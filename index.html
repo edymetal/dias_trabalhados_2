@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FluxoTurno - Controle de Dias Trabalhados e Pagamentos</title>
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Sistema profissional e moderno para controle de dias trabalhados, folgas e gerenciamento de pagamentos semanais com controle de pendências.">
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-logo">
+            <i data-lucide="calendar-check"></i>
+          </div>
+          <div>
+            <span class="brand-name">FluxoTurno</span>
+            <div class="app-version" style="font-size: 0.7rem; color: var(--text-muted);">v1.0.0</div>
+          </div>
+        </div>
+        
+        <ul class="nav-links">
+          <li class="nav-item active" data-tab="dashboard">
+            <a>
+              <i data-lucide="layout-dashboard"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-item" data-tab="calendar">
+            <a>
+              <i data-lucide="calendar"></i>
+              <span>Calendário</span>
+            </a>
+          </li>
+          <li class="nav-item" data-tab="payments">
+            <a>
+              <i data-lucide="wallet"></i>
+              <span>Pagamentos</span>
+            </a>
+          </li>
+          <li class="nav-item" data-tab="history">
+            <a>
+              <i data-lucide="history"></i>
+              <span>Histórico</span>
+            </a>
+          </li>
+          <li class="nav-item" data-tab="settings">
+            <a>
+              <i data-lucide="settings"></i>
+              <span>Configurações</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <span class="app-version">Versão: <span id="val-app-version">1.0.0</span></span>
+        <span class="app-build-date">Atualizado: <span id="val-app-build-date">2026-05-21</span></span>
+      </div>
+    </aside>
+
+    <!-- Main Content Panel -->
+    <main class="main-content">
+      
+      <!-- Top header bar -->
+      <header class="content-header">
+        <div class="header-title">
+          <h1 id="page-title">Dashboard</h1>
+          <p id="page-subtitle">Visão geral do seu trabalho e finanças.</p>
+        </div>
+        <div class="header-actions">
+          <span class="glass-card" style="padding: 0.5rem 1rem; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="calendar-days" style="color: var(--accent-purple); width: 16px; height: 16px;"></i>
+            <span id="current-header-date">21 de Maio, 2026</span>
+          </span>
+        </div>
+      </header>
+
+      <!-- SECTION: Dashboard -->
+      <section id="section-dashboard" class="app-section active">
+        <!-- Stats Summary Row -->
+        <div class="stats-grid">
+          <div class="glass-card stat-card stat-earnings">
+            <div class="stat-info">
+              <p>Total Acumulado</p>
+              <h3 id="stat-total-earnings">R$ 0,00</h3>
+            </div>
+            <div class="stat-icon">
+              <i data-lucide="trending-up"></i>
+            </div>
+          </div>
+          
+          <div class="glass-card stat-card stat-received">
+            <div class="stat-info">
+              <p>Total Recebido</p>
+              <h3 id="stat-total-received">R$ 0,00</h3>
+            </div>
+            <div class="stat-icon">
+              <i data-lucide="check-circle-2"></i>
+            </div>
+          </div>
+
+          <div class="glass-card stat-card stat-pending">
+            <div class="stat-info">
+              <p>Total Pendente</p>
+              <h3 id="stat-total-pending">R$ 0,00</h3>
+            </div>
+            <div class="stat-icon">
+              <i data-lucide="alert-circle"></i>
+            </div>
+          </div>
+
+          <div class="glass-card stat-card stat-partial">
+            <div class="stat-info">
+              <p>Esta Semana</p>
+              <h3 id="stat-this-week-earnings">R$ 0,00</h3>
+            </div>
+            <div class="stat-icon">
+              <i data-lucide="calendar-range"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dashboard Layout -->
+        <div class="dashboard-grid">
+          <!-- Charts -->
+          <div class="glass-card dashboard-card">
+            <h2 class="dashboard-card-title">
+              <i data-lucide="bar-chart-3"></i>
+              Ganhos vs. Recebimentos por Mês
+            </h2>
+            <div class="chart-container">
+              <canvas id="earningsChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Quick Actions & Next Payment -->
+          <div class="glass-card dashboard-card">
+            <h2 class="dashboard-card-title">
+              <i data-lucide="sparkles"></i>
+              Ações Rápidas
+            </h2>
+            <div class="quick-log-container">
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                Registre rapidamente o seu turno para o dia de hoje (<span id="quick-today-date">21/05</span>):
+              </p>
+              <button class="quick-log-btn" onclick="quickLogShift('morning')">
+                <div class="quick-log-info">
+                  <h4>Turno da Manhã</h4>
+                  <p id="quick-rate-morning">Valor padrão: R$ 80,00</p>
+                </div>
+                <div class="quick-log-arrow">
+                  <i data-lucide="sun" style="width: 16px; height: 16px;"></i>
+                </div>
+              </button>
+              
+              <button class="quick-log-btn" onclick="quickLogShift('night')">
+                <div class="quick-log-info">
+                  <h4>Turno da Noite</h4>
+                  <p id="quick-rate-night">Valor padrão: R$ 100,00</p>
+                </div>
+                <div class="quick-log-arrow">
+                  <i data-lucide="moon" style="width: 16px; height: 16px;"></i>
+                </div>
+              </button>
+
+              <button class="quick-log-btn" onclick="quickLogShift('both')">
+                <div class="quick-log-info">
+                  <h4>Ambos os Turnos</h4>
+                  <p id="quick-rate-both">Valor padrão: R$ 180,00</p>
+                </div>
+                <div class="quick-log-arrow">
+                  <i data-lucide="sunset" style="width: 16px; height: 16px;"></i>
+                </div>
+              </button>
+
+              <button class="quick-log-btn" onclick="quickLogShift('off')">
+                <div class="quick-log-info">
+                  <h4>Dia de Folga</h4>
+                  <p>Registrar descanso</p>
+                </div>
+                <div class="quick-log-arrow">
+                  <i data-lucide="coffee" style="width: 16px; height: 16px;"></i>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION: Calendário -->
+      <section id="section-calendar" class="app-section">
+        <div class="glass-card calendar-wrapper">
+          <div class="calendar-header">
+            <h2 class="calendar-nav-title" id="calendar-month-year">Maio de 2026</h2>
+            <div class="calendar-actions-nav">
+              <button class="btn-icon" onclick="changeMonth(-1)">
+                <i data-lucide="chevron-left"></i>
+              </button>
+              <button class="btn-secondary" style="padding: 0.5rem 1rem;" onclick="goToCurrentMonth()">Hoje</button>
+              <button class="btn-icon" onclick="changeMonth(1)">
+                <i data-lucide="chevron-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="calendar-grid" id="calendar-days-grid">
+            <!-- Header labels (Sun, Mon, Tue, etc.) - Filled in JS -->
+          </div>
+
+          <div class="calendar-legend">
+            <div class="legend-item">
+              <div class="legend-color" style="background: var(--status-paid);"></div>
+              <span>Pago</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="background: var(--status-partial);"></div>
+              <span>Parcialmente Pago</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="background: var(--status-unpaid);"></div>
+              <span>Pendente</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="border: 1px dashed var(--status-off); background: transparent;"></div>
+              <span>Folga</span>
+            </div>
+            <div class="legend-item">
+              <i data-lucide="sun" style="width: 14px; height: 14px; color: var(--status-partial);"></i>
+              <span>Manhã</span>
+            </div>
+            <div class="legend-item">
+              <i data-lucide="moon" style="width: 14px; height: 14px; color: var(--accent-purple);"></i>
+              <span>Noite</span>
+            </div>
+            <div class="legend-item">
+              <i data-lucide="sunset" style="width: 14px; height: 14px; color: #3b82f6;"></i>
+              <span>Ambos</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION: Pagamentos -->
+      <section id="section-payments" class="app-section">
+        <div class="payments-container">
+          <!-- Left side: List of Weeks -->
+          <div class="glass-card" style="padding: 1.75rem;">
+            <div class="dashboard-card-title" style="margin-bottom: 0.5rem;">
+              <i data-lucide="calendar-days"></i>
+              Ciclos de Trabalho Semanais
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+              Selecione as semanas que deseja incluir no recebimento do pagamento.
+            </p>
+            
+            <div class="weeks-list" id="weeks-container-list">
+              <!-- Dynamically populated weeks -->
+            </div>
+          </div>
+
+          <!-- Right side: Payment form -->
+          <div class="glass-card payment-processing-card" id="payment-receipt-card">
+            <h2 class="dashboard-card-title">
+              <i data-lucide="coins"></i>
+              Registrar Recebimento
+            </h2>
+
+            <div class="payment-summary-box">
+              <div class="summary-row">
+                <span>Semanas Selecionadas:</span>
+                <span id="summary-weeks-count">0</span>
+              </div>
+              <div class="summary-row">
+                <span>Total de Dias Selecionados:</span>
+                <span id="summary-days-count">0 dias</span>
+              </div>
+              <div class="summary-row">
+                <span>Valor Total Devido:</span>
+                <span id="summary-total-due" style="font-weight: 700;">R$ 0,00</span>
+              </div>
+              <div class="summary-row">
+                <span>Saldo Pendente nas Selecionadas:</span>
+                <span id="summary-already-paid" style="color: var(--status-partial);">R$ 0,00</span>
+              </div>
+              <div class="summary-row">
+                <span>Falta Pagar:</span>
+                <span id="summary-remaining-due" style="color: var(--status-unpaid); font-size: 1.1rem; font-weight: 800;">R$ 0,00</span>
+              </div>
+            </div>
+
+            <form id="payment-form" onsubmit="processPayment(event)">
+              <div class="payment-form-group">
+                <label for="input-payment-amount">Valor Recebido (R$)</label>
+                <input type="number" step="0.01" class="form-input" id="input-payment-amount" placeholder="0,00" required>
+              </div>
+
+              <div class="payment-form-group">
+                <label for="input-payment-date">Data do Recebimento</label>
+                <input type="date" class="form-input" id="input-payment-date" required>
+              </div>
+
+              <div class="payment-form-group">
+                <label for="input-payment-notes">Observações (Opcional)</label>
+                <input type="text" class="form-input" id="input-payment-notes" placeholder="Ex: Pagamento via Pix">
+              </div>
+
+              <button type="submit" class="btn-primary" id="btn-submit-payment" disabled>
+                <i data-lucide="check"></i>
+                Confirmar Recebimento
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION: Histórico -->
+      <section id="section-history" class="app-section">
+        <div class="glass-card" style="padding: 2rem;">
+          <div class="dashboard-card-title">
+            <i data-lucide="history"></i>
+            Histórico de Pagamentos Efetuados
+          </div>
+          
+          <div class="history-table-wrapper">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Data Recebimento</th>
+                  <th>Valor Pago</th>
+                  <th>Período Coberto</th>
+                  <th>Status / Pendência</th>
+                  <th>Observações</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="payment-history-table-body">
+                <!-- Dynamically filled -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION: Configurações -->
+      <section id="section-settings" class="app-section">
+        <div class="settings-grid">
+          <!-- Rates Config -->
+          <div class="glass-card settings-card">
+            <h2 class="dashboard-card-title">
+              <i data-lucide="calculator"></i>
+              Configuração de Tarifas
+            </h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+              Defina os valores padrão para cada período trabalhado. Novos dias utilizarão essas taxas.
+            </p>
+
+            <form id="settings-rates-form" onsubmit="saveRatesSettings(event)">
+              <div class="form-group">
+                <label for="setting-morning-rate">Valor Período da Manhã (R$)</label>
+                <input type="number" step="0.01" class="form-input" id="setting-morning-rate" required>
+              </div>
+
+              <div class="form-group">
+                <label for="setting-night-rate">Valor Período da Noite (R$)</label>
+                <input type="number" step="0.01" class="form-input" id="setting-night-rate" required>
+              </div>
+
+              <button type="submit" class="btn-primary">
+                <i data-lucide="save"></i>
+                Salvar Tarifas
+              </button>
+            </form>
+          </div>
+
+          <!-- Backup and Restore -->
+          <div class="glass-card settings-card">
+            <h2 class="dashboard-card-title">
+              <i data-lucide="database"></i>
+              Backup e Restauração
+            </h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+              Exporte seus dados para segurança ou importe o arquivo JSON em outro dispositivo.
+            </p>
+
+            <div class="backup-actions-grid">
+              <button class="btn-secondary" onclick="exportDatabase()">
+                <i data-lucide="download"></i>
+                Exportar Dados (JSON)
+              </button>
+              
+              <div class="file-input-wrapper">
+                <button class="btn-secondary" style="width: 100%;">
+                  <i data-lucide="upload"></i>
+                  Importar Dados (JSON)
+                </button>
+                <input type="file" id="import-db-file" accept=".json" onchange="importDatabase(event)">
+              </div>
+            </div>
+            
+            <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-light);">
+            
+            <h3 style="font-size: 1rem; font-weight: 700; color: var(--status-unpaid); margin-bottom: 0.5rem;">Zona de Perigo</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+              Esta ação excluirá permanentemente todos os registros de dias trabalhados e pagamentos.
+            </p>
+            <button class="btn-danger" onclick="clearDatabase()">
+              <i data-lucide="trash-2"></i>
+              Apagar Todo o Histórico
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL: Registrar / Editar Dia de Trabalho -->
+  <div class="modal-overlay" id="day-modal">
+    <div class="glass-card modal-content">
+      <div class="modal-header">
+        <h2 id="modal-date-title">Dia 21/05/2026</h2>
+        <button class="modal-close" onclick="closeDayModal()">&times;</button>
+      </div>
+
+      <form id="day-form" onsubmit="saveDayDetails(event)">
+        <input type="hidden" id="modal-date-value">
+
+        <!-- Shift period options -->
+        <div class="form-group">
+          <label>Selecione o Período Trabalhado</label>
+          <div class="period-select-grid">
+            <div class="period-option">
+              <input type="radio" name="modal-period" id="period-morning" value="morning">
+              <label for="period-morning" class="period-card">
+                <i data-lucide="sun"></i>
+                <span>Manhã</span>
+                <span class="period-price" id="modal-price-morning">R$ 80,00</span>
+              </label>
+            </div>
+            
+            <div class="period-option">
+              <input type="radio" name="modal-period" id="period-night" value="night">
+              <label for="period-night" class="period-card">
+                <i data-lucide="moon"></i>
+                <span>Noite</span>
+                <span class="period-price" id="modal-price-night">R$ 100,00</span>
+              </label>
+            </div>
+
+            <div class="period-option option-both">
+              <input type="radio" name="modal-period" id="period-both" value="both">
+              <label for="period-both" class="period-card">
+                <i data-lucide="sunset"></i>
+                <span>Ambos</span>
+                <span class="period-price" id="modal-price-both">R$ 180,00</span>
+              </label>
+            </div>
+
+            <div class="period-option option-off">
+              <input type="radio" name="modal-period" id="period-off" value="off">
+              <label for="period-off" class="period-card">
+                <i data-lucide="coffee"></i>
+                <span>Folga</span>
+                <span class="period-price">R$ 0,00</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group" id="custom-rate-group">
+          <label for="modal-custom-rate">Valor Customizado para este Dia (R$)</label>
+          <input type="number" step="0.01" class="form-input" id="modal-custom-rate" placeholder="Usar valor padrão">
+        </div>
+
+        <div class="form-group">
+          <label for="modal-notes">Observações</label>
+          <input type="text" class="form-input" id="modal-notes" placeholder="Ex: Hora extra ou anotações">
+        </div>
+
+        <!-- Payment Info Display if already paid/partial -->
+        <div id="modal-payment-info" class="payment-summary-box" style="display: none; font-size: 0.85rem; margin-bottom: 1.5rem;">
+          <div style="font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.25rem;">
+            <i data-lucide="info" style="width: 14px; height: 14px; color: var(--accent-purple);"></i>
+            Informações Financeiras do Dia
+          </div>
+          <div class="summary-row">
+            <span>Status:</span>
+            <span id="modal-pay-status-label" class="day-badge" style="align-self: center;">Pendente</span>
+          </div>
+          <div class="summary-row">
+            <span>Valor Já Recebido:</span>
+            <span id="modal-pay-received">R$ 0,00</span>
+          </div>
+          <div class="summary-row">
+            <span>Saldo Devedor:</span>
+            <span id="modal-pay-pending" style="font-weight: 700;">R$ 0,00</span>
+          </div>
+        </div>
+
+        <div class="actions-row">
+          <button type="button" class="btn-danger" id="btn-delete-day" onclick="deleteDayRecord()" style="display: none;">
+            <i data-lucide="trash-2"></i>
+            Excluir
+          </button>
+          <button type="submit" class="btn-primary" style="flex-grow: 1;">
+            <i data-lucide="check"></i>
+            Salvar Registro
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- JavaScript Logica principal -->
+  <script src="app.js"></script>
+</body>
+</html>
