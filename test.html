@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FluxoTurno - Suite de Testes</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Estilos customizados para o Test Runner */
+    .test-suite-container {
+      max-width: 900px;
+      margin: 3rem auto;
+      padding: 0 1.5rem;
+    }
+    .test-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    .test-header h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(to right, #a78bfa, #10b981);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+    .test-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+    .test-summary-card {
+      padding: 1.5rem;
+      text-align: center;
+      border-radius: var(--border-radius-sm);
+    }
+    .test-summary-val {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-top: 0.5rem;
+    }
+    .test-card-success { border-bottom: 4px solid var(--status-paid); }
+    .test-card-failure { border-bottom: 4px solid var(--status-unpaid); }
+    .test-card-total { border-bottom: 4px solid var(--accent-purple); }
+
+    .test-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .test-item {
+      padding: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: var(--transition-smooth);
+    }
+    .test-item:hover {
+      transform: translateX(5px);
+    }
+    .test-info h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+    .test-info p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .test-assertions {
+      margin-top: 0.75rem;
+      padding-left: 1rem;
+      border-left: 2px solid rgba(255, 255, 255, 0.05);
+      font-family: monospace;
+      font-size: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .assertion-pass { color: var(--status-paid); }
+    .assertion-fail { color: var(--status-unpaid); }
+
+    .badge-test-pass { background: var(--status-paid-glow); color: var(--status-paid); font-size: 0.8rem; padding: 4px 10px; border-radius: 12px; font-weight: 700; }
+    .badge-test-fail { background: var(--status-unpaid-glow); color: var(--status-unpaid); font-size: 0.8rem; padding: 4px 10px; border-radius: 12px; font-weight: 700; }
+    
+    .btn-run {
+      margin-top: 2rem;
+      display: block;
+      width: 100%;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <div class="test-suite-container">
+    <div class="test-header">
+      <h1>FluxoTurno Test Runner</h1>
+      <p style="color: var(--text-muted);">Validação automática dos requisitos de negócios, FIFO de pagamentos, estornos e integridade de dados.</p>
+    </div>
+
+    <!-- Estatísticas de Testes -->
+    <div class="test-summary">
+      <div class="glass-card test-summary-card test-card-total">
+        <span style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">Total de Testes</span>
+        <div class="test-summary-val" id="total-tests">0</div>
+      </div>
+      <div class="glass-card test-summary-card test-card-success">
+        <span style="color: var(--status-paid); font-size: 0.9rem; font-weight: 600;">Passados</span>
+        <div class="test-summary-val" id="passed-tests" style="color: var(--status-paid);">0</div>
+      </div>
+      <div class="glass-card test-summary-card test-card-failure">
+        <span style="color: var(--status-unpaid); font-size: 0.9rem; font-weight: 600;">Falhas</span>
+        <div class="test-summary-val" id="failed-tests" style="color: var(--status-unpaid);">0</div>
+      </div>
+    </div>
+
+    <!-- Lista de Testes -->
+    <div class="test-list" id="test-list-results">
+      <!-- Injetado dinamicamente -->
+    </div>
+
+    <button class="btn-primary btn-run" onclick="runTests()">
+      <i data-lucide="refresh-cw"></i>
+      Reexecutar Testes de Validação
+    </button>
+    
+    <a href="index.html" class="btn-secondary" style="display: flex; width: 100%; margin-top: 1rem; text-decoration: none;">
+      <i data-lucide="arrow-left"></i>
+      Voltar para o Sistema
+    </a>
+  </div>
+
+  <!-- CONTAINER DE MOCK DO DOM (necessário para o app.js rodar no mesmo contexto) -->
+  <div style="display: none;">
+    <span id="val-app-version"></span>
+    <span id="val-app-build-date"></span>
+    <h1 id="page-title"></h1>
+    <p id="page-subtitle"></p>
+    <span id="current-header-date"></span>
+    <span id="quick-today-date"></span>
+    <h3 id="stat-total-earnings"></h3>
+    <h3 id="stat-total-received"></h3>
+    <h3 id="stat-total-pending"></h3>
+    <h3 id="stat-this-week-earnings"></h3>
+    <canvas id="earningsChart"></canvas>
+    <span id="quick-rate-morning"></span>
+    <span id="quick-rate-night"></span>
+    <span id="quick-rate-both"></span>
+    <span id="modal-price-morning"></span>
+    <span id="modal-price-night"></span>
+    <span id="modal-price-both"></span>
+    <h2 id="calendar-month-year"></h2>
+    <div id="calendar-days-grid"></div>
+    <div id="weeks-container-list"></div>
+    <span id="summary-weeks-count"></span>
+    <span id="summary-days-count"></span>
+    <span id="summary-total-due"></span>
+    <span id="summary-already-paid"></span>
+    <span id="summary-remaining-due"></span>
+    <input id="input-payment-amount">
+    <input id="input-payment-date">
+    <input id="input-payment-notes">
+    <button id="btn-submit-payment"></button>
+    <table><tbody id="payment-history-table-body"></tbody></table>
+  </div>
+
+  <!-- Carrega a lógica da aplicação -->
+  <script src="app.js"></script>
+
+  <!-- Script da Suite de Testes -->
+  <script>
+    // Armazena dados originais do LocalStorage para restaurar depois dos testes
+    const originalLocalStorage = localStorage.getItem(DB_STORAGE_KEY);
+    
+    // Configurações e Utilitários de Assertion
+    let activeTest = null;
+    let totalTests = 0;
+    let passedTests = 0;
+    let failedTests = 0;
+
+    function startTest(name, description) {
+      activeTest = {
+        name: name,
+        description: description,
+        assertions: [],
+        failed: false
+      };
+      totalTests++;
+    }
+
+    function assert(condition, message) {
+      if (condition) {
+        activeTest.assertions.push({ pass: true, msg: "✔ " + message });
+      } else {
+        activeTest.assertions.push({ pass: false, msg: "✘ " + message });
+        activeTest.failed = true;
+      }
+    }
+
+    function endTest() {
+      const container = document.getElementById('test-list-results');
+      
+      const item = document.createElement('div');
+      item.className = 'glass-card test-item';
+      
+      const leftDiv = document.createElement('div');
+      leftDiv.className = 'test-info';
+      leftDiv.innerHTML = `<h3>${activeTest.name}</h3><p>${activeTest.description}</p>`;
+      
+      const assertDiv = document.createElement('div');
+      assertDiv.className = 'test-assertions';
+      
+      activeTest.assertions.forEach(a => {
+        const p = document.createElement('div');
+        p.className = a.pass ? 'assertion-pass' : 'assertion-fail';
+        p.innerText = a.msg;
+        assertDiv.appendChild(p);
+      });
+      leftDiv.appendChild(assertDiv);
+      item.appendChild(leftDiv);
+
+      const badge = document.createElement('span');
+      if (activeTest.failed) {
+        badge.className = 'badge-test-fail';
+        badge.innerText = 'FALHOU';
+        failedTests++;
+      } else {
+        badge.className = 'badge-test-pass';
+        badge.innerText = 'PASSOU';
+        passedTests++;
+      }
+      item.appendChild(badge);
+      container.appendChild(item);
+    }
+
+    // Função principal de execução da Suite de Testes
+    function runTests() {
+      // Limpa container visual
+      const container = document.getElementById('test-list-results');
+      container.innerHTML = '';
+      
+      // Reseta contadores
+      totalTests = 0;
+      passedTests = 0;
+      failedTests = 0;
+
+      // Força limpeza do DB temporário para isolar os testes
+      localStorage.removeItem(DB_STORAGE_KEY);
+      initDatabase();
+
+      /* -------------------------------------------------------------
+         TESTE 1: Inicialização do Banco de Dados
+         ------------------------------------------------------------- */
+      startTest("Banco de Dados", "Verifica se as configurações padrão são criadas e carregadas corretamente no LocalStorage.");
+      assert(db !== null, "O banco de dados foi carregado.");
+      assert(db.settings.morningRate === 80, "Tarifa matutina inicial é R$ 80,00.");
+      assert(db.settings.nightRate === 100, "Tarifa noturna inicial é R$ 100,00.");
+      assert(Object.keys(db.workedDays).length === 0, "Dicionário de dias trabalhados inicia vazio.");
+      assert(db.payments.length === 0, "Lista de pagamentos efetuados inicia vazia.");
+      endTest();
+
+      /* -------------------------------------------------------------
+         TESTE 2: Lógica de Intervalo de Semana (Segunda a Domingo)
+         ------------------------------------------------------------- */
+      startTest("Agrupamento Semanal", "Garante que qualquer data YYYY-MM-DD seja mapeada para a semana correspondente de segunda a domingo.");
+      
+      // Quinta-feira (21 de Maio de 2026)
+      const dateTest1 = "2026-05-21";
+      const week1 = getWeekRange(dateTest1);
+      assert(week1.mondayStr === "2026-05-18", "Início da semana deve ser Segunda-feira: 2026-05-18.");
+      assert(week1.sundayStr === "2026-05-24", "Fim da semana deve ser Domingo: 2026-05-24.");
+      
+      // Domingo (24 de Maio de 2026)
+      const dateTest2 = "2026-05-24";
+      const week2 = getWeekRange(dateTest2);
+      assert(week2.mondayStr === "2026-05-18", "Domingo mapeia para mesma semana com início em 2026-05-18.");
+      assert(week2.sundayStr === "2026-05-24", "Domingo mapeia para mesma semana com fim em 2026-05-24.");
+
+      // Segunda-feira (18 de Maio de 2026)
+      const dateTest3 = "2026-05-18";
+      const week3 = getWeekRange(dateTest3);
+      assert(week3.mondayStr === "2026-05-18", "Segunda-feira mapeia com início em 2026-05-18.");
+      assert(week3.sundayStr === "2026-05-24", "Segunda-feira mapeia com fim em 2026-05-24.");
+      endTest();
+
+      /* -------------------------------------------------------------
+         TESTE 3: Cadastro de Trabalho e Cálculo de Tarifas
+         ------------------------------------------------------------- */
+      startTest("Lançamento de Turnos", "Verifica se os valores dos turnos e cálculos de valores devidos estão corretos.");
+      
+      // 18/05/2026 - Manhã (80)
+      db.workedDays["2026-05-18"] = {
+        date: "2026-05-18", period: "morning", rate: db.settings.morningRate,
+        status: "unpaid", amountPaid: 0, pendingAmount: db.settings.morningRate, paymentsApplied: {}
+      };
+      // 19/05/2026 - Noite (100)
+      db.workedDays["2026-05-19"] = {
+        date: "2026-05-19", period: "night", rate: db.settings.nightRate,
+        status: "unpaid", amountPaid: 0, pendingAmount: db.settings.nightRate, paymentsApplied: {}
+      };
+      // 20/05/2026 - Ambos (180)
+      db.workedDays["2026-05-20"] = {
+        date: "2026-05-20", period: "both", rate: db.settings.morningRate + db.settings.nightRate,
+        status: "unpaid", amountPaid: 0, pendingAmount: db.settings.morningRate + db.settings.nightRate, paymentsApplied: {}
+      };
+      // 21/05/2026 - Folga (0)
+      db.workedDays["2026-05-21"] = {
+        date: "2026-05-21", period: "off", rate: 0,
+        status: "unpaid", amountPaid: 0, pendingAmount: 0, paymentsApplied: {}
+      };
+
+      assert(db.workedDays["2026-05-18"].rate === 80, "Segunda-feira (Manhã) vale R$ 80.");
+      assert(db.workedDays["2026-05-19"].rate === 100, "Terça-feira (Noite) vale R$ 100.");
+      assert(db.workedDays["2026-05-20"].rate === 180, "Quarta-feira (Ambos) vale R$ 180.");
+      assert(db.workedDays["2026-05-21"].rate === 0, "Quinta-feira (Folga) vale R$ 0.");
+      
+      // Soma total
+      let total = 0;
+      Object.values(db.workedDays).forEach(d => total += d.rate);
+      assert(total === 360, "O valor total acumulado nas 4 diárias é R$ 360,00.");
+      endTest();
+
+      /* -------------------------------------------------------------
+         TESTE 4: Distribuição de Pagamento Parcial (FIFO)
+         ------------------------------------------------------------- */
+      startTest("Fluxo FIFO de Pagamento Parcial", "Simula o recebimento de R$ 200,00 para cobrir R$ 360,00 devidos e valida a distribuição cronológica.");
+      
+      // Seleciona a semana do dia 18/05/2026 a 24/05/2026
+      selectedWeeks = ["2026-05-18_2026-05-24"];
+      
+      // Mock da requisição do formulário (executa a função de negócio)
+      // Simula o preenchimento dos inputs
+      document.getElementById('input-payment-amount').value = 200;
+      document.getElementById('input-payment-date').value = "2026-05-21";
+      document.getElementById('input-payment-notes').value = "PIX Parcial Empregador";
+      
+      // Executa o processamento do pagamento
+      const mockEvent = { preventDefault: () => {} };
+      processPayment(mockEvent);
+
+      // Asserções FIFO:
+      // O pagamento de R$ 200 cobre:
+      // 1. Segunda-feira (18/05): R$ 80 -> Totalmente PAGO (Restam R$ 120)
+      // 2. Terça-feira (19/05): R$ 100 -> Totalmente PAGO (Restam R$ 20)
+      // 3. Quarta-feira (20/05): R$ 180 -> PARCIALMENTE PAGO com R$ 20 (Restam R$ 0)
+      
+      assert(db.payments.length === 1, "Um pagamento foi registrado no histórico.");
+      assert(db.payments[0].amount === 200, "Valor registrado é R$ 200.");
+      
+      const daySeg = db.workedDays["2026-05-18"];
+      assert(daySeg.status === "paid" && daySeg.amountPaid === 80 && daySeg.pendingAmount === 0, 
+             "Segunda (18/05) foi totalmente paga (R$ 80,00).");
+             
+      const dayTer = db.workedDays["2026-05-19"];
+      assert(dayTer.status === "paid" && dayTer.amountPaid === 100 && dayTer.pendingAmount === 0, 
+             "Terça (19/05) foi totalmente paga (R$ 100,00).");
+             
+      const dayQua = db.workedDays["2026-05-20"];
+      assert(dayQua.status === "partial" && dayQua.amountPaid === 20 && dayQua.pendingAmount === 160, 
+             "Quarta (20/05) foi paga parcialmente (R$ 20,00 pagos, R$ 160,00 pendentes).");
+      
+      endTest();
+
+      /* -------------------------------------------------------------
+         TESTE 5: Estorno de Pagamento (Rollback)
+         ------------------------------------------------------------- */
+      startTest("Estorno de Pagamentos", "Verifica se excluir um pagamento do histórico devolve a pendência exata para os dias correspondentes.");
+      
+      // Obtém o ID do pagamento gerado no Teste 4
+      const lastPaymentId = db.payments[0].id;
+      
+      // Aciona exclusão manual de teste (ignorando confirmação do browser no mock)
+      // Sobrescrevemos temporariamente o confirm
+      const originalConfirm = window.confirm;
+      window.confirm = () => true;
+      
+      deletePayment(lastPaymentId);
+      
+      // Restaura o confirm original
+      window.confirm = originalConfirm;
+
+      // Validações pós estorno
+      assert(db.payments.length === 0, "O histórico de pagamentos está vazio após o estorno.");
+      
+      const daySegPost = db.workedDays["2026-05-18"];
+      assert(daySegPost.status === "unpaid" && daySegPost.amountPaid === 0 && daySegPost.pendingAmount === 80, 
+             "Segunda (18/05) voltou para Pendente devendo R$ 80.");
+             
+      const dayTerPost = db.workedDays["2026-05-19"];
+      assert(dayTerPost.status === "unpaid" && dayTerPost.amountPaid === 0 && dayTerPost.pendingAmount === 100, 
+             "Terça (19/05) voltou para Pendente devendo R$ 100.");
+             
+      const dayQuaPost = db.workedDays["2026-05-20"];
+      assert(dayQuaPost.status === "unpaid" && dayQuaPost.amountPaid === 0 && dayQuaPost.pendingAmount === 180, 
+             "Quarta (20/05) voltou para Pendente devendo R$ 180.");
+
+      endTest();
+
+      // Atualiza o painel visual de resultados
+      document.getElementById('total-tests').innerText = totalTests;
+      document.getElementById('passed-tests').innerText = passedTests;
+      document.getElementById('failed-tests').innerText = failedTests;
+      
+      // Altera a cor do card de falhas se houver alguma
+      const failCard = document.querySelector('.test-card-failure');
+      if (failedTests > 0) {
+        failCard.style.background = 'var(--status-unpaid-glow)';
+      } else {
+        failCard.style.background = 'transparent';
+      }
+
+      // Restaura o LocalStorage original do usuário para não apagar dados reais
+      if (originalLocalStorage) {
+        localStorage.setItem(DB_STORAGE_KEY, originalLocalStorage);
+      } else {
+        localStorage.removeItem(DB_STORAGE_KEY);
+      }
+      initDatabase(); // Restaura o banco de dados carregado na memória do app
+    }
+
+    // Executa testes ao iniciar a página
+    document.addEventListener('DOMContentLoaded', () => {
+      runTests();
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>

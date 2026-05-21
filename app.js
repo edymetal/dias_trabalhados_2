@@ -3,8 +3,8 @@
    ========================================================================== */
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.1';
-const APP_BUILD_DATE = '2026-05-21 04:43:36';
+const APP_VERSION = '1.0.2';
+const APP_BUILD_DATE = '2026-05-21 04:46:52';
 
 // Configurações do Banco de Dados Local (LocalStorage)
 const DB_STORAGE_KEY = 'fluxoturno_db';
