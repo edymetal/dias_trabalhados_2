@@ -162,6 +162,11 @@
     <span id="summary-remaining-due"></span>
     <input id="input-payment-amount">
     <input id="input-payment-date">
+    <select id="input-payment-method">
+      <option value="Dinheiro">Dinheiro</option>
+      <option value="Depósito">Depósito</option>
+      <option value="Outros">Outros</option>
+    </select>
     <input id="input-payment-notes">
     <button id="btn-submit-payment"></button>
     <table><tbody id="payment-history-table-body"></tbody></table>
@@ -256,8 +261,8 @@
          ------------------------------------------------------------- */
       startTest("Banco de Dados", "Verifica se as configurações padrão são criadas e carregadas corretamente no LocalStorage.");
       assert(db !== null, "O banco de dados foi carregado.");
-      assert(db.settings.morningRate === 80, "Tarifa matutina inicial é R$ 80,00.");
-      assert(db.settings.nightRate === 100, "Tarifa noturna inicial é R$ 100,00.");
+      assert(db.settings.morningRate === 80, "Tarifa matutina inicial é € 80,00.");
+      assert(db.settings.nightRate === 100, "Tarifa noturna inicial é € 100,00.");
       assert(Object.keys(db.workedDays).length === 0, "Dicionário de dias trabalhados inicia vazio.");
       assert(db.payments.length === 0, "Lista de pagamentos efetuados inicia vazia.");
       endTest();
@@ -312,21 +317,21 @@
         status: "unpaid", amountPaid: 0, pendingAmount: 0, paymentsApplied: {}
       };
 
-      assert(db.workedDays["2026-05-18"].rate === 80, "Segunda-feira (Manhã) vale R$ 80.");
-      assert(db.workedDays["2026-05-19"].rate === 100, "Terça-feira (Noite) vale R$ 100.");
-      assert(db.workedDays["2026-05-20"].rate === 180, "Quarta-feira (Ambos) vale R$ 180.");
-      assert(db.workedDays["2026-05-21"].rate === 0, "Quinta-feira (Folga) vale R$ 0.");
+      assert(db.workedDays["2026-05-18"].rate === 80, "Segunda-feira (Manhã) vale € 80.");
+      assert(db.workedDays["2026-05-19"].rate === 100, "Terça-feira (Noite) vale € 100.");
+      assert(db.workedDays["2026-05-20"].rate === 180, "Quarta-feira (Ambos) vale € 180.");
+      assert(db.workedDays["2026-05-21"].rate === 0, "Quinta-feira (Folga) vale € 0.");
       
       // Soma total
       let total = 0;
       Object.values(db.workedDays).forEach(d => total += d.rate);
-      assert(total === 360, "O valor total acumulado nas 4 diárias é R$ 360,00.");
+      assert(total === 360, "O valor total acumulado nas 4 diárias é € 360,00.");
       endTest();
 
       /* -------------------------------------------------------------
          TESTE 4: Distribuição de Pagamento Parcial (FIFO)
          ------------------------------------------------------------- */
-      startTest("Fluxo FIFO de Pagamento Parcial", "Simula o recebimento de R$ 200,00 para cobrir R$ 360,00 devidos e valida a distribuição cronológica.");
+      startTest("Fluxo FIFO de Pagamento Parcial", "Simula o recebimento de € 200,00 para cobrir € 360,00 devidos e valida a distribuição cronológica.");
       
       // Seleciona a semana do dia 18/05/2026 a 24/05/2026
       selectedWeeks = ["2026-05-18_2026-05-24"];
@@ -335,6 +340,7 @@
       // Simula o preenchimento dos inputs
       document.getElementById('input-payment-amount').value = 200;
       document.getElementById('input-payment-date').value = "2026-05-21";
+      document.getElementById('input-payment-method').value = "Outros";
       document.getElementById('input-payment-notes').value = "PIX Parcial Empregador";
       
       // Executa o processamento do pagamento
@@ -348,19 +354,19 @@
       // 3. Quarta-feira (20/05): R$ 180 -> PARCIALMENTE PAGO com R$ 20 (Restam R$ 0)
       
       assert(db.payments.length === 1, "Um pagamento foi registrado no histórico.");
-      assert(db.payments[0].amount === 200, "Valor registrado é R$ 200.");
+      assert(db.payments[0].amount === 200, "Valor registrado é € 200.");
       
       const daySeg = db.workedDays["2026-05-18"];
       assert(daySeg.status === "paid" && daySeg.amountPaid === 80 && daySeg.pendingAmount === 0, 
-             "Segunda (18/05) foi totalmente paga (R$ 80,00).");
+             "Segunda (18/05) foi totalmente paga (€ 80,00).");
              
       const dayTer = db.workedDays["2026-05-19"];
       assert(dayTer.status === "paid" && dayTer.amountPaid === 100 && dayTer.pendingAmount === 0, 
-             "Terça (19/05) foi totalmente paga (R$ 100,00).");
+             "Terça (19/05) foi totalmente paga (€ 100,00).");
              
       const dayQua = db.workedDays["2026-05-20"];
       assert(dayQua.status === "partial" && dayQua.amountPaid === 20 && dayQua.pendingAmount === 160, 
-             "Quarta (20/05) foi paga parcialmente (R$ 20,00 pagos, R$ 160,00 pendentes).");
+             "Quarta (20/05) foi paga parcialmente (€ 20,00 pagos, € 160,00 pendentes).");
       
       endTest();
 
@@ -387,15 +393,15 @@
       
       const daySegPost = db.workedDays["2026-05-18"];
       assert(daySegPost.status === "unpaid" && daySegPost.amountPaid === 0 && daySegPost.pendingAmount === 80, 
-             "Segunda (18/05) voltou para Pendente devendo R$ 80.");
+             "Segunda (18/05) voltou para Pendente devendo € 80.");
              
       const dayTerPost = db.workedDays["2026-05-19"];
       assert(dayTerPost.status === "unpaid" && dayTerPost.amountPaid === 0 && dayTerPost.pendingAmount === 100, 
-             "Terça (19/05) voltou para Pendente devendo R$ 100.");
+             "Terça (19/05) voltou para Pendente devendo € 100.");
              
       const dayQuaPost = db.workedDays["2026-05-20"];
       assert(dayQuaPost.status === "unpaid" && dayQuaPost.amountPaid === 0 && dayQuaPost.pendingAmount === 180, 
-             "Quarta (20/05) voltou para Pendente devendo R$ 180.");
+             "Quarta (20/05) voltou para Pendente devendo € 180.");
 
       endTest();
 

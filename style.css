@@ -571,17 +571,43 @@ body {
   background: rgba(100, 116, 139, 0.05);
   border: 1px dashed var(--status-off);
 }
+.day-status-indicator {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 .day-status-paid {
-  border-left: 3px solid var(--status-paid);
+  border-left: 4px solid var(--status-paid) !important;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(139, 92, 246, 0.02)) !important;
+}
+
+.day-status-paid:hover {
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.25) !important;
+  border-color: var(--status-paid) !important;
 }
 
 .day-status-partial {
-  border-left: 3px solid var(--status-partial);
+  border-left: 4px solid var(--status-partial) !important;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(139, 92, 246, 0.02)) !important;
+}
+
+.day-status-partial:hover {
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.25) !important;
+  border-color: var(--status-partial) !important;
 }
 
 .day-status-unpaid {
-  border-left: 3px solid var(--status-unpaid);
+  border-left: 4px solid var(--status-unpaid) !important;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(139, 92, 246, 0.02)) !important;
+}
+
+.day-status-unpaid:hover {
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.25) !important;
+  border-color: var(--status-unpaid) !important;
 }
 
 /* Legend styling */
@@ -664,7 +690,7 @@ body {
 
 .week-details {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 0.5rem;
   font-size: 0.85rem;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
@@ -797,6 +823,50 @@ body {
   font-weight: 600;
   color: var(--text-muted);
   margin-bottom: 0.5rem;
+}
+
+/* Off Days Checkbox Custom Layout */
+.offdays-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: var(--border-radius-sm);
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--border-light);
+  transition: var(--transition-smooth);
+  cursor: pointer;
+}
+
+.checkbox-option:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.checkbox-option input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid var(--border-light);
+  background: rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  accent-color: var(--accent-purple);
+}
+
+.checkbox-option label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 0 !important; /* Sobrescrever margem padrão de labels */
 }
 
 /* Buttons and Inputs */
@@ -1148,5 +1218,133 @@ body {
   
   .calendar-day {
     min-height: 50px;
+  }
+}
+
+/* ==========================================================================
+   BATCH MULTI-DAY LOGGER STYLES
+   ========================================================================== */
+.modal-content.modal-large {
+  max-width: 650px;
+}
+
+.batch-inputs-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.batch-inputs-row .form-group {
+  flex: 1;
+}
+
+/* List of batch days */
+.batch-days-list {
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-sm);
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.batch-day-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.75rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  gap: 1rem;
+  transition: var(--transition-smooth);
+}
+
+.batch-day-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.batch-day-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex-grow: 1;
+}
+
+.batch-day-date {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.batch-day-weekday {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.batch-day-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.batch-day-period-select {
+  padding: 0.45rem 0.75rem;
+  font-size: 0.85rem;
+  border-radius: 6px;
+  width: 140px;
+  border: 1px solid var(--border-light);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text-primary);
+  transition: var(--transition-smooth);
+}
+
+.batch-day-period-select:focus {
+  outline: none;
+  border-color: var(--accent-purple);
+}
+
+.batch-day-rate-input {
+  padding: 0.45rem 0.75rem;
+  font-size: 0.85rem;
+  border-radius: 6px;
+  width: 100px;
+  border: 1px solid var(--border-light);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text-primary);
+  transition: var(--transition-smooth);
+}
+
+.batch-day-rate-input:focus {
+  outline: none;
+  border-color: var(--accent-purple);
+}
+
+@media (max-width: 600px) {
+  .batch-inputs-row {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .batch-day-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .batch-day-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .batch-day-period-select {
+    flex: 1;
+  }
+  
+  .batch-day-rate-input {
+    width: 90px;
   }
 }

@@ -3,8 +3,8 @@
    ========================================================================== */
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.2';
-const APP_BUILD_DATE = '2026-05-21 04:46:52';
+const APP_VERSION = '1.0.3';
+const APP_BUILD_DATE = '2026-05-21 06:53:09';
 
 // Configurações do Banco de Dados Local (LocalStorage)
 const DB_STORAGE_KEY = 'fluxoturno_db';
@@ -12,19 +12,361 @@ const DB_STORAGE_KEY = 'fluxoturno_db';
 // Estado Inicial do Banco de Dados
 const DEFAULT_DB = {
   settings: {
-    morningRate: 80.00,
-    nightRate: 100.00,
-    currency: 'BRL'
+    morningRate: 35.00,
+    nightRate: 25.00,
+    currency: 'EUR',
+    offDays: [4], // Quinta-feira (4) por padrão
+    language: 'pt-BR'
   },
   workedDays: {}, // Formato: { 'YYYY-MM-DD': { date, period, rate, status, amountPaid, pendingAmount, notes, paymentsApplied: { paymentId: amount } } }
   payments: []    // Formato: [{ id, date, amount, coveredDays: [], notes }]
 };
+
+// Traduções para Português e Italiano
+const translations = {
+  'pt-BR': {
+    // Sidebar
+    'nav-dashboard': 'Dashboard',
+    'nav-calendar': 'Calendário',
+    'nav-payments': 'Pagamentos',
+    'nav-history': 'Histórico',
+    'nav-settings': 'Configurações',
+    'sidebar-version': 'Versão:',
+    'sidebar-updated': 'Atualizado:',
+    
+    // Header
+    'header-dashboard-title': 'Dashboard',
+    'header-dashboard-subtitle': 'Visão geral do seu trabalho e finanças.',
+    'header-calendar-title': 'Calendário',
+    'header-calendar-subtitle': 'Visualize o mês de trabalho e configure seus turnos clicando nos dias.',
+    'header-payments-title': 'Pagamentos',
+    'header-payments-subtitle': 'Selecione os ciclos semanais para registrar recebimentos totais ou parciais.',
+    'header-history-title': 'Histórico',
+    'header-history-subtitle': 'Registro completo de pagamentos e pendências finalizadas.',
+    'header-settings-title': 'Configurações',
+    'header-settings-subtitle': 'Ajustes finos do sistema, exportação de dados e tarifas padrão.',
+
+    // Dashboard
+    'stat-total-accumulated': 'Total Acumulado',
+    'stat-total-received': 'Total Recebido',
+    'stat-total-pending': 'Total Pendente',
+    'stat-this-week': 'Esta Semana',
+    'chart-title': 'Ganhos vs. Recebimentos por Mês',
+    'quick-actions-title': 'Ações Rápidas',
+    'quick-actions-desc': 'Registre rapidamente o seu turno para o dia de hoje',
+    'btn-morning-shift': 'Turno da Manhã',
+    'btn-night-shift': 'Turno da Noite',
+    'btn-both-shifts': 'Ambos os Turnos',
+    'btn-off-day': 'Dia de Folga',
+    'rate-default': 'Valor padrão:',
+    'log-rest': 'Registrar descanso',
+
+    // Calendar
+    'btn-batch-launch': 'Lançar Vários Dias',
+    'btn-batch-remove': 'Remover Vários Dias',
+    'btn-today': 'Hoje',
+    'legend-paid': 'Pago',
+    'legend-partial': 'Parcialmente Pago',
+    'legend-pending': 'Pendente',
+    'legend-off': 'Folga',
+    'legend-morning': 'Manhã',
+    'legend-night': 'Noite',
+    'legend-both': 'Ambos',
+
+    // Payments
+    'work-cycles-title': 'Ciclos de Trabalho Semanais',
+    'work-cycles-desc': 'Selecione as semanas que deseja incluir no recebimento do pagamento.',
+    'register-receipt-title': 'Registrar Recebimento',
+    'summary-selected-weeks': 'Semanas Selecionadas:',
+    'summary-selected-days': 'Total de Dias Selecionados:',
+    'summary-total-due': 'Valor Total Devido:',
+    'summary-already-paid': 'Saldo Pendente nas Selecionadas:',
+    'summary-to-pay': 'Falta Pagar:',
+    'label-received-amount': 'Valor Recebido (€)',
+    'label-payment-date': 'Data do Recebimento',
+    'label-payment-method': 'Método de Pagamento',
+    'label-notes': 'Especificação / Notas',
+    'btn-confirm-receipt': 'Confirmar Recebimento',
+    'opt-cash': 'Dinheiro',
+    'opt-deposit': 'Depósito',
+    'opt-others': 'Outros (Especificar)',
+    'week-to': 'a',
+    'week-days': 'dias',
+    'week-day': 'dia',
+
+    // History
+    'payment-history-title': 'Histórico de Pagamentos Efetuados',
+    'th-date': 'Data Recebimento',
+    'th-amount': 'Valor Pago',
+    'th-period': 'Período Coberto',
+    'th-status': 'Status / Pendência',
+    'th-notes': 'Observações',
+    'th-actions': 'Ações',
+    'btn-refund': 'Estornar',
+    'status-processed': 'Processado',
+
+    // Settings
+    'settings-rates-title': 'Configuração de Tarifas',
+    'settings-rates-desc': 'Defina os valores padrão para cada período trabalhado. Novos dias utilizarão essas taxas.',
+    'label-morning-rate': 'Valor Período da Manhã (€)',
+    'label-night-rate': 'Valor Período da Noite (€)',
+    'btn-save-rates': 'Salvar Tarifas',
+    'settings-offdays-title': 'Folga Semanal Padrão',
+    'settings-offdays-desc': 'Selecione os dias da semana que são suas folgas padrão. Eles serão sugeridos no lançamento em lote e exibidos no calendário.',
+    'btn-save-offdays': 'Salvar Folgas',
+    'settings-backup-title': 'Backup e Restauração',
+    'settings-backup-desc': 'Exporte seus dados para segurança ou importe o arquivo JSON em outro dispositivo.',
+    'btn-export': 'Exportar Dados (JSON)',
+    'btn-import': 'Importar Dados (JSON)',
+    'danger-zone': 'Zona de Perigo',
+    'danger-zone-desc': 'Esta ação excluirá permanentemente todos os registros de dias trabalhados e pagamentos.',
+    'btn-clear-all': 'Apagar Todo o Histórico',
+    'label-language': 'Idioma do Sistema',
+
+    // Modals
+    'modal-period-label': 'Selecione o Período Trabalhado',
+    'modal-custom-rate': 'Valor Customizado para este Dia (€)',
+    'modal-notes-label': 'Observações',
+    'modal-fin-info': 'Informações Financeiras do Dia',
+    'modal-status': 'Status:',
+    'modal-received': 'Valor Já Recebido:',
+    'modal-pending': 'Saldo Devedor:',
+    'btn-delete': 'Excluir',
+    'btn-save-record': 'Salvar Registro',
+    'batch-title': 'Lançamento em Lote',
+    'batch-start': 'Data Inicial',
+    'batch-end': 'Data Final',
+    'batch-default-period': 'Período Padrão para Dias Úteis',
+    'batch-offday-note': 'Obs: Os dias de folga semanal configurados serão pré-marcados como "Folga" automaticamente.',
+    'batch-customize-title': 'Personalizar Dias do Intervalo',
+    'btn-cancel': 'Cancelar',
+    'btn-save-batch': 'Salvar Lote de Dias',
+    'batch-remove-title': 'Remover Dias em Lote',
+    'batch-remove-select': 'Selecionar Dias para Remoção',
+    'btn-confirm-remove': 'Confirmar Remoção',
+
+    // Days & Months
+    'day-0': 'Domingo',
+    'day-1': 'Segunda-feira',
+    'day-2': 'Terça-feira',
+    'day-3': 'Quarta-feira',
+    'day-4': 'Quinta-feira',
+    'day-5': 'Sexta-feira',
+    'day-6': 'Sábado',
+    'short-day-0': 'Dom',
+    'short-day-1': 'Seg',
+    'short-day-2': 'Ter',
+    'short-day-3': 'Qua',
+    'short-day-4': 'Qui',
+    'short-day-5': 'Sex',
+    'short-day-6': 'Sáb',
+    'month-0': 'Janeiro',
+    'month-1': 'Fevereiro',
+    'month-2': 'Março',
+    'month-3': 'Abril',
+    'month-4': 'Maio',
+    'month-5': 'Junho',
+    'month-6': 'Julho',
+    'month-7': 'Agosto',
+    'month-8': 'Setembro',
+    'month-9': 'Outubro',
+    'month-10': 'Novembro',
+    'month-11': 'Dezembro',
+
+    // Alerts & Messages
+    'msg-save-success': 'Salvo com sucesso!',
+    'msg-delete-confirm': 'Tem certeza que deseja excluir?',
+    'msg-backup-success': 'Backup importado com sucesso!',
+    'msg-invalid-file': 'Arquivo inválido!',
+    'msg-select-period': 'Por favor, selecione um período.',
+    'msg-payment-success': 'Pagamento registrado com sucesso!',
+    'msg-undo-confirm': 'Tem certeza que deseja estornar este pagamento?',
+    'msg-undo-success': 'Pagamento estornado com sucesso!',
+    'msg-clear-confirm': 'ATENÇÃO: Você perderá definitivamente todos os registros. Deseja prosseguir?',
+    'msg-batch-save-success': 'registros de dia salvos/atualizados com sucesso!',
+    'msg-batch-remove-success': 'registros de dia removidos com sucesso!',
+    'msg-all-pending': 'Todas com Pendência',
+    'msg-no-days': 'Nenhum dia de trabalho registrado para processar pagamentos.',
+    'msg-no-history': 'Nenhum registro de pagamento recebido no histórico.',
+    'msg-no-batch-days': 'Selecione as datas inicial e final para visualizar e personalizar os dias.',
+    'msg-no-remove-days': 'Selecione as datas inicial e final para visualizar os dias com registros.'
+  },
+  'it-IT': {
+    // Sidebar
+    'nav-dashboard': 'Dashboard',
+    'nav-calendar': 'Calendario',
+    'nav-payments': 'Pagamenti',
+    'nav-history': 'Cronologia',
+    'nav-settings': 'Impostazioni',
+    'sidebar-version': 'Versione:',
+    'sidebar-updated': 'Aggiornato:',
+    
+    // Header
+    'header-dashboard-title': 'Dashboard',
+    'header-dashboard-subtitle': 'Panoramica del tuo lavoro e delle tue finanze.',
+    'header-calendar-title': 'Calendario',
+    'header-calendar-subtitle': 'Visualizza il mese di lavoro e configura i turni cliccando sui giorni.',
+    'header-payments-title': 'Pagamenti',
+    'header-payments-subtitle': 'Seleziona i cicli settimanali per registrare incassi totali o parziali.',
+    'header-history-title': 'Cronologia',
+    'header-history-subtitle': 'Registro completo dei pagamenti e delle pendenze completate.',
+    'header-settings-title': 'Impostazioni',
+    'header-settings-subtitle': 'Regolazioni del sistema, esportazione dati e tariffe standard.',
+
+    // Dashboard
+    'stat-total-accumulated': 'Totale Accumulato',
+    'stat-total-received': 'Totale Ricevuto',
+    'stat-total-pending': 'Totale Pendente',
+    'stat-this-week': 'Questa Settimana',
+    'chart-title': 'Guadagni vs. Incassi per Mese',
+    'quick-actions-title': 'Azioni Rapide',
+    'quick-actions-desc': 'Registra rapidamente il tuo turno per oggi',
+    'btn-morning-shift': 'Turno Mattina',
+    'btn-night-shift': 'Turno Sera',
+    'btn-both-shifts': 'Entrambi i Turni',
+    'btn-off-day': 'Giorno di Riposo',
+    'rate-default': 'Valore standard:',
+    'log-rest': 'Registra riposo',
+
+    // Calendar
+    'btn-batch-launch': 'Inserimento Multiplo',
+    'btn-batch-remove': 'Rimozione Multipla',
+    'btn-today': 'Oggi',
+    'legend-paid': 'Pagato',
+    'legend-partial': 'Parzialmente Pagato',
+    'legend-pending': 'Pendente',
+    'legend-off': 'Riposo',
+    'legend-morning': 'Mattina',
+    'legend-night': 'Sera',
+    'legend-both': 'Entrambi',
+
+    // Payments
+    'work-cycles-title': 'Cicli di Lavoro Settimanali',
+    'work-cycles-desc': 'Seleziona le settimane che desideri includere nel pagamento.',
+    'register-receipt-title': 'Registra Incasso',
+    'summary-selected-weeks': 'Settimane Selezionate:',
+    'summary-selected-days': 'Totale Giorni Selezionati:',
+    'summary-total-due': 'Totale Dovuto:',
+    'summary-already-paid': 'Saldo Pendente nelle Selezionate:',
+    'summary-to-pay': 'Da Pagare:',
+    'label-received-amount': 'Importo Ricevuto (€)',
+    'label-payment-date': 'Data di Incasso',
+    'label-payment-method': 'Metodo di Pagamento',
+    'label-notes': 'Specifiche / Note',
+    'btn-confirm-receipt': 'Conferma Incasso',
+    'opt-cash': 'Contanti',
+    'opt-deposit': 'Deposito',
+    'opt-others': 'Altro (Specificare)',
+    'week-to': 'a',
+    'week-days': 'giorni',
+    'week-day': 'giorno',
+
+    // History
+    'payment-history-title': 'Cronologia dei Pagamenti Effettuati',
+    'th-date': 'Data Incasso',
+    'th-amount': 'Importo Pagato',
+    'th-period': 'Periodo Coperto',
+    'th-status': 'Stato / Pendenza',
+    'th-notes': 'Note',
+    'th-actions': 'Azioni',
+    'btn-refund': 'Storna',
+    'status-processed': 'Elaborato',
+
+    // Settings
+    'settings-rates-title': 'Configurazione Tariffe',
+    'settings-rates-desc': 'Definisci i valori standard per ogni periodo lavorato. I nuovi giorni useranno queste tariffe.',
+    'label-morning-rate': 'Valore Periodo Mattina (€)',
+    'label-night-rate': 'Valore Periodo Sera (€)',
+    'btn-save-rates': 'Salva Tariffe',
+    'settings-offdays-title': 'Riposo Settimanale Standard',
+    'settings-offdays-desc': 'Seleziona i giorni della settimana che sono i tuoi riposi standard.',
+    'btn-save-offdays': 'Salva Riposi',
+    'settings-backup-title': 'Backup e Ripristino',
+    'settings-backup-desc': 'Esporta i tuoi dati per sicurezza o importa il file JSON su un altro dispositivo.',
+    'btn-export': 'Esporta Dati (JSON)',
+    'btn-import': 'Importa Dati (JSON)',
+    'danger-zone': 'Zona di Pericolo',
+    'danger-zone-desc': 'Questa azione eliminerà permanentemente tutti i record di giorni lavorati e pagamenti.',
+    'btn-clear-all': 'Cancella Tutta la Cronologia',
+    'label-language': 'Lingua del Sistema',
+
+    // Modals
+    'modal-period-label': 'Seleziona il Periodo Lavorato',
+    'modal-custom-rate': 'Valore Personalizzato per questo Giorno (€)',
+    'modal-notes-label': 'Note',
+    'modal-fin-info': 'Informazioni Finanziarie del Giorno',
+    'modal-status': 'Stato:',
+    'modal-received': 'Importo Già Ricevuto:',
+    'modal-pending': 'Saldo Debitore:',
+    'btn-delete': 'Elimina',
+    'btn-save-record': 'Salva Record',
+    'batch-title': 'Inserimento Multiplo',
+    'batch-start': 'Data Iniziale',
+    'batch-end': 'Data Finale',
+    'batch-default-period': 'Periodo Standard per Giorni Lavorativi',
+    'batch-offday-note': 'Nota: I giorni di riposo settimanale configurati saranno pre-marcati come "Riposo" automaticamente.',
+    'batch-customize-title': 'Personalizza Giorni dell\'Intervallo',
+    'btn-cancel': 'Annulla',
+    'btn-save-batch': 'Salva Blocco Giorni',
+    'batch-remove-title': 'Rimozione Multipla',
+    'batch-remove-select': 'Seleziona Giorni da Rimuovere',
+    'btn-confirm-remove': 'Conferma Rimozione',
+
+    // Days & Months
+    'day-0': 'Domenica',
+    'day-1': 'Lunedì',
+    'day-2': 'Martedì',
+    'day-3': 'Mercoledì',
+    'day-4': 'Giovedì',
+    'day-5': 'Venerdì',
+    'day-6': 'Sabato',
+    'short-day-0': 'Dom',
+    'short-day-1': 'Lun',
+    'short-day-2': 'Mar',
+    'short-day-3': 'Mer',
+    'short-day-4': 'Gio',
+    'short-day-5': 'Ven',
+    'short-day-6': 'Sab',
+    'month-0': 'Gennaio',
+    'month-1': 'Febbraio',
+    'month-2': 'Marzo',
+    'month-3': 'Aprile',
+    'month-4': 'Maggio',
+    'month-5': 'Giugno',
+    'month-6': 'Luglio',
+    'month-7': 'Agosto',
+    'month-8': 'Settembre',
+    'month-9': 'Ottobre',
+    'month-10': 'Novembre',
+    'month-11': 'Dicembre',
+
+    // Alerts & Messages
+    'msg-save-success': 'Salvato con successo!',
+    'msg-delete-confirm': 'Sei sicuro di voler eliminare?',
+    'msg-backup-success': 'Backup importado con successo!',
+    'msg-invalid-file': 'File non valido!',
+    'msg-select-period': 'Per favore, seleziona un periodo.',
+    'msg-payment-success': 'Pagamento registrato con successo!',
+    'msg-undo-confirm': 'Sei sicuro di voler stornare questo pagamento?',
+    'msg-undo-success': 'Pagamento stornato con successo!',
+    'msg-clear-confirm': 'ATTENZIONE: Perderai permanentemente tutti i record. Vuoi procedere?',
+    'msg-batch-save-success': 'record giornalieri salvati/aggiornati con sucesso!',
+    'msg-batch-remove-success': 'record giornalieri rimossi con sucesso!',
+    'msg-all-pending': 'Tutte con Pendenza',
+    'msg-no-days': 'Nessun giorno di lavoro registrato per elaborare i pagamenti.',
+    'msg-no-history': 'Nessun registro di pagamento ricevuto nella cronologia.',
+    'msg-no-batch-days': 'Seleziona le date di inizio e fine per visualizzare e personalizzare i giorni.',
+    'msg-no-remove-days': 'Seleziona le date di inizio e fine per visualizzare i giorni con i record.'
+    }
+    };
 
 let db = null;
 let currentYear = new Date().getFullYear();
 let currentMonth = new Date().getMonth(); // 0-indexed (0 = Jan, 11 = Dez)
 let earningsChart = null;
 let selectedWeeks = []; // Lista de chaves de semana selecionadas ('YYYY-MM-DD_YYYY-MM-DD')
+const MONTH_NAMES = [];
+const WEEKDAY_NAMES = [];
 
 /* ==========================================================================
    INICIALIZAÇÃO DA APLICAÇÃO
@@ -32,6 +374,7 @@ let selectedWeeks = []; // Lista de chaves de semana selecionadas ('YYYY-MM-DD_Y
 
 document.addEventListener('DOMContentLoaded', () => {
   initDatabase();
+  applyLanguage();
   renderAppVersion();
   initNavigation();
   initDashboard();
@@ -48,7 +391,14 @@ function initDatabase() {
     try {
       db = JSON.parse(stored);
       // Garantir compatibilidade com formatos legados caso existam
-      if (!db.settings) db.settings = { ...DEFAULT_DB.settings };
+      if (!db.settings) {
+        db.settings = { ...DEFAULT_DB.settings };
+      } else {
+        if (!db.settings.offDays) db.settings.offDays = [4];
+        if (!db.settings.language) db.settings.language = 'pt-BR';
+        if (db.settings.morningRate === 80) db.settings.morningRate = 35; // Atualizar se for o valor antigo
+        if (db.settings.nightRate === 100) db.settings.nightRate = 25; // Atualizar se for o valor antigo
+      }
       if (!db.workedDays) db.workedDays = {};
       if (!db.payments) db.payments = [];
     } catch (e) {
@@ -67,6 +417,57 @@ function saveToStorage() {
   localStorage.setItem(DB_STORAGE_KEY, JSON.stringify(db));
 }
 
+// Aplica as traduções baseadas no idioma atual
+function applyLanguage() {
+  const lang = db.settings.language || 'pt-BR';
+  const texts = translations[lang];
+  
+  // Traduz elementos com atributo data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (texts[key]) {
+      el.innerText = texts[key];
+    }
+  });
+
+  // Atualizar nomes dos meses e dias da semana globais
+  MONTH_NAMES.length = 0;
+  for (let i = 0; i < 12; i++) MONTH_NAMES.push(texts[`month-${i}`]);
+  
+  WEEKDAY_NAMES.length = 0;
+  for (let i = 0; i < 7; i++) WEEKDAY_NAMES.push(texts[`day-${i}`]);
+
+  // Atualiza o Calendário se estiver visível
+  if (document.getElementById('section-calendar').classList.contains('active')) {
+    renderCalendar();
+  }
+  
+  // Atualiza labels de tarifas
+  updateRateLabels();
+}
+
+// Muda o idioma e salva
+function setLanguage(lang) {
+  if (translations[lang]) {
+    db.settings.language = lang;
+    saveToStorage();
+    applyLanguage();
+    initCurrentDate();
+    
+    // Atualiza subtítulo da página atual
+    const activeNav = document.querySelector('.nav-item.active');
+    if (activeNav) {
+      const tabName = activeNav.getAttribute('data-tab');
+      const texts = translations[db.settings.language];
+      document.getElementById('page-subtitle').innerText = texts[`header-${tabName}-subtitle`];
+    }
+
+    if (earningsChart) {
+      renderEarningsChart();
+    }
+  }
+}
+
 // Mostra a versão no rodapé do menu
 function renderAppVersion() {
   document.getElementById('val-app-version').innerText = APP_VERSION;
@@ -75,8 +476,9 @@ function renderAppVersion() {
 
 // Inicializa a data atual no cabeçalho
 function initCurrentDate() {
+  const lang = db.settings.language === 'it-IT' ? 'it-IT' : 'pt-BR';
   const options = { day: 'numeric', month: 'long', year: 'numeric' };
-  const todayStr = new Date().toLocaleDateString('pt-BR', options);
+  const todayStr = new Date().toLocaleDateString(lang, options);
   document.getElementById('current-header-date').innerText = todayStr;
   
   const today = new Date();
@@ -92,17 +494,10 @@ function initNavigation() {
   const pageTitle = document.getElementById('page-title');
   const pageSubtitle = document.getElementById('page-subtitle');
 
-  const routeSubtitles = {
-    dashboard: 'Visão geral do seu trabalho e finanças.',
-    calendar: 'Visualize o mês de trabalho e configure seus turnos clicando nos dias.',
-    payments: 'Selecione os ciclos semanais para registrar recebimentos totais ou parciais.',
-    history: 'Registro completo de pagamentos e pendências finalizadas.',
-    settings: 'Ajustes finos do sistema, exportação de dados e tarifas padrão.'
-  };
-
   navItems.forEach(item => {
     item.addEventListener('click', () => {
       const tabName = item.getAttribute('data-tab');
+      const texts = translations[db.settings.language || 'pt-BR'];
       
       // Atualizar classe ativa na navegação
       navItems.forEach(i => i.classList.remove('active'));
@@ -117,8 +512,8 @@ function initNavigation() {
       });
 
       // Atualizar títulos
-      pageTitle.innerText = item.querySelector('span').innerText;
-      pageSubtitle.innerText = routeSubtitles[tabName] || '';
+      pageTitle.innerText = texts[`nav-${tabName}`];
+      pageSubtitle.innerText = texts[`header-${tabName}-subtitle`];
 
       // Ações específicas ao abrir cada tela
       if (tabName === 'dashboard') {
@@ -146,14 +541,24 @@ function updateRateLabels() {
   const morning = db.settings.morningRate;
   const night = db.settings.nightRate;
   const both = morning + night;
+  const texts = translations[db.settings.language || 'pt-BR'];
 
-  document.getElementById('quick-rate-morning').innerText = `Valor padrão: ${formatCurrency(morning)}`;
-  document.getElementById('quick-rate-night').innerText = `Valor padrão: ${formatCurrency(night)}`;
-  document.getElementById('quick-rate-both').innerText = `Valor padrão: ${formatCurrency(both)}`;
+  document.getElementById('quick-rate-morning').innerText = `${texts['rate-default']} ${formatCurrency(morning)}`;
+  document.getElementById('quick-rate-night').innerText = `${texts['rate-default']} ${formatCurrency(night)}`;
+  document.getElementById('quick-rate-both').innerText = `${texts['rate-default']} ${formatCurrency(both)}`;
 
   document.getElementById('modal-price-morning').innerText = formatCurrency(morning);
   document.getElementById('modal-price-night').innerText = formatCurrency(night);
   document.getElementById('modal-price-both').innerText = formatCurrency(both);
+
+  // Atualiza as opções do select de período do lote com as tarifas vigentes
+  const batchDefaultSelect = document.getElementById('batch-default-period');
+  if (batchDefaultSelect) {
+    batchDefaultSelect.options[0].text = `${texts['legend-morning']} (${formatCurrency(morning)})`;
+    batchDefaultSelect.options[1].text = `${texts['legend-night']} (${formatCurrency(night)})`;
+    batchDefaultSelect.options[2].text = `${texts['legend-both']} (${formatCurrency(both)})`;
+    batchDefaultSelect.options[3].text = `${texts['legend-off']} (${formatCurrency(0)})`;
+  }
 }
 
 /* ==========================================================================
@@ -161,7 +566,8 @@ function updateRateLabels() {
    ========================================================================== */
 
 function formatCurrency(value) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  const lang = db.settings.language === 'it-IT' ? 'it-IT' : 'pt-BR';
+  return new Intl.NumberFormat(lang, { style: 'currency', currency: 'EUR' }).format(value);
 }
 
 function formatDateISO(date) {
@@ -262,6 +668,8 @@ function updateDashboardData() {
 // Cria/Atualiza o gráfico dinâmico
 function renderEarningsChart() {
   const ctx = document.getElementById('earningsChart').getContext('2d');
+  const lang = db.settings.language === 'it-IT' ? 'it-IT' : 'pt-BR';
+  const texts = translations[db.settings.language || 'pt-BR'];
   
   // Agrupar ganhos e pagamentos recebidos por mês
   const monthlyData = {};
@@ -271,7 +679,7 @@ function renderEarningsChart() {
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    const label = d.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
+    const label = d.toLocaleDateString(lang, { month: 'short', year: 'numeric' });
     monthlyData[monthKey] = {
       label: label.charAt(0).toUpperCase() + label.slice(1),
       earned: 0,
@@ -312,7 +720,7 @@ function renderEarningsChart() {
       labels: labels,
       datasets: [
         {
-          label: 'Ganhos no Trabalho',
+          label: texts['nav-history'],
           data: earnedValues,
           backgroundColor: 'rgba(139, 92, 246, 0.65)',
           borderColor: 'rgb(139, 92, 246)',
@@ -320,7 +728,7 @@ function renderEarningsChart() {
           borderRadius: 6
         },
         {
-          label: 'Valor Recebido',
+          label: texts['stat-total-received'],
           data: receivedValues,
           backgroundColor: 'rgba(16, 185, 129, 0.65)',
           borderColor: 'rgb(16, 185, 129)',
@@ -358,6 +766,7 @@ function renderEarningsChart() {
 function quickLogShift(period) {
   const todayStr = formatDateISO(new Date());
   let rate = 0;
+  const texts = translations[db.settings.language || 'pt-BR'];
   
   if (period === 'morning') rate = db.settings.morningRate;
   else if (period === 'night') rate = db.settings.nightRate;
@@ -384,28 +793,26 @@ function quickLogShift(period) {
   saveToStorage();
   updateDashboardData();
   
-  alert(`Turno de hoje (${period === 'morning' ? 'Manhã' : period === 'night' ? 'Noite' : period === 'both' ? 'Ambos' : 'Folga'}) registrado com sucesso!`);
+  const periodLabel = texts[`btn-${period === 'both' ? 'both-shifts' : period === 'off' ? 'off-day' : period + '-shift'}`];
+  alert(`${periodLabel} - ${texts['msg-save-success']}`);
 }
 
 /* ==========================================================================
    ABA 2: CALENDÁRIO MENSAL INTERATIVO
    ========================================================================== */
 
-// Lista de meses
-const MONTH_NAMES = [
-  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-];
-
 function renderCalendar() {
+  const texts = translations[db.settings.language || 'pt-BR'];
   const monthYearLabel = document.getElementById('calendar-month-year');
-  monthYearLabel.innerText = `${MONTH_NAMES[currentMonth]} de ${currentYear}`;
+  monthYearLabel.innerText = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
 
   const grid = document.getElementById('calendar-days-grid');
-  grid.innerHTML = ''; // Limpar calendário anterior
+  grid.innerHTML = ''; 
 
-  // Adicionar nomes dos dias da semana
-  const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+  const dayNames = [
+    texts['short-day-1'], texts['short-day-2'], texts['short-day-3'], 
+    texts['short-day-4'], texts['short-day-5'], texts['short-day-6'], texts['short-day-0']
+  ];
   dayNames.forEach(name => {
     const label = document.createElement('div');
     label.className = 'calendar-day-label';
@@ -413,14 +820,11 @@ function renderCalendar() {
     grid.appendChild(label);
   });
 
-  // Obter primeiro dia do mês e total de dias do mês
-  const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay(); 
+  const firstDayIndex = firstDay === 0 ? 6 : firstDay - 1;
   const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
-  
-  // Obter total de dias do mês anterior
   const prevLastDay = new Date(currentYear, currentMonth, 0).getDate();
 
-  // Desenhar dias do mês anterior (para preencher a primeira semana)
   for (let i = firstDayIndex - 1; i >= 0; i--) {
     const dayNum = prevLastDay - i;
     const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
@@ -429,15 +833,13 @@ function renderCalendar() {
     createDayElement(dayNum, dateStr, true, grid);
   }
 
-  // Desenhar dias do mês corrente
   for (let i = 1; i <= lastDay; i++) {
     const dateStr = formatDateISO(new Date(currentYear, currentMonth, i));
     createDayElement(i, dateStr, false, grid);
   }
 
-  // Desenhar dias do mês seguinte (para preencher até completar múltiplos de 7)
-  const totalCells = grid.children.length - 7; // Desconta a linha de labels de dias
-  const remainingCells = 42 - totalCells; // Queremos completar 6 semanas inteiras (42 células)
+  const totalCells = grid.children.length - 7;
+  const remainingCells = 42 - totalCells; 
   
   for (let i = 1; i <= remainingCells; i++) {
     const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
@@ -457,45 +859,51 @@ function createDayElement(dayNum, dateStr, isOtherMonth, container) {
   }
 
   const data = db.workedDays[dateStr];
+  const texts = translations[db.settings.language || 'pt-BR'];
 
-  // Número do Dia
   const numSpan = document.createElement('span');
   numSpan.className = 'day-number';
   numSpan.innerText = dayNum;
   dayElement.appendChild(numSpan);
 
-  // Destacar o dia de hoje
   const todayStr = formatDateISO(new Date());
   if (dateStr === todayStr) {
     dayElement.style.border = '2px solid var(--accent-purple)';
     dayElement.style.boxShadow = '0 0 15px rgba(139, 92, 246, 0.4)';
   }
 
-  // Adicionar layout específico se houver registros para este dia
+  const dateParts = dateStr.split('-');
+  const dateObj = new Date(parseInt(dateParts[0], 10), parseInt(dateParts[1], 10) - 1, parseInt(dateParts[2], 10));
+  const dayOfWeek = dateObj.getDay();
+  const offDays = db.settings.offDays || [4];
+  const isDefaultOffDay = offDays.includes(dayOfWeek);
+
   if (data && data.period !== 'none') {
-    // Aplicar estilos com base no período trabalhado
-    if (data.period === 'morning') {
-      dayElement.classList.add('day-worked-morning');
-    } else if (data.period === 'night') {
-      dayElement.classList.add('day-worked-night');
-    } else if (data.period === 'both') {
-      dayElement.classList.add('day-worked-both');
-    } else if (data.period === 'off') {
-      dayElement.classList.add('day-off');
-    }
+    if (data.period === 'morning') dayElement.classList.add('day-worked-morning');
+    else if (data.period === 'night') dayElement.classList.add('day-worked-night');
+    else if (data.period === 'both') dayElement.classList.add('day-worked-both');
+    else if (data.period === 'off') dayElement.classList.add('day-off');
 
-    // Aplicar estilos com base no status do pagamento
     if (data.period !== 'off') {
+      if (data.status === 'paid') dayElement.classList.add('day-status-paid');
+      else if (data.status === 'partial') dayElement.classList.add('day-status-partial');
+      else if (data.status === 'unpaid') dayElement.classList.add('day-status-unpaid');
+
+      const statusIndicator = document.createElement('span');
+      statusIndicator.className = 'day-status-indicator';
       if (data.status === 'paid') {
-        dayElement.classList.add('day-status-paid');
+        statusIndicator.innerHTML = `<i data-lucide="check-circle-2" style="width: 14px; height: 14px; color: var(--status-paid);"></i>`;
+        statusIndicator.title = texts['legend-paid'];
       } else if (data.status === 'partial') {
-        dayElement.classList.add('day-status-partial');
+        statusIndicator.innerHTML = `<i data-lucide="help-circle" style="width: 14px; height: 14px; color: var(--status-partial);"></i>`;
+        statusIndicator.title = texts['legend-partial'];
       } else if (data.status === 'unpaid') {
-        dayElement.classList.add('day-status-unpaid');
+        statusIndicator.innerHTML = `<i data-lucide="alert-circle" style="width: 14px; height: 14px; color: var(--status-unpaid);"></i>`;
+        statusIndicator.title = texts['legend-pending'];
       }
+      dayElement.appendChild(statusIndicator);
     }
 
-    // Badge de status visual para o período/valor
     const detailsContainer = document.createElement('div');
     detailsContainer.style.display = 'flex';
     detailsContainer.style.flexDirection = 'column';
@@ -506,49 +914,57 @@ function createDayElement(dayNum, dateStr, isOtherMonth, container) {
     badge.className = 'day-badge';
     
     if (data.period === 'morning') {
-      badge.innerHTML = `<i data-lucide="sun" style="width: 10px; height: 10px; display: inline; vertical-align: middle; margin-right: 2px;"></i> Manhã`;
+      badge.innerHTML = `<i data-lucide="sun" style="width: 10px; height: 10px; display: inline; vertical-align: middle; margin-right: 2px;"></i> ${texts['legend-morning']}`;
       badge.style.background = 'rgba(245, 158, 11, 0.15)';
       badge.style.color = '#f59e0b';
     } else if (data.period === 'night') {
-      badge.innerHTML = `<i data-lucide="moon" style="width: 10px; height: 10px; display: inline; vertical-align: middle; margin-right: 2px;"></i> Noite`;
+      badge.innerHTML = `<i data-lucide="moon" style="width: 10px; height: 10px; display: inline; vertical-align: middle; margin-right: 2px;"></i> ${texts['legend-night']}`;
       badge.style.background = 'rgba(139, 92, 246, 0.15)';
       badge.style.color = '#a78bfa';
     } else if (data.period === 'both') {
-      badge.innerHTML = `<i data-lucide="sunset" style="width: 10px; height: 10px; display: inline; vertical-align: middle; margin-right: 2px;"></i> Ambos`;
+      badge.innerHTML = `<i data-lucide="sunset" style="width: 10px; height: 10px; display: inline; vertical-align: middle; margin-right: 2px;"></i> ${texts['legend-both']}`;
       badge.style.background = 'rgba(59, 130, 246, 0.15)';
       badge.style.color = '#60a5fa';
     } else if (data.period === 'off') {
-      badge.innerHTML = `<i data-lucide="coffee" style="width: 10px; height: 10px; display: inline; vertical-align: middle; margin-right: 2px;"></i> Folga`;
+      badge.innerHTML = `<i data-lucide="coffee" style="width: 10px; height: 10px; display: inline; vertical-align: middle; margin-right: 2px;"></i> ${texts['legend-off']}`;
       badge.style.background = 'rgba(100, 116, 139, 0.15)';
       badge.style.color = '#94a3b8';
     }
     
     detailsContainer.appendChild(badge);
 
-    // Mostrar valor monetário se não for folga
     if (data.period !== 'off') {
       const valDiv = document.createElement('div');
       valDiv.className = 'day-value';
-      
       if (data.status === 'partial') {
-        const remaining = data.pendingAmount;
-        valDiv.innerHTML = `${formatCurrency(data.amountPaid)} <span style="color: var(--status-unpaid); font-size: 0.65rem;">(-${formatCurrency(remaining)})</span>`;
+        valDiv.innerHTML = `${formatCurrency(data.amountPaid)} <span style="color: var(--status-unpaid); font-size: 0.65rem;">(-${formatCurrency(data.pendingAmount)})</span>`;
       } else {
         valDiv.innerText = formatCurrency(data.rate);
       }
-      
       detailsContainer.appendChild(valDiv);
     }
-
+    dayElement.appendChild(detailsContainer);
+  } else if (!data && isDefaultOffDay) {
+    dayElement.classList.add('day-off');
+    dayElement.style.opacity = '0.65';
+    const detailsContainer = document.createElement('div');
+    detailsContainer.style.display = 'flex';
+    detailsContainer.style.flexDirection = 'column';
+    detailsContainer.style.gap = '2px';
+    detailsContainer.style.width = '100%';
+    const badge = document.createElement('span');
+    badge.className = 'day-badge';
+    badge.innerHTML = `<i data-lucide="coffee" style="width: 10px; height: 10px; display: inline; vertical-align: middle; margin-right: 2px;"></i> ${texts['legend-off']}`;
+    badge.style.background = 'rgba(100, 116, 139, 0.15)';
+    badge.style.color = '#94a3b8';
+    detailsContainer.appendChild(badge);
     dayElement.appendChild(detailsContainer);
   }
 
-  // Ação de clique para abrir edição
   dayElement.addEventListener('click', () => openDayModal(dateStr));
   container.appendChild(dayElement);
 }
 
-// Navegação de meses
 function changeMonth(direction) {
   currentMonth += direction;
   if (currentMonth > 11) {
@@ -575,77 +991,61 @@ function openDayModal(dateStr) {
   const modal = document.getElementById('day-modal');
   const dateTitle = document.getElementById('modal-date-title');
   const dateValue = document.getElementById('modal-date-value');
-  const customRateGroup = document.getElementById('custom-rate-group');
   const deleteBtn = document.getElementById('btn-delete-day');
   const paymentInfoBox = document.getElementById('modal-payment-info');
+  const texts = translations[db.settings.language || 'pt-BR'];
 
   dateValue.value = dateStr;
   dateTitle.innerText = formatDateStringDisplay(dateStr);
 
-  // Carregar dados existentes ou novos
   const data = db.workedDays[dateStr];
-  
-  // Limpar formulário de seleções anteriores
   const radios = document.getElementsByName('modal-period');
   radios.forEach(r => r.checked = false);
   document.getElementById('modal-custom-rate').value = '';
   document.getElementById('modal-notes').value = '';
   
   if (data) {
-    // Preencher com os dados salvos
     const periodRadio = document.querySelector(`input[name="modal-period"][value="${data.period}"]`);
     if (periodRadio) periodRadio.checked = true;
-    
-    if (data.rate !== undefined) {
-      // Verifica se o valor salvo é diferente do valor configurado padrão na data de criação
-      const standardRate = getStandardRateForPeriod(data.period);
-      if (data.rate !== standardRate && data.period !== 'off' && data.period !== 'none') {
-        document.getElementById('modal-custom-rate').value = data.rate;
-      }
+    const standardRate = getStandardRateForPeriod(data.period);
+    if (data.rate !== standardRate && data.period !== 'off' && data.period !== 'none') {
+      document.getElementById('modal-custom-rate').value = data.rate;
     }
-    
     document.getElementById('modal-notes').value = data.notes || '';
     deleteBtn.style.display = 'block';
 
-    // Se já houver pagamentos parciais ou totais associados ao dia
     if (data.amountPaid > 0 || data.pendingAmount > 0) {
       paymentInfoBox.style.display = 'block';
-      
       const statusLabel = document.getElementById('modal-pay-status-label');
       statusLabel.className = 'day-badge';
       if (data.status === 'paid') {
-        statusLabel.innerText = 'Pago';
+        statusLabel.innerText = texts['legend-paid'];
         statusLabel.classList.add('badge-paid');
       } else if (data.status === 'partial') {
-        statusLabel.innerText = 'Parcialmente Pago';
+        statusLabel.innerText = texts['legend-partial'];
         statusLabel.classList.add('badge-partial');
       } else {
-        statusLabel.innerText = 'Pendente';
+        statusLabel.innerText = texts['legend-pending'];
         statusLabel.classList.add('badge-unpaid');
       }
-
       document.getElementById('modal-pay-received').innerText = formatCurrency(data.amountPaid);
       document.getElementById('modal-pay-pending').innerText = formatCurrency(data.pendingAmount);
     } else {
       paymentInfoBox.style.display = 'none';
     }
   } else {
-    // Dia vazio
     deleteBtn.style.display = 'none';
     paymentInfoBox.style.display = 'none';
   }
 
-  // Abre o modal
   modal.classList.add('active');
   lucide.createIcons();
 }
 
 function closeDayModal() {
-  const modal = document.getElementById('day-modal');
-  modal.classList.remove('active');
+  document.getElementById('day-modal').classList.remove('active');
 }
 
-// Retorna o valor padrão com base no período
 function getStandardRateForPeriod(period) {
   if (period === 'morning') return db.settings.morningRate;
   if (period === 'night') return db.settings.nightRate;
@@ -653,85 +1053,54 @@ function getStandardRateForPeriod(period) {
   return 0;
 }
 
-// Salva os dados no banco
 function saveDayDetails(event) {
   event.preventDefault();
-
   const dateStr = document.getElementById('modal-date-value').value;
   const radios = document.getElementsByName('modal-period');
+  const texts = translations[db.settings.language || 'pt-BR'];
   let selectedPeriod = 'none';
-  
-  for (const r of radios) {
-    if (r.checked) {
-      selectedPeriod = r.value;
-      break;
-    }
-  }
+  for (const r of radios) if (r.checked) { selectedPeriod = r.value; break; }
 
   if (selectedPeriod === 'none') {
-    alert("Por favor, selecione um período trabalhado ou folga.");
+    alert(texts['msg-select-period']);
     return;
   }
 
   const customRateVal = parseFloat(document.getElementById('modal-custom-rate').value);
   const notesVal = document.getElementById('modal-notes').value;
-
-  // Determinar valor devido
   let rate = getStandardRateForPeriod(selectedPeriod);
-  if (!isNaN(customRateVal) && selectedPeriod !== 'off' && selectedPeriod !== 'none') {
-    rate = customRateVal;
-  }
+  if (!isNaN(customRateVal) && selectedPeriod !== 'off' && selectedPeriod !== 'none') rate = customRateVal;
 
-  const existing = db.workedDays[dateStr] || {
-    amountPaid: 0,
-    paymentsApplied: {}
-  };
-
+  const existing = db.workedDays[dateStr] || { amountPaid: 0, paymentsApplied: {} };
   const amountPaid = existing.amountPaid || 0;
   const pendingAmount = Math.max(0, rate - amountPaid);
-  
-  // Define status de pagamento
-  let status = 'unpaid';
-  if (amountPaid >= rate) {
-    status = 'paid';
-  } else if (amountPaid > 0) {
-    status = 'partial';
-  }
+  let status = amountPaid >= rate ? 'paid' : (amountPaid > 0 ? 'partial' : 'unpaid');
 
   db.workedDays[dateStr] = {
-    date: dateStr,
-    period: selectedPeriod,
-    rate: rate,
-    status: status,
-    amountPaid: amountPaid,
-    pendingAmount: pendingAmount,
-    notes: notesVal,
+    date: dateStr, period: selectedPeriod, rate: rate, status: status,
+    amountPaid: amountPaid, pendingAmount: pendingAmount, notes: notesVal,
     paymentsApplied: existing.paymentsApplied || {}
   };
 
   saveToStorage();
   closeDayModal();
   renderCalendar();
+  updateDashboardData();
 }
 
-// Deleta o registro de um dia
 function deleteDayRecord() {
+  const texts = translations[db.settings.language || 'pt-BR'];
   const dateStr = document.getElementById('modal-date-value').value;
   const data = db.workedDays[dateStr];
-
   if (!data) return;
-
   if (data.amountPaid > 0) {
-    const confirmDelete = confirm("Este dia já possui registro de pagamentos. Excluir o registro de trabalho limpará o valor a receber, mas manterá o histórico financeiro. Deseja continuar?");
-    if (!confirmDelete) return;
+    if (!confirm(texts['msg-delete-confirm'])) return;
   }
-
-  // Deleta do objeto
   delete db.workedDays[dateStr];
-  
   saveToStorage();
   closeDayModal();
   renderCalendar();
+  updateDashboardData();
 }
 
 /* ==========================================================================
@@ -740,9 +1109,8 @@ function deleteDayRecord() {
 
 function renderWeeksList() {
   const container = document.getElementById('weeks-container-list');
+  const texts = translations[db.settings.language || 'pt-BR'];
   container.innerHTML = '';
-
-  // Agrupar dias trabalhados (que não são folgas) por semana
   const weeksMap = {};
 
   Object.keys(db.workedDays).forEach(dateStr => {
@@ -750,19 +1118,12 @@ function renderWeeksList() {
     if (dayData.period !== 'none' && dayData.period !== 'off') {
       const weekInfo = getWeekRange(dateStr);
       const weekKey = weekInfo.key;
-
       if (!weeksMap[weekKey]) {
         weeksMap[weekKey] = {
-          key: weekKey,
-          label: weekInfo.label,
-          mondayISO: weekInfo.mondayStr,
-          days: [],
-          totalDue: 0,
-          totalPaid: 0,
-          totalPending: 0
+          key: weekKey, label: weekInfo.label, mondayISO: weekInfo.mondayStr,
+          days: [], totalDue: 0, totalPaid: 0, totalPending: 0
         };
       }
-
       weeksMap[weekKey].days.push(dayData);
       weeksMap[weekKey].totalDue += dayData.rate;
       weeksMap[weekKey].totalPaid += dayData.amountPaid || 0;
@@ -770,218 +1131,169 @@ function renderWeeksList() {
     }
   });
 
-  // Ordena semanas em ordem decrescente (mais recentes primeiro)
-  const sortedWeeks = Object.values(weeksMap).sort((a, b) => {
-    return b.mondayISO.localeCompare(a.mondayISO);
-  });
-
+  const sortedWeeks = Object.values(weeksMap).sort((a, b) => b.mondayISO.localeCompare(a.mondayISO));
   if (sortedWeeks.length === 0) {
-    container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhum dia de trabalho registrado para processar pagamentos.</div>`;
+    container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">${texts['msg-no-days']}</div>`;
     return;
   }
 
   sortedWeeks.forEach(week => {
     const card = document.createElement('div');
     card.className = 'week-card';
-    if (selectedWeeks.includes(week.key)) {
-      card.classList.add('selected');
-    }
+    if (selectedWeeks.includes(week.key)) card.classList.add('selected');
 
-    // Calcula status visual da semana
-    let statusText = 'Pendente';
+    let statusText = texts['legend-pending'];
     let badgeClass = 'badge-unpaid';
-
-    if (week.totalPending === 0) {
-      statusText = 'Pago';
-      badgeClass = 'badge-paid';
-    } else if (week.totalPaid > 0) {
-      statusText = 'Parcial';
-      badgeClass = 'badge-partial';
-    }
+    if (week.totalPending === 0) { statusText = texts['legend-paid']; badgeClass = 'badge-paid'; }
+    else if (week.totalPaid > 0) { statusText = texts['legend-partial']; badgeClass = 'badge-partial'; }
 
     card.innerHTML = `
       <div class="week-header">
-        <span class="week-title">${week.label}</span>
+        <span class="week-title">${week.label.replace(' a ', ' ' + texts['week-to'] + ' ')}</span>
         <span class="week-badge ${badgeClass}">${statusText}</span>
       </div>
       <div class="week-details">
+        <div class="week-detail-item">
+          <span data-i18n="nav-history">${texts['nav-history']}</span>
+          <p style="color: var(--text-primary);">${week.days.length} ${week.days.length === 1 ? texts['week-day'] : texts['week-days']}</p>
+        </div>
         <div class="week-detail-item">
           <span>Total</span>
           <p>${formatCurrency(week.totalDue)}</p>
         </div>
         <div class="week-detail-item">
-          <span>Recebido</span>
+          <span data-i18n="stat-total-received">${texts['stat-total-received']}</span>
           <p style="color: var(--status-paid);">${formatCurrency(week.totalPaid)}</p>
         </div>
         <div class="week-detail-item">
-          <span>Pendente</span>
+          <span data-i18n="legend-pending">${texts['legend-pending']}</span>
           <p style="color: var(--status-unpaid);">${formatCurrency(week.totalPending)}</p>
         </div>
       </div>
     `;
 
-    // Ação ao clicar no cartão da semana para seleção/multi-seleção
     card.addEventListener('click', () => {
       const idx = selectedWeeks.indexOf(week.key);
-      if (idx > -1) {
-        selectedWeeks.splice(idx, 1);
-        card.classList.remove('selected');
-      } else {
-        selectedWeeks.push(week.key);
-        card.classList.add('selected');
-      }
+      if (idx > -1) { selectedWeeks.splice(idx, 1); card.classList.remove('selected'); }
+      else { selectedWeeks.push(week.key); card.classList.add('selected'); }
       updatePaymentSummary();
     });
-
     container.appendChild(card);
   });
 }
 
-// Atualiza o resumo financeiro das semanas selecionadas à direita da tela
 function updatePaymentSummary() {
+  const texts = translations[db.settings.language || 'pt-BR'];
   const summaryWeeksCount = document.getElementById('summary-weeks-count');
   const summaryDaysCount = document.getElementById('summary-days-count');
   const summaryTotalDue = document.getElementById('summary-total-due');
   const summaryAlreadyPaid = document.getElementById('summary-already-paid');
   const summaryRemainingDue = document.getElementById('summary-remaining-due');
   const paymentAmountInput = document.getElementById('input-payment-amount');
-  const paymentDateInput = document.getElementById('input-payment-date');
   const submitBtn = document.getElementById('btn-submit-payment');
 
+  let dbTotalDays = 0, dbTotalDue = 0, dbTotalPaid = 0, dbTotalPending = 0;
+  Object.keys(db.workedDays).forEach(dateStr => {
+    const dayData = db.workedDays[dateStr];
+    if (dayData.period !== 'none' && dayData.period !== 'off') {
+      dbTotalDays++; dbTotalDue += dayData.rate;
+      dbTotalPaid += dayData.amountPaid || 0; dbTotalPending += dayData.pendingAmount || 0;
+    }
+  });
+
   if (selectedWeeks.length === 0) {
-    summaryWeeksCount.innerText = "0";
-    summaryDaysCount.innerText = "0 dias";
-    summaryTotalDue.innerText = "R$ 0,00";
-    summaryAlreadyPaid.innerText = "R$ 0,00";
-    summaryRemainingDue.innerText = "R$ 0,00";
-    
-    paymentAmountInput.value = '';
-    paymentAmountInput.disabled = true;
-    submitBtn.disabled = true;
+    if (dbTotalPending > 0) {
+      summaryWeeksCount.innerHTML = `<span style="color: var(--accent-purple); font-weight: 600;">${texts['msg-all-pending']}</span>`;
+      summaryDaysCount.innerText = `${dbTotalDays} ${dbTotalDays === 1 ? texts['week-day'] : texts['week-days']}`;
+      summaryTotalDue.innerText = formatCurrency(dbTotalDue);
+      summaryAlreadyPaid.innerText = formatCurrency(dbTotalPaid);
+      summaryRemainingDue.innerText = formatCurrency(dbTotalPending);
+      paymentAmountInput.disabled = false;
+      paymentAmountInput.value = dbTotalPending.toFixed(2);
+      submitBtn.disabled = false;
+    } else {
+      summaryWeeksCount.innerText = "0"; summaryDaysCount.innerText = `0 ${texts['week-days']}`;
+      summaryTotalDue.innerText = formatCurrency(0); summaryAlreadyPaid.innerText = formatCurrency(0);
+      summaryRemainingDue.innerText = formatCurrency(0);
+      paymentAmountInput.value = ''; paymentAmountInput.disabled = true; submitBtn.disabled = true;
+    }
     return;
   }
 
-  // Coleta dados dos dias correspondentes às semanas selecionadas
-  let totalDays = 0;
-  let totalDue = 0;
-  let totalPaid = 0;
-  let totalPending = 0;
-
-  // Analisa todos os dias que pertencem às semanas selecionadas
+  let totalDays = 0, totalDue = 0, totalPaid = 0, totalPending = 0;
   Object.keys(db.workedDays).forEach(dateStr => {
     const dayData = db.workedDays[dateStr];
     if (dayData.period !== 'none' && dayData.period !== 'off') {
       const weekInfo = getWeekRange(dateStr);
       if (selectedWeeks.includes(weekInfo.key)) {
-        totalDays++;
-        totalDue += dayData.rate;
-        totalPaid += dayData.amountPaid || 0;
-        totalPending += dayData.pendingAmount || 0;
+        totalDays++; totalDue += dayData.rate;
+        totalPaid += dayData.amountPaid || 0; totalPending += dayData.pendingAmount || 0;
       }
     }
   });
 
   summaryWeeksCount.innerText = selectedWeeks.length;
-  summaryDaysCount.innerText = `${totalDays} dia(s)`;
+  summaryDaysCount.innerText = `${totalDays} ${totalDays === 1 ? texts['week-day'] : texts['week-days']}`;
   summaryTotalDue.innerText = formatCurrency(totalDue);
   summaryAlreadyPaid.innerText = formatCurrency(totalPaid);
   summaryRemainingDue.innerText = formatCurrency(totalPending);
-
   paymentAmountInput.disabled = false;
   paymentAmountInput.value = totalPending.toFixed(2);
-  paymentAmountInput.max = totalPending.toFixed(2); // Sugere o valor máximo restante
-  paymentDateInput.value = formatDateISO(new Date());
-  
   submitBtn.disabled = false;
 }
 
-// Processa o pagamento enviado pelo formulário (FIFO)
+function toggleCustomNotesInput() {
+  const methodSelect = document.getElementById('input-payment-method');
+  const customNotesGroup = document.getElementById('custom-notes-group');
+  if (methodSelect.value === 'Outros') customNotesGroup.style.display = 'block';
+  else { customNotesGroup.style.display = 'none'; document.getElementById('input-payment-notes').value = ''; }
+}
+
 function processPayment(event) {
   event.preventDefault();
-
-  if (selectedWeeks.length === 0) return;
-
+  const texts = translations[db.settings.language || 'pt-BR'];
   const paymentAmount = parseFloat(document.getElementById('input-payment-amount').value);
   const paymentDate = document.getElementById('input-payment-date').value;
-  const paymentNotes = document.getElementById('input-payment-notes').value;
+  const paymentMethod = document.getElementById('input-payment-method').value;
+  const paymentNotes = paymentMethod === 'Outros' ? document.getElementById('input-payment-notes').value : texts['opt-' + paymentMethod.toLowerCase().replace('é', 'e')];
 
-  if (isNaN(paymentAmount) || paymentAmount <= 0) {
-    alert("Por favor, digite um valor de pagamento válido maior que R$ 0,00.");
-    return;
-  }
+  if (isNaN(paymentAmount) || paymentAmount <= 0) return;
 
-  // 1. Identificar todos os dias trabalhados das semanas selecionadas que ainda têm pendências
-  const daysToPay = [];
+  const daysToPay = [], otherDaysToPay = [];
   Object.keys(db.workedDays).forEach(dateStr => {
     const dayData = db.workedDays[dateStr];
     if (dayData.period !== 'none' && dayData.period !== 'off' && dayData.pendingAmount > 0) {
-      const weekInfo = getWeekRange(dateStr);
-      if (selectedWeeks.includes(weekInfo.key)) {
-        daysToPay.push(dayData);
+      if (selectedWeeks.length === 0) daysToPay.push(dayData);
+      else {
+        const weekInfo = getWeekRange(dateStr);
+        if (selectedWeeks.includes(weekInfo.key)) daysToPay.push(dayData);
+        else otherDaysToPay.push(dayData);
       }
     }
   });
 
-  if (daysToPay.length === 0) {
-    alert("Todos os dias nestas semanas selecionadas já foram totalmente pagos.");
-    return;
-  }
-
-  // Ordenar cronologicamente (da data mais antiga para a mais recente) para aplicar o FIFO
+  if (daysToPay.length === 0 && otherDaysToPay.length === 0) return;
   daysToPay.sort((a, b) => a.date.localeCompare(b.date));
+  otherDaysToPay.sort((a, b) => a.date.localeCompare(b.date));
 
-  // 2. Registrar o ID do pagamento
-  const paymentId = 'pay_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-  let remainingPayment = paymentAmount;
-  const coveredDays = [];
+  const paymentId = 'pay_' + Date.now();
+  let remaining = paymentAmount;
+  const covered = [];
 
-  // Distribui o dinheiro
-  for (const day of daysToPay) {
-    if (remainingPayment <= 0) break;
-
-    const amountNeeded = day.pendingAmount;
-    const amountToApply = Math.min(remainingPayment, amountNeeded);
-
-    // Atualiza o dia trabalhado
-    day.amountPaid = (day.amountPaid || 0) + amountToApply;
-    day.pendingAmount = day.rate - day.amountPaid;
-    
-    // Atualiza status do dia
-    if (day.pendingAmount <= 0) {
-      day.status = 'paid';
-    } else {
-      day.status = 'partial';
-    }
-
-    // Registra o relacionamento pagamento -> valor aplicado neste dia
+  [...daysToPay, ...otherDaysToPay].forEach(day => {
+    if (remaining <= 0) return;
+    const apply = Math.min(remaining, day.pendingAmount);
+    day.amountPaid += apply; day.pendingAmount -= apply;
+    day.status = day.pendingAmount <= 0 ? 'paid' : 'partial';
     if (!day.paymentsApplied) day.paymentsApplied = {};
-    day.paymentsApplied[paymentId] = amountToApply;
+    day.paymentsApplied[paymentId] = apply;
+    covered.push(day.date); remaining -= apply;
+  });
 
-    coveredDays.push(day.date);
-    remainingPayment -= amountToApply;
-  }
-
-  // 3. Registrar o pagamento no Histórico de Pagamentos
-  const paymentRecord = {
-    id: paymentId,
-    date: paymentDate,
-    amount: paymentAmount,
-    coveredDays: coveredDays,
-    notes: paymentNotes || 'Recebimento semanal'
-  };
-
-  db.payments.push(paymentRecord);
+  db.payments.push({ id: paymentId, date: paymentDate, amount: paymentAmount, coveredDays: covered, notes: paymentNotes });
   saveToStorage();
-
-  // Resetar a seleção e recarregar os dados
-  selectedWeeks = [];
-  renderWeeksList();
-  updatePaymentSummary();
-  
-  // Limpar formulário
-  document.getElementById('input-payment-notes').value = '';
-  
-  alert("Pagamento registrado com sucesso!");
+  selectedWeeks = []; renderWeeksList(); updatePaymentSummary(); updateDashboardData();
+  alert(texts['msg-payment-success']);
 }
 
 /* ==========================================================================
@@ -990,106 +1302,54 @@ function processPayment(event) {
 
 function renderPaymentHistory() {
   const tableBody = document.getElementById('payment-history-table-body');
+  const texts = translations[db.settings.language || 'pt-BR'];
   tableBody.innerHTML = '';
+  const sorted = [...db.payments].sort((a, b) => b.date.localeCompare(a.date));
 
-  // Ordenar pagamentos por data decrescente (mais recente primeiro)
-  const sortedPayments = [...db.payments].sort((a, b) => b.date.localeCompare(a.date));
-
-  if (sortedPayments.length === 0) {
-    tableBody.innerHTML = `
-      <tr>
-        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 3rem;">
-          Nenhum registro de pagamento recebido no histórico.
-        </td>
-      </tr>
-    `;
+  if (sorted.length === 0) {
+    tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 3rem;">${texts['msg-no-history']}</td></tr>`;
     return;
   }
 
-  sortedPayments.forEach(pay => {
+  sorted.forEach(pay => {
     const tr = document.createElement('tr');
-    
-    // Formatar dias cobertos
-    let periodText = 'Nenhum dia';
+    let periodText = '...';
     if (pay.coveredDays && pay.coveredDays.length > 0) {
-      const sortedDates = [...pay.coveredDays].sort((a, b) => a.localeCompare(b));
-      if (sortedDates.length === 1) {
-        periodText = formatDateStringDisplay(sortedDates[0]);
-      } else {
-        const start = formatDateStringDisplay(sortedDates[0]);
-        const end = formatDateStringDisplay(sortedDates[sortedDates.length - 1]);
-        periodText = `${start} a ${end} (${sortedDates.length} dias)`;
-      }
+      const dates = [...pay.coveredDays].sort((a, b) => a.localeCompare(b));
+      periodText = dates.length === 1 ? formatDateStringDisplay(dates[0]) : `${formatDateStringDisplay(dates[0])} ${texts['week-to']} ${formatDateStringDisplay(dates[dates.length-1])} (${dates.length} ${texts['week-days']})`;
     }
 
     tr.innerHTML = `
-      <td class="history-date">${formatDateStringDisplay(pay.date)}</td>
-      <td class="history-amount" style="color: var(--status-paid);">${formatCurrency(pay.amount)}</td>
+      <td>${formatDateStringDisplay(pay.date)}</td>
+      <td style="color: var(--status-paid);">${formatCurrency(pay.amount)}</td>
       <td>${periodText}</td>
-      <td>
-        <span class="history-pending-tag" style="background: rgba(139, 92, 246, 0.1); color: var(--accent-purple);">
-          <i data-lucide="check" style="width: 12px; height: 12px;"></i> Processado
-        </span>
-      </td>
-      <td style="color: var(--text-muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-        ${pay.notes || '-'}
-      </td>
-      <td>
-        <button class="btn-danger" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" onclick="deletePayment('${pay.id}')">
-          <i data-lucide="undo-2" style="width: 12px; height: 12px;"></i> Estornar
-        </button>
-      </td>
+      <td><span class="history-pending-tag"><i data-lucide="check"></i> ${texts['status-processed']}</span></td>
+      <td>${pay.notes || '-'}</td>
+      <td><button class="btn-danger" onclick="deletePayment('${pay.id}')">${texts['btn-refund']}</button></td>
     `;
-
     tableBody.appendChild(tr);
   });
+  lucide.createIcons();
 }
 
-// Estorna um pagamento (remove e devolve o saldo devedor nos dias associados)
-function deletePayment(paymentId) {
-  const confirmUndo = confirm("Tem certeza que deseja estornar este pagamento? O valor correspondente voltará a ficar pendente nos dias trabalhados relacionados.");
-  
-  if (!confirmUndo) return;
-
-  // Localiza o pagamento no array
-  const payIndex = db.payments.findIndex(p => p.id === paymentId);
-  if (payIndex === -1) return;
-
-  const payment = db.payments[payIndex];
-
-  // Desfazer aplicação do dinheiro nos dias
-  if (payment.coveredDays) {
-    payment.coveredDays.forEach(dateStr => {
-      const day = db.workedDays[dateStr];
-      if (day && day.paymentsApplied && day.paymentsApplied[paymentId] !== undefined) {
-        const amountApplied = day.paymentsApplied[paymentId];
-        
-        // Deduz valor pago
-        day.amountPaid = Math.max(0, (day.amountPaid || 0) - amountApplied);
-        day.pendingAmount = day.rate - day.amountPaid;
-        
-        // Remove vínculo do pagamento
-        delete day.paymentsApplied[paymentId];
-
-        // Atualiza status do dia
-        if (day.amountPaid === 0) {
-          day.status = 'unpaid';
-        } else {
-          day.status = 'partial';
-        }
-      }
-    });
-  }
-
-  // Remove pagamento da lista
-  db.payments.splice(payIndex, 1);
-  saveToStorage();
-  
-  // Recarregar histórico
-  renderPaymentHistory();
-  lucide.createIcons();
-  
-  alert("Pagamento estornado com sucesso!");
+function deletePayment(id) {
+  const texts = translations[db.settings.language || 'pt-BR'];
+  if (!confirm(texts['msg-undo-confirm'])) return;
+  const idx = db.payments.findIndex(p => p.id === id);
+  if (idx === -1) return;
+  const pay = db.payments[idx];
+  pay.coveredDays.forEach(date => {
+    const day = db.workedDays[date];
+    if (day && day.paymentsApplied && day.paymentsApplied[id]) {
+      const amt = day.paymentsApplied[id];
+      day.amountPaid -= amt; day.pendingAmount += amt;
+      delete day.paymentsApplied[id];
+      day.status = day.amountPaid === 0 ? 'unpaid' : 'partial';
+    }
+  });
+  db.payments.splice(idx, 1);
+  saveToStorage(); renderPaymentHistory(); updateDashboardData();
+  alert(texts['msg-undo-success']);
 }
 
 /* ==========================================================================
@@ -1099,86 +1359,230 @@ function deletePayment(paymentId) {
 function loadSettingsFields() {
   document.getElementById('setting-morning-rate').value = db.settings.morningRate;
   document.getElementById('setting-night-rate').value = db.settings.nightRate;
+  document.getElementById('setting-language').value = db.settings.language || 'pt-BR';
+  const offDays = db.settings.offDays || [4];
+  for (let i = 0; i <= 6; i++) {
+    const chk = document.getElementById(`offday-${i}`);
+    if (chk) chk.checked = offDays.includes(i);
+  }
+}
+
+function saveOffDaysSettings(event) {
+  event.preventDefault();
+  const offDays = [];
+  for (let i = 0; i <= 6; i++) {
+    const chk = document.getElementById(`offday-${i}`);
+    if (chk && chk.checked) offDays.push(parseInt(chk.value, 10));
+  }
+  db.settings.offDays = offDays;
+  saveToStorage(); renderCalendar();
+  alert(translations[db.settings.language]['msg-save-success']);
 }
 
 function saveRatesSettings(event) {
   event.preventDefault();
-
-  const morning = parseFloat(document.getElementById('setting-morning-rate').value);
-  const night = parseFloat(document.getElementById('setting-night-rate').value);
-
-  if (isNaN(morning) || isNaN(night)) {
-    alert("Valores inválidos para as tarifas.");
-    return;
-  }
-
-  db.settings.morningRate = morning;
-  db.settings.nightRate = night;
-  
-  saveToStorage();
-  updateRateLabels();
-  
-  alert("Tarifas padrão atualizadas com sucesso!");
+  db.settings.morningRate = parseFloat(document.getElementById('setting-morning-rate').value);
+  db.settings.nightRate = parseFloat(document.getElementById('setting-night-rate').value);
+  saveToStorage(); updateRateLabels();
+  alert(translations[db.settings.language]['msg-save-success']);
 }
 
-// Exporta base de dados em formato JSON para download
 function exportDatabase() {
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
-  const downloadAnchor = document.createElement('a');
-  
-  const dateStr = formatDateISO(new Date());
-  
-  downloadAnchor.setAttribute("href", dataStr);
-  downloadAnchor.setAttribute("download", `fluxoturno_backup_${dateStr}.json`);
-  document.body.appendChild(downloadAnchor);
-  downloadAnchor.click();
-  downloadAnchor.remove();
+  const link = document.createElement('a');
+  link.setAttribute("href", dataStr); link.setAttribute("download", `backup_${formatDateISO(new Date())}.json`);
+  link.click();
 }
 
-// Importa base de dados a partir de arquivo JSON
 function importDatabase(event) {
-  const fileReader = new FileReader();
+  const reader = new FileReader();
   const file = event.target.files[0];
-
   if (!file) return;
-
-  fileReader.onload = function(e) {
+  reader.onload = (e) => {
     try {
       const parsed = JSON.parse(e.target.result);
-      
-      // Validação básica do formato
-      if (parsed.settings && parsed.workedDays && parsed.payments) {
-        db = parsed;
-        saveToStorage();
-        updateRateLabels();
-        loadSettingsFields();
-        alert("Backup importado com sucesso! Os dados da aplicação foram atualizados.");
-        // Forçar reload na aba de dashboard
+      if (parsed.settings && parsed.workedDays) {
+        db = parsed; saveToStorage(); applyLanguage();
+        alert(translations[db.settings.language]['msg-backup-success']);
         document.querySelector('[data-tab="dashboard"]').click();
-      } else {
-        alert("O arquivo selecionado não é um backup válido do FluxoTurno.");
       }
-    } catch (err) {
-      alert("Erro ao ler o arquivo JSON de backup.");
-      console.error(err);
-    }
+    } catch (err) { alert("Error!"); }
   };
-
-  fileReader.readAsText(file);
+  reader.readAsText(file);
 }
 
-// Apaga todos os dados do localStorage e reinicia
 function clearDatabase() {
-  const confirmClear = confirm("ATENÇÃO: Você perderá definitivamente todos os registros de dias trabalhados e pagamentos efetuados. Deseja prosseguir?");
-  
-  if (confirmClear) {
+  if (confirm(translations[db.settings.language]['msg-clear-confirm'])) {
     db = JSON.parse(JSON.stringify(DEFAULT_DB));
-    saveToStorage();
-    updateRateLabels();
-    loadSettingsFields();
-    alert("Todos os registros foram excluídos com sucesso.");
-    
-    // Forçar reload na aba de dashboard
+    saveToStorage(); applyLanguage(); loadSettingsFields();
     document.querySelector('[data-tab="dashboard"]').click();
   }
+}
+
+/* ==========================================================================
+   FUNÇÕES PARA LANÇAMENTO EM LOTE
+   ========================================================================== */
+
+function openBatchModal() {
+  const texts = translations[db.settings.language || 'pt-BR'];
+  const container = document.getElementById('batch-days-container');
+  container.innerHTML = `
+    <div style="text-align: center; color: var(--text-muted); padding: 2rem; font-size: 0.85rem;">
+      ${texts['msg-no-batch-days']}
+    </div>
+  `;
+  document.getElementById('batch-modal').classList.add('active');
+  lucide.createIcons();
+}
+
+function closeBatchModal() {
+  document.getElementById('batch-modal').classList.remove('active');
+}
+
+function generateBatchDaysList() {
+  const startStr = document.getElementById('batch-start-date').value;
+  const endStr = document.getElementById('batch-end-date').value;
+  const container = document.getElementById('batch-days-container');
+  const texts = translations[db.settings.language || 'pt-BR'];
+  if (!startStr || !endStr) return;
+
+  const start = new Date(startStr), end = new Date(endStr);
+  if (start > end) return;
+  container.innerHTML = '';
+  let current = new Date(start);
+  while (current <= end) {
+    const dateStr = formatDateISO(current);
+    const dayOfWeek = current.getDay();
+    const existing = db.workedDays[dateStr];
+    let period = existing ? existing.period : (db.settings.offDays.includes(dayOfWeek) ? 'off' : 'morning');
+    
+    const row = document.createElement('div');
+    row.className = 'batch-day-row';
+    row.innerHTML = `
+      <div class="batch-day-info"><span>${formatDateStringDisplay(dateStr)}</span> <strong>${WEEKDAY_NAMES[dayOfWeek]}</strong></div>
+      <div class="batch-day-controls">
+        <select class="batch-day-period-select" onchange="updateBatchRowRate(this)">
+          <option value="morning" ${period === 'morning' ? 'selected' : ''}>${texts['legend-morning']}</option>
+          <option value="night" ${period === 'night' ? 'selected' : ''}>${texts['legend-night']}</option>
+          <option value="both" ${period === 'both' ? 'selected' : ''}>${texts['legend-both']}</option>
+          <option value="off" ${period === 'off' ? 'selected' : ''}>${texts['legend-off']}</option>
+        </select>
+        <input type="number" class="batch-day-rate-input" value="${existing ? existing.rate : ''}" placeholder="${getStandardRateForPeriod(period).toFixed(2)}" ${period === 'off' ? 'disabled' : ''}>
+      </div>
+    `;
+    row.setAttribute('data-date', dateStr);
+    container.appendChild(row);
+    current.setDate(current.getDate() + 1);
+  }
+}
+
+function updateBatchRowRate(select) {
+  const input = select.closest('.batch-day-row').querySelector('.batch-day-rate-input');
+  if (select.value === 'off') { input.value = ''; input.disabled = true; }
+  else { input.disabled = false; input.placeholder = getStandardRateForPeriod(select.value).toFixed(2); }
+}
+
+function applyDefaultPeriodToBatchDays() {
+  const defaultPeriod = document.getElementById('batch-default-period').value;
+  const rows = document.querySelectorAll('.batch-day-row');
+  const offDays = db.settings.offDays || [4];
+
+  rows.forEach(row => {
+    const select = row.querySelector('.batch-day-period-select');
+    if (select) {
+      const dateStr = row.getAttribute('data-date');
+      const parts = dateStr.split('-');
+      const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      const dayOfWeek = d.getDay();
+
+      if (offDays.includes(dayOfWeek)) {
+        select.value = 'off';
+      } else {
+        select.value = defaultPeriod;
+      }
+      updateBatchRowRate(select);
+    }
+  });
+}
+
+function saveBatchShifts(event) {
+  event.preventDefault();
+  const rows = document.querySelectorAll('.batch-day-row');
+  if (rows.length === 0) return;
+
+  const texts = translations[db.settings.language || 'pt-BR'];
+  rows.forEach(row => {
+    const date = row.getAttribute('data-date');
+    const select = row.querySelector('.batch-day-period-select');
+    const input = row.querySelector('.batch-day-rate-input');
+    
+    if (select && input) {
+      const period = select.value;
+      const rateVal = parseFloat(input.value);
+      const rate = isNaN(rateVal) ? getStandardRateForPeriod(period) : rateVal;
+      const existing = db.workedDays[date] || { amountPaid: 0, paymentsApplied: {} };
+      
+      db.workedDays[date] = {
+        date, period, rate, amountPaid: existing.amountPaid, pendingAmount: Math.max(0, rate - existing.amountPaid),
+        status: existing.amountPaid >= rate ? 'paid' : (existing.amountPaid > 0 ? 'partial' : 'unpaid'),
+        notes: 'Lote', paymentsApplied: existing.paymentsApplied
+      };
+    }
+  });
+  saveToStorage(); closeBatchModal(); renderCalendar(); updateDashboardData();
+  alert(texts['msg-batch-save-success']);
+}
+
+function openBatchRemoveModal() {
+  const texts = translations[db.settings.language || 'pt-BR'];
+  const container = document.getElementById('batch-remove-days-container');
+  container.innerHTML = `
+    <div style="text-align: center; color: var(--text-muted); padding: 2rem; font-size: 0.85rem;">
+      ${texts['msg-no-remove-days']}
+    </div>
+  `;
+  document.getElementById('batch-remove-modal').classList.add('active');
+}
+
+function closeBatchRemoveModal() {
+  document.getElementById('batch-remove-modal').classList.remove('active');
+}
+
+function generateBatchRemoveDaysList() {
+  const startStr = document.getElementById('batch-remove-start-date').value;
+  const endStr = document.getElementById('batch-remove-end-date').value;
+  const container = document.getElementById('batch-remove-days-container');
+  if (!startStr || !endStr) return;
+  const start = new Date(startStr), end = new Date(endStr);
+  container.innerHTML = '';
+  let current = new Date(start);
+  let found = 0;
+  while (current <= end) {
+    const date = formatDateISO(current);
+    if (db.workedDays[date]) {
+      found++;
+      const row = document.createElement('div');
+      row.className = 'batch-day-row';
+      row.innerHTML = `<span>${formatDateStringDisplay(date)}</span> <input type="checkbox" class="batch-remove-day-checkbox" data-date="${date}" checked>`;
+      container.appendChild(row);
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  if (found === 0) {
+    const texts = translations[db.settings.language || 'pt-BR'];
+    container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem; font-size: 0.85rem;">${texts['msg-no-history']}</div>`;
+  }
+}
+
+function saveBatchRemoveShifts(event) {
+  event.preventDefault();
+  const checks = document.querySelectorAll('.batch-remove-day-checkbox:checked');
+  const texts = translations[db.settings.language || 'pt-BR'];
+  if (!confirm(texts['msg-delete-confirm'])) return;
+  checks.forEach(chk => {
+    const date = chk.getAttribute('data-date');
+    if (db.workedDays[date] && db.workedDays[date].amountPaid === 0) delete db.workedDays[date];
+  });
+  saveToStorage(); closeBatchRemoveModal(); renderCalendar(); updateDashboardData();
+  alert(texts['msg-batch-remove-success']);
 }
