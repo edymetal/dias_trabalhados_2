@@ -3,12 +3,19 @@
    ========================================================================== */
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.6';
-const APP_BUILD_DATE = '2026-05-28 08:08:58';
+const APP_VERSION = '1.0.7';
+const APP_BUILD_DATE = '2026-05-28 08:11:52';
 
-// CONFIGURAÇÃO DO FIREBASE (Cole seu firebaseConfig completo aqui)
+// CONFIGURAÇÃO DO FIREBASE
 const firebaseConfig = {
-  databaseURL: "https://dias-trabalhados-bf99a-default-rtdb.firebaseio.com/"
+  apiKey: "AIzaSyAlY3MVb-8jvvcwjOtd0VqRP427MISJDjg",
+  authDomain: "dias-trabalhados-bf99a.firebaseapp.com",
+  databaseURL: "https://dias-trabalhados-bf99a-default-rtdb.firebaseio.com",
+  projectId: "dias-trabalhados-bf99a",
+  storageBucket: "dias-trabalhados-bf99a.firebasestorage.app",
+  messagingSenderId: "807305373436",
+  appId: "1:807305373436:web:5b12891242f350326e9979",
+  measurementId: "G-B2TPPJMH55"
 };
 
 // Inicializa Firebase (Compat)
