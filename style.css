@@ -1310,6 +1310,14 @@ body {
 #app-content[style*="display: none"] {
   display: none !important;
 }
+
+.payments-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 1024px) {
   .payments-container {
     grid-template-columns: 1fr;
   }
@@ -1317,9 +1325,7 @@ body {
   .payment-processing-card {
     position: static;
   }
-}
 
-@media (max-width: 1024px) {
   .mobile-only {
     display: flex !important;
   }

@@ -7,8 +7,9 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.30';
-const APP_BUILD_DATE = '2026-05-28 15:28:18';
+const APP_VERSION = '1.0.31';
+const APP_BUILD_DATE = '2026-05-28 15:34:06';
+
 
 // CONFIGURAÇÃO DO FIREBASE
 const firebaseConfig = {
@@ -683,10 +684,12 @@ function setLanguage(lang) {
 function renderAppVersion() {
   const versionEl = document.getElementById('val-app-version');
   const versionLoginEl = document.getElementById('val-app-version-login');
+  const versionHeaderEl = document.getElementById('val-app-version-header');
   const buildDateEl = document.getElementById('val-app-build-date');
 
   if (versionEl) versionEl.innerText = APP_VERSION;
   if (versionLoginEl) versionLoginEl.innerText = APP_VERSION;
+  if (versionHeaderEl) versionHeaderEl.innerText = APP_VERSION;
   if (buildDateEl) buildDateEl.innerText = APP_BUILD_DATE;
 }
 
