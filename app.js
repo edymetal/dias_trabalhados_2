@@ -3,8 +3,8 @@
    ========================================================================== */
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.8';
-const APP_BUILD_DATE = '2026-05-28 08:15:00';
+const APP_VERSION = '1.0.9';
+const APP_BUILD_DATE = '2026-05-28 09:10:09';
 
 // CONFIGURAÇÃO DO FIREBASE
 const firebaseConfig = {
@@ -23,6 +23,7 @@ if (firebaseConfig.apiKey) {
   firebase.initializeApp(firebaseConfig);
 }
 const database = firebaseConfig.apiKey ? firebase.database() : null;
+const auth = firebaseConfig.apiKey ? firebase.auth() : null;
 
 // Configurações do Banco de Dados Local (LocalStorage)
 const DB_STORAGE_KEY = 'fluxoturno_db';
@@ -455,8 +456,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Inicializa o banco de dados carregando do Firebase ou localStorage
 async function initDatabase() {
-  // Tenta carregar do Firebase primeiro se estiver configurado
-  if (database) {
+  // Tenta autenticar anonimamente antes de acessar o banco
+  if (auth) {
+    try {
+      await auth.signInAnonymously();
+      console.log("Autenticado anonimamente no Firebase.");
+    } catch (error) {
+      console.error("Erro na autenticação anônima:", error.code, error.message);
+    }
+  }
+
+  // Tenta carregar do Firebase primeiro se estiver configurado e autenticado
+  if (database && auth && auth.currentUser) {
     try {
       const snapshot = await database.ref('fluxoTurnoDB').once('value');
       const cloudData = snapshot.val();
@@ -519,8 +530,8 @@ async function saveToStorage() {
   // Salva Localmente
   localStorage.setItem(DB_STORAGE_KEY, JSON.stringify(db));
   
-  // Salva na Nuvem (Firebase)
-  if (database) {
+  // Salva na Nuvem (Firebase) se estiver autenticado
+  if (database && auth && auth.currentUser) {
     try {
       await database.ref('fluxoTurnoDB').set(db);
     } catch (e) {
