@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.26';
-const APP_BUILD_DATE = '2026-05-28 11:20:20';
+const APP_VERSION = '1.0.27';
+const APP_BUILD_DATE = '2026-05-28 11:28:15';
 
 // CONFIGURAÇÃO DO FIREBASE
 const firebaseConfig = {
@@ -112,7 +112,9 @@ const DEFAULT_DB = {
     nightRate: 25.00,
     currency: 'EUR',
     offDays: [4], // Quinta-feira (4) por padrão
-    halfDays: {}, // Meio Período padrão por dia da semana
+    halfDays: {
+      0: 'morning' // Domingo (0) como Meio Período (Manhã) padrão
+    },
     language: 'pt-BR'
   },
   workedDays: {}, // Formato: { 'YYYY-MM-DD': { date, period, rate, status, amountPaid, pendingAmount, notes, paymentsApplied: { paymentId: amount } } }
