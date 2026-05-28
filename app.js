@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.19';
-const APP_BUILD_DATE = '2026-05-28 10:22:17';
+const APP_VERSION = '1.0.20';
+const APP_BUILD_DATE = '2026-05-28 10:25:35';
 
 // CONFIGURAÇÃO DO FIREBASE
 const firebaseConfig = {
@@ -645,10 +645,15 @@ function setLanguage(lang) {
   }
 }
 
-// Mostra a Versão no rodapé do menu
+// Mostra a Versão no rodapé do menu e na tela de login
 function renderAppVersion() {
-  document.getElementById('val-app-version').innerText = APP_VERSION;
-  document.getElementById('val-app-build-date').innerText = APP_BUILD_DATE;
+  const versionEl = document.getElementById('val-app-version');
+  const versionLoginEl = document.getElementById('val-app-version-login');
+  const buildDateEl = document.getElementById('val-app-build-date');
+
+  if (versionEl) versionEl.innerText = APP_VERSION;
+  if (versionLoginEl) versionLoginEl.innerText = APP_VERSION;
+  if (buildDateEl) buildDateEl.innerText = APP_BUILD_DATE;
 }
 
 // Inicializa a data atual no cabeçalho
