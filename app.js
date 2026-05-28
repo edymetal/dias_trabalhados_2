@@ -7,8 +7,9 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.32';
-const APP_BUILD_DATE = '2026-05-28 16:14:32';
+const APP_VERSION = '1.0.33';
+const APP_BUILD_DATE = '2026-05-28 16:22:19';
+
 
 
 
@@ -1317,7 +1318,7 @@ function createDayElement(dayNum, dateStr, isOtherMonth, container) {
       const valDiv = document.createElement('div');
       valDiv.className = 'day-value';
       if (data.status === 'partial') {
-        valDiv.innerHTML = `${formatCurrency(data.amountPaid)} <span style="color: var(--status-unpaid); font-size: 0.65rem;">(-${formatCurrency(data.pendingAmount)})</span>`;
+        valDiv.innerHTML = `<span>${formatCurrency(data.amountPaid)}</span><span class="day-pending-value">(-${formatCurrency(data.pendingAmount)})</span>`;
       } else {
         valDiv.innerText = formatCurrency(data.rate);
       }

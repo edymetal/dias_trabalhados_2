@@ -569,6 +569,14 @@ body {
   font-weight: 700;
   color: var(--text-muted);
   margin-top: 0.25rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.day-pending-value {
+  color: var(--status-unpaid);
+  font-size: 0.65rem;
+  font-weight: 600;
 }
 
 .day-badge {
