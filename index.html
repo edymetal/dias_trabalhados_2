@@ -18,8 +18,27 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
+  <!-- Login Screen -->
+  <div id="login-screen" class="auth-wrapper">
+    <div class="auth-card glass-card">
+      <div class="auth-brand">
+        <div class="auth-logo">
+          <i data-lucide="calendar-check"></i>
+        </div>
+        <h1>FluxoTurno</h1>
+        <p>Gestão Profissional de Turnos</p>
+      </div>
+      <div class="auth-body">
+        <button id="btn-google-login" class="btn-google">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+          <span>Entrar com Google</span>
+        </button>
+        <p id="login-error-msg" class="error-msg" style="display: none;"></p>
+      </div>
+    </div>
+  </div>
 
-  <div class="app-container">
+  <div id="app-content" class="app-container" style="display: none;">
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
       <div class="sidebar-header">

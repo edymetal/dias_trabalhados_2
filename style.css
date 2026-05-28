@@ -1125,8 +1125,121 @@ body {
   cursor: pointer;
 }
 
-/* Responsive Styles */
-@media (max-width: 1024px) {
+/* ==========================================================================
+   AUTH & LOGIN STYLES
+   ========================================================================== */
+
+.auth-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 1.5rem;
+  background: radial-gradient(circle at top right, rgba(139, 92, 246, 0.15), transparent),
+              radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.1), transparent);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  padding: 3rem 2rem;
+  text-align: center;
+  animation: fadeInDown 0.6s ease-out;
+}
+
+.auth-brand {
+  margin-bottom: 2.5rem;
+}
+
+.auth-logo {
+  width: 64px;
+  height: 64px;
+  background: var(--accent-purple-glow);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+}
+
+.auth-logo i {
+  width: 32px;
+  height: 32px;
+  color: var(--accent-purple);
+}
+
+.auth-brand h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #fff 0%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.auth-brand p {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.85rem;
+  background: white;
+  border: none;
+  border-radius: 12px;
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-google:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+  background: #f9fafb;
+}
+
+.btn-google img {
+  width: 20px;
+  height: 20px;
+}
+
+.error-msg {
+  margin-top: 1.5rem;
+  color: #ef4444;
+  font-size: 0.875rem;
+  background: rgba(239, 68, 68, 0.1);
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 2.5rem 1.5rem;
+  }
+}
+
+/* Ensure app content fills viewport properly when shown */
+#app-content.app-container {
+  display: flex !important;
+}
+
+#app-content[style*="display: none"] {
+  display: none !important;
+}
   .payments-container {
     grid-template-columns: 1fr;
   }

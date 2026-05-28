@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.14';
-const APP_BUILD_DATE = '2026-05-28 09:41:04';
+const APP_VERSION = '1.0.15';
+const APP_BUILD_DATE = '2026-05-28 09:52:33';
 
 // CONFIGURAÃƒâ€¡ÃƒÆ’O DO FIREBASE
 const firebaseConfig = {
@@ -130,7 +130,7 @@ const translations = {
     // Settings
     'settings-rates-title': 'Configuração de Tarifas',
     'settings-rates-desc': 'Defina os valores padrão para cada Período trabalhado. Novos dias utilizarão essas taxas.',
-    'label-morning-rate': 'Valor Período da Manhã (€)',
+    'label-morning-rate': 'Valor Período da Manhà(€)',
     'label-night-rate': 'Valor Período da Noite (€)',
     'btn-save-rates': 'Salvar Tarifas',
     'settings-offdays-title': 'Folga Semanal padrão',
@@ -222,7 +222,7 @@ const translations = {
     'general-balance-pending': 'Total Geral a Receber',
     'general-balance-zero': 'Tudo Pago / Zerado',
     'settings-halfdays-title': 'Meio Período padrão',
-    'settings-halfdays-desc': 'Defina os dias da semana em que Você trabalha meio Período fixo e qual o Período padrão (Manhã ou Noite).',
+    'settings-halfdays-desc': 'Defina os dias da semana em que Você trabalha meio Período fixo e qual o Período padrão (Manhàou Noite).',
     'btn-save-halfdays': 'Salvar Meio Período'
   },
   'it-IT': {
@@ -441,7 +441,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Permite valores assimÃ©tricos calculando a contrapartida dinamicamente
+  // Permite valores assimétricos calculando a contrapartida dinamicamente
   if (inputCash && inputDeposit && paymentAmountInput) {
     inputCash.addEventListener('input', () => {
       const total = parseFloat(paymentAmountInput.value) || 0;
@@ -606,7 +606,7 @@ function setLanguage(lang) {
   }
 }
 
-// Mostra a Versão no rodapÃ© do menu
+// Mostra a Versão no rodapé do menu
 function renderAppVersion() {
   document.getElementById('val-app-version').innerText = APP_VERSION;
   document.getElementById('val-app-build-date').innerText = APP_BUILD_DATE;
@@ -673,7 +673,7 @@ function initNavigation() {
         loadSettingsFields();
       }
       
-      // Atualiza ícones Lucide recÃ©m-renderizados
+      // Atualiza ícones Lucide recém-renderizados
       lucide.createIcons();
     });
   });
@@ -874,7 +874,7 @@ function updateDashboardData() {
     }
   });
 
-  // Total Recebido Ã© a soma real de todos os pagamentos efetuados
+  // Total Recebido é a soma real de todos os pagamentos efetuados
   totalReceived = db.payments.reduce((acc, pay) => acc + pay.amount, 0);
 
   // Total de adiantamento/Crédito ativo nos pagamentos
@@ -915,7 +915,7 @@ function updateDashboardData() {
       if (pendingIcon) pendingIcon.innerHTML = `<i data-lucide="alert-circle"></i>`;
     }
     
-    // Atualiza os ícones Lucide no card recÃ©m-modificado
+    // Atualiza os ícones Lucide no card recém-modificado
     lucide.createIcons();
   }
 
@@ -932,7 +932,7 @@ function renderEarningsChart() {
   // Agrupar ganhos e pagamentos recebidos por mês
   const monthlyData = {};
   
-  // Preencher os Ãºltimos 6 meses para garantir dados ordenados
+  // Preencher os últimos 6 meses para garantir dados ordenados
   const now = new Date();
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -1030,7 +1030,7 @@ function quickLogShift(period) {
   else if (period === 'night') rate = db.settings.nightRate;
   else if (period === 'both') rate = db.settings.morningRate + db.settings.nightRate;
   
-  // Se o dia Já tiver registro financeiro de pagamento, mantÃ©m o valor pago e atualiza
+  // Se o dia Já tiver registro financeiro de pagamento, mantém o valor pago e atualiza
   const existing = db.workedDays[todayStr] || {
     amountPaid: 0,
     paymentsApplied: {}
@@ -1629,7 +1629,7 @@ function processPayment(event) {
     // Constrói notas descritivas
     paymentNotes = `${texts['opt-cash']}: ${formatCurrency(cashAmount)} / ${texts['opt-deposit']}: ${formatCurrency(depositAmount)}`;
   } else {
-    paymentNotes = texts['opt-' + paymentMethod.toLowerCase().replace('Ã©', 'e')] || paymentMethod;
+    paymentNotes = texts['opt-' + paymentMethod.toLowerCase().replace('é', 'e')] || paymentMethod;
   }
 
   const daysToPay = [], otherDaysToPay = [];
@@ -1668,7 +1668,7 @@ function processPayment(event) {
     remaining -= apply;
   });
 
-  // O excedente Ã© salvo no atributo advanceRemaining do pagamento
+  // O excedente é salvo no atributo advanceRemaining do pagamento
   db.payments.push({
     id: paymentId,
     date: paymentDate,
@@ -2106,6 +2106,7 @@ window.closeBatchRemoveModal = closeBatchRemoveModal;
 window.refundPaymentCreditsFromDay = refundPaymentCreditsFromDay;
 window.deletePayment = deletePayment;
 window.openDayModal = openDayModal;
+
 
 
 
