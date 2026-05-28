@@ -284,6 +284,18 @@
               <span data-i18n="register-receipt-title">Registrar Recebimento</span>
             </h2>
 
+            <!-- Geral Balance Widget -->
+            <div id="general-balance-box" class="payment-summary-box" style="margin-bottom: 1.5rem; transition: var(--transition-smooth);">
+              <div style="font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem;">
+                <i id="general-balance-icon" data-lucide="info" style="width: 16px; height: 16px;"></i>
+                <span id="general-balance-title" data-i18n="general-balance-title">Saldo Geral Consolidado</span>
+              </div>
+              <div class="summary-row" style="margin-bottom: 0; border: none; padding: 0;">
+                <span id="general-balance-label" style="font-size: 0.85rem; color: var(--text-muted);">Saldo:</span>
+                <span id="general-balance-value" style="font-size: 1.15rem; font-weight: 800;">€ 0,00</span>
+              </div>
+            </div>
+
             <div class="payment-summary-box">
               <div class="summary-row">
                 <span data-i18n="summary-selected-weeks">Semanas Selecionadas:</span>
@@ -323,8 +335,22 @@
                 <select class="form-input" id="input-payment-method" onchange="toggleCustomNotesInput()">
                   <option value="Dinheiro" data-i18n="opt-cash">Dinheiro</option>
                   <option value="Depósito" data-i18n="opt-deposit">Depósito</option>
+                  <option value="Misto" data-i18n="opt-mixed">Misto (Dinheiro + Depósito)</option>
                   <option value="Outros" data-i18n="opt-others">Outros (Especificar)</option>
                 </select>
+              </div>
+
+              <div class="payment-form-group" id="mixed-amounts-group" style="display: none;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                  <div>
+                    <label for="input-payment-cash-amount" data-i18n="label-cash-amount">Valor em Dinheiro (€)</label>
+                    <input type="number" step="0.01" class="form-input" id="input-payment-cash-amount" placeholder="0,00">
+                  </div>
+                  <div>
+                    <label for="input-payment-deposit-amount" data-i18n="label-deposit-amount">Valor em Depósito (€)</label>
+                    <input type="number" step="0.01" class="form-input" id="input-payment-deposit-amount" placeholder="0,00">
+                  </div>
+                </div>
               </div>
 
               <div class="payment-form-group" id="custom-notes-group" style="display: none;">
@@ -445,6 +471,97 @@
               <button type="submit" class="btn-primary" style="margin-top: 1.5rem;">
                 <i data-lucide="save"></i>
                 <span data-i18n="btn-save-offdays">Salvar Folgas</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Meio Período Padrão Config -->
+          <div class="glass-card settings-card">
+            <h2 class="dashboard-card-title">
+              <i data-lucide="clock"></i>
+              <span data-i18n="settings-halfdays-title">Meio Período Padrão</span>
+            </h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;" data-i18n="settings-halfdays-desc">
+              Defina os dias da semana em que você trabalha meio período fixo e qual o período padrão (Manhã ou Noite).
+            </p>
+
+            <form id="settings-halfdays-form" onsubmit="saveHalfDaysSettings(event)">
+              <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <div class="halfday-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border-light);">
+                  <div class="checkbox-option" style="margin-bottom: 0;">
+                    <input type="checkbox" id="halfday-active-0" value="0" onchange="toggleHalfDaySelect(0)">
+                    <label for="halfday-active-0" data-i18n="day-0">Domingo</label>
+                  </div>
+                  <select class="form-input" id="halfday-period-0" style="width: 140px; padding: 0.25rem 0.5rem;" disabled>
+                    <option value="morning" data-i18n="legend-morning">Manhã</option>
+                    <option value="night" data-i18n="legend-night">Noite</option>
+                  </select>
+                </div>
+                <div class="halfday-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border-light);">
+                  <div class="checkbox-option" style="margin-bottom: 0;">
+                    <input type="checkbox" id="halfday-active-1" value="1" onchange="toggleHalfDaySelect(1)">
+                    <label for="halfday-active-1" data-i18n="day-1">Segunda-feira</label>
+                  </div>
+                  <select class="form-input" id="halfday-period-1" style="width: 140px; padding: 0.25rem 0.5rem;" disabled>
+                    <option value="morning" data-i18n="legend-morning">Manhã</option>
+                    <option value="night" data-i18n="legend-night">Noite</option>
+                  </select>
+                </div>
+                <div class="halfday-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border-light);">
+                  <div class="checkbox-option" style="margin-bottom: 0;">
+                    <input type="checkbox" id="halfday-active-2" value="2" onchange="toggleHalfDaySelect(2)">
+                    <label for="halfday-active-2" data-i18n="day-2">Terça-feira</label>
+                  </div>
+                  <select class="form-input" id="halfday-period-2" style="width: 140px; padding: 0.25rem 0.5rem;" disabled>
+                    <option value="morning" data-i18n="legend-morning">Manhã</option>
+                    <option value="night" data-i18n="legend-night">Noite</option>
+                  </select>
+                </div>
+                <div class="halfday-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border-light);">
+                  <div class="checkbox-option" style="margin-bottom: 0;">
+                    <input type="checkbox" id="halfday-active-3" value="3" onchange="toggleHalfDaySelect(3)">
+                    <label for="halfday-active-3" data-i18n="day-3">Quarta-feira</label>
+                  </div>
+                  <select class="form-input" id="halfday-period-3" style="width: 140px; padding: 0.25rem 0.5rem;" disabled>
+                    <option value="morning" data-i18n="legend-morning">Manhã</option>
+                    <option value="night" data-i18n="legend-night">Noite</option>
+                  </select>
+                </div>
+                <div class="halfday-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border-light);">
+                  <div class="checkbox-option" style="margin-bottom: 0;">
+                    <input type="checkbox" id="halfday-active-4" value="4" onchange="toggleHalfDaySelect(4)">
+                    <label for="halfday-active-4" data-i18n="day-4">Quinta-feira</label>
+                  </div>
+                  <select class="form-input" id="halfday-period-4" style="width: 140px; padding: 0.25rem 0.5rem;" disabled>
+                    <option value="morning" data-i18n="legend-morning">Manhã</option>
+                    <option value="night" data-i18n="legend-night">Noite</option>
+                  </select>
+                </div>
+                <div class="halfday-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border-light);">
+                  <div class="checkbox-option" style="margin-bottom: 0;">
+                    <input type="checkbox" id="halfday-active-5" value="5" onchange="toggleHalfDaySelect(5)">
+                    <label for="halfday-active-5" data-i18n="day-5">Sexta-feira</label>
+                  </div>
+                  <select class="form-input" id="halfday-period-5" style="width: 140px; padding: 0.25rem 0.5rem;" disabled>
+                    <option value="morning" data-i18n="legend-morning">Manhã</option>
+                    <option value="night" data-i18n="legend-night">Noite</option>
+                  </select>
+                </div>
+                <div class="halfday-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border-light);">
+                  <div class="checkbox-option" style="margin-bottom: 0;">
+                    <input type="checkbox" id="halfday-active-6" value="6" onchange="toggleHalfDaySelect(6)">
+                    <label for="halfday-active-6" data-i18n="day-6">Sábado</label>
+                  </div>
+                  <select class="form-input" id="halfday-period-6" style="width: 140px; padding: 0.25rem 0.5rem;" disabled>
+                    <option value="morning" data-i18n="legend-morning">Manhã</option>
+                    <option value="night" data-i18n="legend-night">Noite</option>
+                  </select>
+                </div>
+              </div>
+
+              <button type="submit" class="btn-primary" style="margin-top: 1.5rem;">
+                <i data-lucide="save"></i>
+                <span data-i18n="btn-save-halfdays">Salvar Meio Período</span>
               </button>
             </form>
           </div>

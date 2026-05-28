@@ -3,8 +3,8 @@
    ========================================================================== */
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.3';
-const APP_BUILD_DATE = '2026-05-21 06:53:09';
+const APP_VERSION = '1.0.4';
+const APP_BUILD_DATE = '2026-05-28 07:35:12';
 
 // Configurações do Banco de Dados Local (LocalStorage)
 const DB_STORAGE_KEY = 'fluxoturno_db';
@@ -16,6 +16,7 @@ const DEFAULT_DB = {
     nightRate: 25.00,
     currency: 'EUR',
     offDays: [4], // Quinta-feira (4) por padrão
+    halfDays: {}, // Meio período padrão por dia da semana
     language: 'pt-BR'
   },
   workedDays: {}, // Formato: { 'YYYY-MM-DD': { date, period, rate, status, amountPaid, pendingAmount, notes, paymentsApplied: { paymentId: amount } } }
@@ -189,7 +190,19 @@ const translations = {
     'msg-no-days': 'Nenhum dia de trabalho registrado para processar pagamentos.',
     'msg-no-history': 'Nenhum registro de pagamento recebido no histórico.',
     'msg-no-batch-days': 'Selecione as datas inicial e final para visualizar e personalizar os dias.',
-    'msg-no-remove-days': 'Selecione as datas inicial e final para visualizar os dias com registros.'
+    'msg-no-remove-days': 'Selecione as datas inicial e final para visualizar os dias com registros.',
+    'opt-mixed': 'Misto (Dinheiro + Depósito)',
+    'label-cash-amount': 'Valor em Dinheiro (€)',
+    'label-deposit-amount': 'Valor em Depósito (€)',
+    'msg-invalid-mixed-sum': 'A soma dos valores em dinheiro e depósito deve ser igual ao valor total recebido!',
+    'stat-total-credit': 'Crédito Antecipado',
+    'general-balance-title': 'Saldo Geral Consolidado',
+    'general-balance-credit': 'Crédito Disponível (Adiantado)',
+    'general-balance-pending': 'Total Geral a Receber',
+    'general-balance-zero': 'Tudo Pago / Zerado',
+    'settings-halfdays-title': 'Meio Período Padrão',
+    'settings-halfdays-desc': 'Defina os dias da semana em que você trabalha meio período fixo e qual o período padrão (Manhã ou Noite).',
+    'btn-save-halfdays': 'Salvar Meio Período'
   },
   'it-IT': {
     // Sidebar
@@ -356,7 +369,19 @@ const translations = {
     'msg-no-days': 'Nessun giorno di lavoro registrato per elaborare i pagamenti.',
     'msg-no-history': 'Nessun registro di pagamento ricevuto nella cronologia.',
     'msg-no-batch-days': 'Seleziona le date di inizio e fine per visualizzare e personalizzare i giorni.',
-    'msg-no-remove-days': 'Seleziona le date di inizio e fine per visualizzare i giorni con i record.'
+    'msg-no-remove-days': 'Seleziona le date di inizio e fine per visualizzare i giorni con i record.',
+    'opt-mixed': 'Misto (Contanti + Deposito)',
+    'label-cash-amount': 'Importo in Contanti (€)',
+    'label-deposit-amount': 'Importo in Deposito (€)',
+    'msg-invalid-mixed-sum': 'La somma degli importi in contanti e deposito deve essere uguale all\'importo totale ricevuto!',
+    'stat-total-credit': 'Credito Anticipato',
+    'general-balance-title': 'Saldo Generale Consolidato',
+    'general-balance-credit': 'Credito Disponibile (Anticipo)',
+    'general-balance-pending': 'Totale Generale da Ricevere',
+    'general-balance-zero': 'Tutto Pagato / Bilancio Zero',
+    'settings-halfdays-title': 'Mezza Giornata Standard',
+    'settings-halfdays-desc': 'Definisci i giorni della settimana in cui lavori mezza giornata fissa e il periodo standard (Mattina o Sera).',
+    'btn-save-halfdays': 'Salva Mezza Giornata'
     }
     };
 
@@ -382,6 +407,36 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Atualiza as tarifas padrão no modal e nas ações rápidas
   updateRateLabels();
+
+  // Escuta alteração do valor do pagamento para atualizar a divisão do Misto se estiver ativo
+  const paymentAmountInput = document.getElementById('input-payment-amount');
+  const inputCash = document.getElementById('input-payment-cash-amount');
+  const inputDeposit = document.getElementById('input-payment-deposit-amount');
+  
+  if (paymentAmountInput) {
+    paymentAmountInput.addEventListener('input', () => {
+      const methodSelect = document.getElementById('input-payment-method');
+      if (methodSelect && methodSelect.value === 'Misto') {
+        const totalAmount = parseFloat(paymentAmountInput.value) || 0;
+        document.getElementById('input-payment-cash-amount').value = (totalAmount / 2).toFixed(2);
+        document.getElementById('input-payment-deposit-amount').value = (totalAmount - (totalAmount / 2)).toFixed(2);
+      }
+    });
+  }
+
+  // Permite valores assimétricos calculando a contrapartida dinamicamente
+  if (inputCash && inputDeposit && paymentAmountInput) {
+    inputCash.addEventListener('input', () => {
+      const total = parseFloat(paymentAmountInput.value) || 0;
+      const cash = parseFloat(inputCash.value) || 0;
+      inputDeposit.value = Math.max(0, total - cash).toFixed(2);
+    });
+    inputDeposit.addEventListener('input', () => {
+      const total = parseFloat(paymentAmountInput.value) || 0;
+      const deposit = parseFloat(inputDeposit.value) || 0;
+      inputCash.value = Math.max(0, total - deposit).toFixed(2);
+    });
+  }
 });
 
 // Inicializa o banco de dados carregando do localStorage
@@ -395,12 +450,20 @@ function initDatabase() {
         db.settings = { ...DEFAULT_DB.settings };
       } else {
         if (!db.settings.offDays) db.settings.offDays = [4];
+        if (!db.settings.halfDays) db.settings.halfDays = {};
         if (!db.settings.language) db.settings.language = 'pt-BR';
         if (db.settings.morningRate === 80) db.settings.morningRate = 35; // Atualizar se for o valor antigo
         if (db.settings.nightRate === 100) db.settings.nightRate = 25; // Atualizar se for o valor antigo
       }
       if (!db.workedDays) db.workedDays = {};
       if (!db.payments) db.payments = [];
+      
+      // Garante retrocompatibilidade para o saldo de adiantamento
+      db.payments.forEach(pay => {
+        if (pay.advanceRemaining === undefined) {
+          pay.advanceRemaining = 0;
+        }
+      });
     } catch (e) {
       console.error("Erro ao ler banco de dados local. Resetando para o padrão.", e);
       db = JSON.parse(JSON.stringify(DEFAULT_DB));
@@ -589,6 +652,12 @@ function formatDateStringDisplay(dateISO) {
   return `${day}/${month}/${year}`;
 }
 
+function parseLocalDate(dateStr) {
+  if (!dateStr) return null;
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
 // Retorna o intervalo da semana de Segunda a Domingo de um determinado dia
 function getWeekRange(dateStr) {
   const parts = dateStr.split('-');
@@ -614,6 +683,77 @@ function getWeekRange(dateStr) {
     key: `${formatDateISO(monday)}_${formatDateISO(sunday)}`,
     label: `${formatDateDisplay(monday)} a ${formatDateDisplay(sunday)}`
   };
+}
+
+// Aplica créditos de adiantamento disponíveis a um dia trabalhado que tenha saldo pendente
+function applyAdvanceCreditsToDay(day) {
+  if (day.period === 'none' || day.period === 'off') return;
+  
+  day.pendingAmount = Math.max(0, day.rate - (day.amountPaid || 0));
+  if (day.pendingAmount <= 0) return;
+  
+  // Encontra pagamentos com adiantamento disponível, ordenados por data ascendente (mais antigos primeiro)
+  const paymentsWithAdvance = db.payments
+    .filter(p => (p.advanceRemaining || 0) > 0)
+    .sort((a, b) => a.date.localeCompare(b.date));
+    
+  for (const pay of paymentsWithAdvance) {
+    if (day.pendingAmount <= 0) break;
+    
+    const apply = Math.min(pay.advanceRemaining, day.pendingAmount);
+    
+    day.amountPaid = (day.amountPaid || 0) + apply;
+    day.pendingAmount -= apply;
+    day.status = day.pendingAmount <= 0 ? 'paid' : 'partial';
+    
+    if (!day.paymentsApplied) day.paymentsApplied = {};
+    day.paymentsApplied[pay.id] = (day.paymentsApplied[pay.id] || 0) + apply;
+    
+    if (!pay.coveredDays) pay.coveredDays = [];
+    if (!pay.coveredDays.includes(day.date)) {
+      pay.coveredDays.push(day.date);
+    }
+    
+    pay.advanceRemaining -= apply;
+  }
+}
+
+// Reembolsa valores pagos com adiantamento/crédito de volta para os pagamentos de origem se a tarifa do dia for reduzida ou o dia for deletado
+function refundPaymentCreditsFromDay(day, newRate) {
+  if (!day.paymentsApplied || Object.keys(day.paymentsApplied).length === 0) return;
+  
+  let refundNeeded = day.amountPaid - newRate;
+  if (refundNeeded <= 0) return;
+  
+  const paymentIds = Object.keys(day.paymentsApplied);
+  
+  for (const payId of paymentIds) {
+    if (refundNeeded <= 0) break;
+    
+    const appliedAmount = day.paymentsApplied[payId];
+    if (appliedAmount <= 0) continue;
+    
+    const refund = Math.min(refundNeeded, appliedAmount);
+    
+    const pay = db.payments.find(p => p.id === payId);
+    if (pay) {
+      pay.advanceRemaining = (pay.advanceRemaining || 0) + refund;
+      
+      day.amountPaid -= refund;
+      day.paymentsApplied[payId] -= refund;
+      if (day.paymentsApplied[payId] <= 0) {
+        delete day.paymentsApplied[payId];
+        if (pay.coveredDays) {
+          pay.coveredDays = pay.coveredDays.filter(d => d !== day.date);
+        }
+      }
+      
+      refundNeeded -= refund;
+    }
+  }
+  
+  day.pendingAmount = Math.max(0, newRate - day.amountPaid);
+  day.status = day.amountPaid >= newRate ? 'paid' : (day.amountPaid > 0 ? 'partial' : 'unpaid');
 }
 
 /* ==========================================================================
@@ -645,7 +785,6 @@ function updateDashboardData() {
       totalEarnings += rate;
       
       const paid = dayData.amountPaid || 0;
-      totalReceived += paid;
       totalPending += (rate - paid);
 
       // Soma para os ganhos da semana atual
@@ -655,11 +794,50 @@ function updateDashboardData() {
     }
   });
 
+  // Total Recebido é a soma real de todos os pagamentos efetuados
+  totalReceived = db.payments.reduce((acc, pay) => acc + pay.amount, 0);
+
+  // Total de adiantamento/crédito ativo nos pagamentos
+  const totalAdvance = db.payments.reduce((acc, pay) => acc + (pay.advanceRemaining || 0), 0);
+
   // Atualiza os elementos da tela
   document.getElementById('stat-total-earnings').innerText = formatCurrency(totalEarnings);
   document.getElementById('stat-total-received').innerText = formatCurrency(totalReceived);
-  document.getElementById('stat-total-pending').innerText = formatCurrency(totalPending);
   document.getElementById('stat-this-week-earnings').innerText = formatCurrency(thisWeekEarnings);
+
+  // Atualização dinâmica do Card de Pendente / Crédito
+  const pendingCard = document.querySelector('.stat-card.stat-pending');
+  if (pendingCard) {
+    const pendingTitle = pendingCard.querySelector('p');
+    const pendingValue = document.getElementById('stat-total-pending');
+    const pendingIcon = pendingCard.querySelector('.stat-icon');
+    const texts = translations[db.settings.language || 'pt-BR'];
+
+    if (totalAdvance > 0) {
+      // Transforma em card de Crédito
+      pendingCard.style.borderLeft = '4px solid var(--accent-purple)';
+      pendingCard.classList.add('stat-credit-active');
+      if (pendingTitle) pendingTitle.innerText = texts['stat-total-credit'] || 'Crédito Antecipado';
+      if (pendingValue) {
+        pendingValue.innerText = formatCurrency(totalAdvance);
+        pendingValue.style.color = 'var(--accent-purple)';
+      }
+      if (pendingIcon) pendingIcon.innerHTML = `<i data-lucide="coins"></i>`;
+    } else {
+      // Volta a ser card de Pendente
+      pendingCard.style.borderLeft = '';
+      pendingCard.classList.remove('stat-credit-active');
+      if (pendingTitle) pendingTitle.innerText = texts['stat-total-pending'] || 'Total Pendente';
+      if (pendingValue) {
+        pendingValue.innerText = formatCurrency(totalPending);
+        pendingValue.style.color = '';
+      }
+      if (pendingIcon) pendingIcon.innerHTML = `<i data-lucide="alert-circle"></i>`;
+    }
+    
+    // Atualiza os ícones Lucide no card recém-modificado
+    lucide.createIcons();
+  }
 
   // Atualiza gráfico
   renderEarningsChart();
@@ -778,6 +956,11 @@ function quickLogShift(period) {
     paymentsApplied: {}
   };
 
+  // Se o novo rate for menor que o amountPaid já registrado, devolvemos
+  if (existing.amountPaid > rate) {
+    refundPaymentCreditsFromDay(existing, rate);
+  }
+
   const newDay = {
     date: todayStr,
     period: period,
@@ -788,6 +971,9 @@ function quickLogShift(period) {
     notes: existing.notes || 'Registrado via Ação Rápida',
     paymentsApplied: existing.paymentsApplied || {}
   };
+
+  // Aplica créditos de adiantamento, se houver
+  applyAdvanceCreditsToDay(newDay);
 
   db.workedDays[todayStr] = newDay;
   saveToStorage();
@@ -1072,15 +1258,26 @@ function saveDayDetails(event) {
   if (!isNaN(customRateVal) && selectedPeriod !== 'off' && selectedPeriod !== 'none') rate = customRateVal;
 
   const existing = db.workedDays[dateStr] || { amountPaid: 0, paymentsApplied: {} };
+
+  // Se o novo rate for menor que o amountPaid já registrado (ou se mudou para off/none), devolvemos
+  if (existing.amountPaid > rate) {
+    refundPaymentCreditsFromDay(existing, rate);
+  }
+
   const amountPaid = existing.amountPaid || 0;
   const pendingAmount = Math.max(0, rate - amountPaid);
   let status = amountPaid >= rate ? 'paid' : (amountPaid > 0 ? 'partial' : 'unpaid');
 
-  db.workedDays[dateStr] = {
+  const newDay = {
     date: dateStr, period: selectedPeriod, rate: rate, status: status,
     amountPaid: amountPaid, pendingAmount: pendingAmount, notes: notesVal,
     paymentsApplied: existing.paymentsApplied || {}
   };
+
+  // Aplica créditos de adiantamento, se houver
+  applyAdvanceCreditsToDay(newDay);
+
+  db.workedDays[dateStr] = newDay;
 
   saveToStorage();
   closeDayModal();
@@ -1095,6 +1292,8 @@ function deleteDayRecord() {
   if (!data) return;
   if (data.amountPaid > 0) {
     if (!confirm(texts['msg-delete-confirm'])) return;
+    // Devolve os créditos aplicados a este dia para os pagamentos originais
+    refundPaymentCreditsFromDay(data, 0);
   }
   delete db.workedDays[dateStr];
   saveToStorage();
@@ -1192,6 +1391,56 @@ function updatePaymentSummary() {
   const paymentAmountInput = document.getElementById('input-payment-amount');
   const submitBtn = document.getElementById('btn-submit-payment');
 
+  // ATUALIZAÇÃO DO WIDGET DE SALDO GERAL CONSOLIDADO
+  const balanceBox = document.getElementById('general-balance-box');
+  if (balanceBox) {
+    const balanceLabel = document.getElementById('general-balance-label');
+    const balanceValue = document.getElementById('general-balance-value');
+    const balanceIcon = document.getElementById('general-balance-icon');
+    
+    // Calcula os valores gerais da base
+    let generalPending = 0;
+    Object.keys(db.workedDays).forEach(dateStr => {
+      const dayData = db.workedDays[dateStr];
+      if (dayData.period !== 'none' && dayData.period !== 'off') {
+        generalPending += (dayData.pendingAmount || 0);
+      }
+    });
+    
+    const generalAdvance = db.payments.reduce((acc, pay) => acc + (pay.advanceRemaining || 0), 0);
+    
+    if (generalAdvance > 0) {
+      balanceBox.style.border = '1px solid var(--accent-purple)';
+      balanceBox.style.background = 'var(--accent-purple-glow)';
+      if (balanceLabel) balanceLabel.innerText = texts['general-balance-credit'] || 'Crédito Disponível (Adiantado)';
+      if (balanceValue) {
+        balanceValue.innerText = formatCurrency(generalAdvance);
+        balanceValue.style.color = 'var(--accent-purple)';
+      }
+      if (balanceIcon) balanceIcon.outerHTML = `<i id="general-balance-icon" data-lucide="coins" style="width: 16px; height: 16px; color: var(--accent-purple);"></i>`;
+    } else if (generalPending > 0) {
+      balanceBox.style.border = '1px solid var(--status-unpaid)';
+      balanceBox.style.background = 'var(--status-unpaid-glow)';
+      if (balanceLabel) balanceLabel.innerText = texts['general-balance-pending'] || 'Total Geral a Receber';
+      if (balanceValue) {
+        balanceValue.innerText = formatCurrency(generalPending);
+        balanceValue.style.color = 'var(--status-unpaid)';
+      }
+      if (balanceIcon) balanceIcon.outerHTML = `<i id="general-balance-icon" data-lucide="alert-circle" style="width: 16px; height: 16px; color: var(--status-unpaid);"></i>`;
+    } else {
+      balanceBox.style.border = '1px solid var(--border-light)';
+      balanceBox.style.background = 'rgba(255, 255, 255, 0.02)';
+      if (balanceLabel) balanceLabel.innerText = texts['general-balance-zero'] || 'Tudo Pago / Zerado';
+      if (balanceValue) {
+        balanceValue.innerText = formatCurrency(0);
+        balanceValue.style.color = 'var(--text-muted)';
+      }
+      if (balanceIcon) balanceIcon.outerHTML = `<i id="general-balance-icon" data-lucide="check-circle-2" style="width: 16px; height: 16px; color: var(--status-paid);"></i>`;
+    }
+    
+    lucide.createIcons();
+  }
+
   let dbTotalDays = 0, dbTotalDue = 0, dbTotalPaid = 0, dbTotalPending = 0;
   Object.keys(db.workedDays).forEach(dateStr => {
     const dayData = db.workedDays[dateStr];
@@ -1212,10 +1461,15 @@ function updatePaymentSummary() {
       paymentAmountInput.value = dbTotalPending.toFixed(2);
       submitBtn.disabled = false;
     } else {
-      summaryWeeksCount.innerText = "0"; summaryDaysCount.innerText = `0 ${texts['week-days']}`;
-      summaryTotalDue.innerText = formatCurrency(0); summaryAlreadyPaid.innerText = formatCurrency(0);
+      summaryWeeksCount.innerText = "0";
+      summaryDaysCount.innerText = `0 ${texts['week-days']}`;
+      summaryTotalDue.innerText = formatCurrency(0);
+      summaryAlreadyPaid.innerText = formatCurrency(0);
       summaryRemainingDue.innerText = formatCurrency(0);
-      paymentAmountInput.value = ''; paymentAmountInput.disabled = true; submitBtn.disabled = true;
+      paymentAmountInput.disabled = false;
+      paymentAmountInput.value = '';
+      paymentAmountInput.placeholder = '0.00';
+      submitBtn.disabled = false;
     }
     return;
   }
@@ -1245,8 +1499,26 @@ function updatePaymentSummary() {
 function toggleCustomNotesInput() {
   const methodSelect = document.getElementById('input-payment-method');
   const customNotesGroup = document.getElementById('custom-notes-group');
-  if (methodSelect.value === 'Outros') customNotesGroup.style.display = 'block';
-  else { customNotesGroup.style.display = 'none'; document.getElementById('input-payment-notes').value = ''; }
+  const mixedAmountsGroup = document.getElementById('mixed-amounts-group');
+  
+  if (methodSelect.value === 'Outros') {
+    customNotesGroup.style.display = 'block';
+    mixedAmountsGroup.style.display = 'none';
+  } else if (methodSelect.value === 'Misto') {
+    customNotesGroup.style.display = 'none';
+    mixedAmountsGroup.style.display = 'block';
+    
+    // Divide o valor total entre os dois campos (50/50 por padrão)
+    const totalAmount = parseFloat(document.getElementById('input-payment-amount').value) || 0;
+    document.getElementById('input-payment-cash-amount').value = (totalAmount / 2).toFixed(2);
+    document.getElementById('input-payment-deposit-amount').value = (totalAmount - (totalAmount / 2)).toFixed(2);
+  } else {
+    customNotesGroup.style.display = 'none';
+    mixedAmountsGroup.style.display = 'none';
+    document.getElementById('input-payment-notes').value = '';
+    document.getElementById('input-payment-cash-amount').value = '';
+    document.getElementById('input-payment-deposit-amount').value = '';
+  }
 }
 
 function processPayment(event) {
@@ -1255,24 +1527,48 @@ function processPayment(event) {
   const paymentAmount = parseFloat(document.getElementById('input-payment-amount').value);
   const paymentDate = document.getElementById('input-payment-date').value;
   const paymentMethod = document.getElementById('input-payment-method').value;
-  const paymentNotes = paymentMethod === 'Outros' ? document.getElementById('input-payment-notes').value : texts['opt-' + paymentMethod.toLowerCase().replace('é', 'e')];
-
+  
   if (isNaN(paymentAmount) || paymentAmount <= 0) return;
+
+  let paymentNotes = '';
+  let cashAmount = 0;
+  let depositAmount = 0;
+
+  if (paymentMethod === 'Outros') {
+    paymentNotes = document.getElementById('input-payment-notes').value || texts['opt-others'];
+  } else if (paymentMethod === 'Misto') {
+    cashAmount = parseFloat(document.getElementById('input-payment-cash-amount').value) || 0;
+    depositAmount = parseFloat(document.getElementById('input-payment-deposit-amount').value) || 0;
+    
+    // Validação da soma (tolerância a ponto flutuante de 0.01)
+    if (Math.abs((cashAmount + depositAmount) - paymentAmount) > 0.01) {
+      alert(texts['msg-invalid-mixed-sum'] || 'A soma dos valores em dinheiro e depósito deve ser igual ao valor total recebido!');
+      return;
+    }
+    
+    // Constrói notas descritivas
+    paymentNotes = `${texts['opt-cash']}: ${formatCurrency(cashAmount)} / ${texts['opt-deposit']}: ${formatCurrency(depositAmount)}`;
+  } else {
+    paymentNotes = texts['opt-' + paymentMethod.toLowerCase().replace('é', 'e')] || paymentMethod;
+  }
 
   const daysToPay = [], otherDaysToPay = [];
   Object.keys(db.workedDays).forEach(dateStr => {
     const dayData = db.workedDays[dateStr];
     if (dayData.period !== 'none' && dayData.period !== 'off' && dayData.pendingAmount > 0) {
-      if (selectedWeeks.length === 0) daysToPay.push(dayData);
-      else {
+      if (selectedWeeks.length === 0) {
+        daysToPay.push(dayData);
+      } else {
         const weekInfo = getWeekRange(dateStr);
-        if (selectedWeeks.includes(weekInfo.key)) daysToPay.push(dayData);
-        else otherDaysToPay.push(dayData);
+        if (selectedWeeks.includes(weekInfo.key)) {
+          daysToPay.push(dayData);
+        } else {
+          otherDaysToPay.push(dayData);
+        }
       }
     }
   });
 
-  if (daysToPay.length === 0 && otherDaysToPay.length === 0) return;
   daysToPay.sort((a, b) => a.date.localeCompare(b.date));
   otherDaysToPay.sort((a, b) => a.date.localeCompare(b.date));
 
@@ -1283,16 +1579,37 @@ function processPayment(event) {
   [...daysToPay, ...otherDaysToPay].forEach(day => {
     if (remaining <= 0) return;
     const apply = Math.min(remaining, day.pendingAmount);
-    day.amountPaid += apply; day.pendingAmount -= apply;
+    day.amountPaid = (day.amountPaid || 0) + apply;
+    day.pendingAmount -= apply;
     day.status = day.pendingAmount <= 0 ? 'paid' : 'partial';
     if (!day.paymentsApplied) day.paymentsApplied = {};
-    day.paymentsApplied[paymentId] = apply;
-    covered.push(day.date); remaining -= apply;
+    day.paymentsApplied[paymentId] = (day.paymentsApplied[paymentId] || 0) + apply;
+    covered.push(day.date);
+    remaining -= apply;
   });
 
-  db.payments.push({ id: paymentId, date: paymentDate, amount: paymentAmount, coveredDays: covered, notes: paymentNotes });
+  // O excedente é salvo no atributo advanceRemaining do pagamento
+  db.payments.push({
+    id: paymentId,
+    date: paymentDate,
+    amount: paymentAmount,
+    coveredDays: covered,
+    notes: paymentNotes,
+    advanceRemaining: remaining
+  });
+
   saveToStorage();
-  selectedWeeks = []; renderWeeksList(); updatePaymentSummary(); updateDashboardData();
+  
+  // Limpa campos adicionais de Misto
+  const inputCash = document.getElementById('input-payment-cash-amount');
+  const inputDeposit = document.getElementById('input-payment-deposit-amount');
+  if (inputCash) inputCash.value = '';
+  if (inputDeposit) inputDeposit.value = '';
+  
+  selectedWeeks = [];
+  renderWeeksList();
+  updatePaymentSummary();
+  updateDashboardData();
   alert(texts['msg-payment-success']);
 }
 
@@ -1319,9 +1636,15 @@ function renderPaymentHistory() {
       periodText = dates.length === 1 ? formatDateStringDisplay(dates[0]) : `${formatDateStringDisplay(dates[0])} ${texts['week-to']} ${formatDateStringDisplay(dates[dates.length-1])} (${dates.length} ${texts['week-days']})`;
     }
 
+    const hasAdvance = pay.advanceRemaining > 0;
+    const advanceBadge = hasAdvance ? `<div style="font-size:0.75rem; color: var(--accent-purple); font-weight:600; margin-top: 2px;"><i data-lucide="coins" style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-right: 2px;"></i>Crédito: ${formatCurrency(pay.advanceRemaining)}</div>` : '';
+
     tr.innerHTML = `
       <td>${formatDateStringDisplay(pay.date)}</td>
-      <td style="color: var(--status-paid);">${formatCurrency(pay.amount)}</td>
+      <td style="color: var(--status-paid); font-weight: 700;">
+        ${formatCurrency(pay.amount)}
+        ${advanceBadge}
+      </td>
       <td>${periodText}</td>
       <td><span class="history-pending-tag"><i data-lucide="check"></i> ${texts['status-processed']}</span></td>
       <td>${pay.notes || '-'}</td>
@@ -1365,6 +1688,48 @@ function loadSettingsFields() {
     const chk = document.getElementById(`offday-${i}`);
     if (chk) chk.checked = offDays.includes(i);
   }
+
+  // Carrega configurações de meio período padrão
+  const halfDays = db.settings.halfDays || {};
+  for (let i = 0; i <= 6; i++) {
+    const chk = document.getElementById(`halfday-active-${i}`);
+    const sel = document.getElementById(`halfday-period-${i}`);
+    if (chk && sel) {
+      const period = halfDays[i];
+      if (period) {
+        chk.checked = true;
+        sel.value = period;
+        sel.disabled = false;
+      } else {
+        chk.checked = false;
+        sel.value = 'morning';
+        sel.disabled = true;
+      }
+    }
+  }
+}
+
+function toggleHalfDaySelect(dayIndex) {
+  const chk = document.getElementById(`halfday-active-${dayIndex}`);
+  const sel = document.getElementById(`halfday-period-${dayIndex}`);
+  if (chk && sel) {
+    sel.disabled = !chk.checked;
+  }
+}
+
+function saveHalfDaysSettings(event) {
+  event.preventDefault();
+  const halfDays = {};
+  for (let i = 0; i <= 6; i++) {
+    const chk = document.getElementById(`halfday-active-${i}`);
+    const sel = document.getElementById(`halfday-period-${i}`);
+    if (chk && chk.checked && sel) {
+      halfDays[i] = sel.value;
+    }
+  }
+  db.settings.halfDays = halfDays;
+  saveToStorage();
+  alert(translations[db.settings.language]['msg-save-success']);
 }
 
 function saveOffDaysSettings(event) {
@@ -1431,6 +1796,8 @@ function openBatchModal() {
       ${texts['msg-no-batch-days']}
     </div>
   `;
+  document.getElementById('batch-start-date').value = '';
+  document.getElementById('batch-end-date').value = '';
   document.getElementById('batch-modal').classList.add('active');
   lucide.createIcons();
 }
@@ -1446,15 +1813,27 @@ function generateBatchDaysList() {
   const texts = translations[db.settings.language || 'pt-BR'];
   if (!startStr || !endStr) return;
 
-  const start = new Date(startStr), end = new Date(endStr);
+  const start = parseLocalDate(startStr);
+  const end = parseLocalDate(endStr);
   if (start > end) return;
   container.innerHTML = '';
   let current = new Date(start);
+  const halfDays = db.settings.halfDays || {};
+  const defaultPeriod = document.getElementById('batch-default-period').value;
+  
   while (current <= end) {
     const dateStr = formatDateISO(current);
     const dayOfWeek = current.getDay();
     const existing = db.workedDays[dateStr];
-    let period = existing ? existing.period : (db.settings.offDays.includes(dayOfWeek) ? 'off' : 'morning');
+    
+    let period = defaultPeriod;
+    if (existing) {
+      period = existing.period;
+    } else if (db.settings.offDays.includes(dayOfWeek)) {
+      period = 'off';
+    } else if (halfDays[dayOfWeek]) {
+      period = halfDays[dayOfWeek];
+    }
     
     const row = document.createElement('div');
     row.className = 'batch-day-row';
@@ -1486,6 +1865,7 @@ function applyDefaultPeriodToBatchDays() {
   const defaultPeriod = document.getElementById('batch-default-period').value;
   const rows = document.querySelectorAll('.batch-day-row');
   const offDays = db.settings.offDays || [4];
+  const halfDays = db.settings.halfDays || {};
 
   rows.forEach(row => {
     const select = row.querySelector('.batch-day-period-select');
@@ -1497,6 +1877,8 @@ function applyDefaultPeriodToBatchDays() {
 
       if (offDays.includes(dayOfWeek)) {
         select.value = 'off';
+      } else if (halfDays[dayOfWeek]) {
+        select.value = halfDays[dayOfWeek];
       } else {
         select.value = defaultPeriod;
       }
@@ -1522,11 +1904,30 @@ function saveBatchShifts(event) {
       const rate = isNaN(rateVal) ? getStandardRateForPeriod(period) : rateVal;
       const existing = db.workedDays[date] || { amountPaid: 0, paymentsApplied: {} };
       
-      db.workedDays[date] = {
-        date, period, rate, amountPaid: existing.amountPaid, pendingAmount: Math.max(0, rate - existing.amountPaid),
-        status: existing.amountPaid >= rate ? 'paid' : (existing.amountPaid > 0 ? 'partial' : 'unpaid'),
-        notes: 'Lote', paymentsApplied: existing.paymentsApplied
+      // Se o novo rate for menor que o amountPaid já registrado, devolvemos
+      if (existing.amountPaid > rate) {
+        refundPaymentCreditsFromDay(existing, rate);
+      }
+      
+      const amountPaid = existing.amountPaid || 0;
+      const pendingAmount = Math.max(0, rate - amountPaid);
+      const status = amountPaid >= rate ? 'paid' : (amountPaid > 0 ? 'partial' : 'unpaid');
+      
+      const newDay = {
+        date: date,
+        period: period,
+        rate: rate,
+        amountPaid: amountPaid,
+        pendingAmount: pendingAmount,
+        status: status,
+        notes: 'Lote',
+        paymentsApplied: existing.paymentsApplied || {}
       };
+      
+      // Aplica créditos de adiantamento, se houver
+      applyAdvanceCreditsToDay(newDay);
+      
+      db.workedDays[date] = newDay;
     }
   });
   saveToStorage(); closeBatchModal(); renderCalendar(); updateDashboardData();
@@ -1541,6 +1942,8 @@ function openBatchRemoveModal() {
       ${texts['msg-no-remove-days']}
     </div>
   `;
+  document.getElementById('batch-remove-start-date').value = '';
+  document.getElementById('batch-remove-end-date').value = '';
   document.getElementById('batch-remove-modal').classList.add('active');
 }
 
@@ -1553,7 +1956,8 @@ function generateBatchRemoveDaysList() {
   const endStr = document.getElementById('batch-remove-end-date').value;
   const container = document.getElementById('batch-remove-days-container');
   if (!startStr || !endStr) return;
-  const start = new Date(startStr), end = new Date(endStr);
+  const start = parseLocalDate(startStr);
+  const end = parseLocalDate(endStr);
   container.innerHTML = '';
   let current = new Date(start);
   let found = 0;
@@ -1581,7 +1985,13 @@ function saveBatchRemoveShifts(event) {
   if (!confirm(texts['msg-delete-confirm'])) return;
   checks.forEach(chk => {
     const date = chk.getAttribute('data-date');
-    if (db.workedDays[date] && db.workedDays[date].amountPaid === 0) delete db.workedDays[date];
+    const day = db.workedDays[date];
+    if (day) {
+      if (day.amountPaid > 0) {
+        refundPaymentCreditsFromDay(day, 0);
+      }
+      delete db.workedDays[date];
+    }
   });
   saveToStorage(); closeBatchRemoveModal(); renderCalendar(); updateDashboardData();
   alert(texts['msg-batch-remove-success']);
