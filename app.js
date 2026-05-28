@@ -4,13 +4,13 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.15';
-const APP_BUILD_DATE = '2026-05-28 09:52:33';
+const APP_VERSION = '1.0.16';
+const APP_BUILD_DATE = '2026-05-28 09:58:41';
 
-// CONFIGURAÃƒâ€¡ÃƒÆ’O DO FIREBASE
+// CONFIGURAÇÃO DO FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyAlY3MVb-8jvvcwjOtd0VqRP427MISJDjg",
   authDomain: "dias-trabalhados-bf99a.firebaseapp.com",
@@ -22,10 +22,54 @@ const firebaseConfig = {
   measurementId: "G-B2TPPJMH55"
 };
 
+// Lista de e-mails permitidos
+const ALLOWED_EMAILS = [
+  'edneypugliese.dev@gmail.com',
+  'seu-email@gmail.com'
+];
+
 // Inicializa Firebase
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+// Monitora o estado de autenticação
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    if (ALLOWED_EMAILS.includes(user.email)) {
+      console.log("Usuário autorizado:", user.email);
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app-content').style.display = 'flex';
+      await initDatabase();
+    } else {
+      console.warn("Acesso negado para:", user.email);
+      showLoginError("Acesso restrito. Seu e-mail não está na lista de permissões.");
+      await signOut(auth);
+    }
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app-content').style.display = 'none';
+  }
+});
+
+function showLoginError(msg) {
+  const errorEl = document.getElementById('login-error-msg');
+  if (errorEl) {
+    errorEl.innerText = msg;
+    errorEl.style.display = 'block';
+  }
+}
+
+// Função de Login
+async function handleLogin() {
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (error) {
+    console.error("Erro no login:", error);
+    showLoginError("Falha na autenticação com o Google. Tente novamente.");
+  }
+}
 
 // Configurações do Banco de Dados Local (LocalStorage)
 const DB_STORAGE_KEY = 'fluxoturno_db';
@@ -44,7 +88,7 @@ const DEFAULT_DB = {
   payments: []    // Formato: [{ id, date, amount, coveredDays: [], notes }]
 };
 
-// TraduÃ§ões para Português e Italiano
+// Traduções para Português e Italiano
 const translations = {
   'pt-BR': {
     // Sidebar
@@ -415,17 +459,22 @@ const MONTH_NAMES = [];
 const WEEKDAY_NAMES = [];
 
 /* ==========================================================================
-   INICIALIZAÃƒâ€¡ÃƒÆ’O DA APLICAÃƒâ€¡ÃƒÆ’O
+   INICIALIZAÇÃO DA APLICAÇÃO
    ========================================================================== */
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await initDatabase();
   renderAppVersion();
   initNavigation();
   initDashboard();
   initCurrentDate();
 
-  // Escuta alteração do valor do pagamento para atualizar a diVisão do Misto se estiver ativo
+  // Configura botão de login do Google
+  const loginBtn = document.getElementById('btn-google-login');
+  if (loginBtn) {
+    loginBtn.addEventListener('click', handleLogin);
+  }
+
+  // Escuta alteração do valor do pagamento para atualizar a divisão do Misto se estiver ativo
   const paymentAmountInput = document.getElementById('input-payment-amount');
   const inputCash = document.getElementById('input-payment-cash-amount');
   const inputDeposit = document.getElementById('input-payment-deposit-amount');
@@ -458,14 +507,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Inicializa o banco de dados carregando do Firebase ou localStorage
 async function initDatabase() {
-  // Tenta autenticar anonimamente antes de acessar o banco
-  try {
-    await signInAnonymously(auth);
-    console.log("Autenticado anonimamente no Firebase.");
-  } catch (error) {
-    console.error("Erro na autenticação anÃƒÂ´nima:", error.code, error.message);
-  }
-
   // Tenta carregar do Firebase primeiro se estiver autenticado
   if (database && auth.currentUser) {
     try {
@@ -555,7 +596,7 @@ function renderAll() {
   }
 }
 
-// Aplica as traduÃ§ões baseadas no idioma atual
+// Aplica as Traduções baseadas no idioma atual
 function applyLanguage() {
   const lang = db.settings.language || 'pt-BR';
   const texts = translations[lang];
@@ -2077,7 +2118,19 @@ function saveBatchRemoveShifts(event) {
   alert(texts['msg-batch-remove-success']);
 }
 
+async function handleLogout() {
+  if (confirm("Deseja realmente sair?")) {
+    try {
+      await signOut(auth);
+      window.location.reload();
+    } catch (error) {
+      console.error("Erro ao sair:", error);
+    }
+  }
+}
+
 // Expoe funcoes ao escopo global
+window.handleLogout = handleLogout;
 window.quickLogShift = quickLogShift;
 window.changeMonth = changeMonth;
 window.goToCurrentMonth = goToCurrentMonth;
@@ -2106,6 +2159,7 @@ window.closeBatchRemoveModal = closeBatchRemoveModal;
 window.refundPaymentCreditsFromDay = refundPaymentCreditsFromDay;
 window.deletePayment = deletePayment;
 window.openDayModal = openDayModal;
+
 
 
 
