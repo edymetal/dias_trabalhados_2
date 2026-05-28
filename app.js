@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.13';
-const APP_BUILD_DATE = '2026-05-28 09:37:36';
+const APP_VERSION = '1.0.14';
+const APP_BUILD_DATE = '2026-05-28 09:41:04';
 
 // CONFIGURAÃƒâ€¡ÃƒÆ’O DO FIREBASE
 const firebaseConfig = {
@@ -44,7 +44,7 @@ const DEFAULT_DB = {
   payments: []    // Formato: [{ id, date, amount, coveredDays: [], notes }]
 };
 
-// TraduÃ§Ãµes para PortuguÃªs e Italiano
+// TraduÃ§ões para Português e Italiano
 const translations = {
   'pt-BR': {
     // Sidebar
@@ -487,7 +487,7 @@ async function initDatabase() {
     loadFromLocalStorage();
   }
 
-  // Garantir estruturas bÃ¡sicas e retrocompatibilidade
+  // Garantir estruturas básicas e retrocompatibilidade
   if (!db.settings) {
     db.settings = { ...DEFAULT_DB.settings };
   } else {
@@ -506,7 +506,7 @@ async function initDatabase() {
     }
   });
   
-  // ApÃ³s carregar, se estivermos na UI principal, renderizamos tudo
+  // Após carregar, se estivermos na UI principal, renderizamos tudo
   if (typeof renderCalendar === 'function') {
     renderAll();
   }
@@ -541,7 +541,7 @@ async function saveToStorage() {
   }
 }
 
-// FunÃ§Ã£o auxiliar para renderizar toda a UI (chamada apÃ³s carga inicial)
+// Função auxiliar para renderizar toda a UI (chamada após carga inicial)
 function renderAll() {
   if (document.getElementById('calendar-days-grid')) {
     updateDashboardData();
@@ -555,7 +555,7 @@ function renderAll() {
   }
 }
 
-// Aplica as traduÃ§Ãµes baseadas no idioma atual
+// Aplica as traduÃ§ões baseadas no idioma atual
 function applyLanguage() {
   const lang = db.settings.language || 'pt-BR';
   const texts = translations[lang];
@@ -575,7 +575,7 @@ function applyLanguage() {
   WEEKDAY_NAMES.length = 0;
   for (let i = 0; i < 7; i++) WEEKDAY_NAMES.push(texts[`day-${i}`]);
 
-  // Atualiza o Calendário se estiver visÃ­vel
+  // Atualiza o Calendário se estiver visível
   if (document.getElementById('section-calendar').classList.contains('active')) {
     renderCalendar();
   }
@@ -592,7 +592,7 @@ function setLanguage(lang) {
     applyLanguage();
     initCurrentDate();
     
-    // Atualiza subtÃ­tulo da pÃ¡gina atual
+    // Atualiza subtítulo da página atual
     const activeNav = document.querySelector('.nav-item.active');
     if (activeNav) {
       const tabName = activeNav.getAttribute('data-tab');
@@ -646,7 +646,7 @@ function initNavigation() {
         item.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       }
 
-      // Mostrar seÃ§Ã£o correspondente com animação
+      // Mostrar seção correspondente com animação
       sections.forEach(sec => {
         sec.classList.remove('active');
         if (sec.id === `section-${tabName}`) {
@@ -654,11 +654,11 @@ function initNavigation() {
         }
       });
 
-      // Atualizar tÃ­tulos
+      // Atualizar títulos
       pageTitle.innerText = texts[`nav-${tabName}`];
       pageSubtitle.innerText = texts[`header-${tabName}-subtitle`];
 
-      // Ações especÃ­ficas ao abrir cada tela
+      // Ações específicas ao abrir cada tela
       if (tabName === 'dashboard') {
         updateDashboardData();
       } else if (tabName === 'calendar') {
@@ -673,13 +673,13 @@ function initNavigation() {
         loadSettingsFields();
       }
       
-      // Atualiza Ã­cones Lucide recÃ©m-renderizados
+      // Atualiza ícones Lucide recÃ©m-renderizados
       lucide.createIcons();
     });
   });
 }
 
-// Atualiza os valores monetÃ¡rios nos formulÃ¡rios e textos
+// Atualiza os valores monetários nos formulários e textos
 function updateRateLabels() {
   const morning = db.settings.morningRate;
   const night = db.settings.nightRate;
@@ -694,7 +694,7 @@ function updateRateLabels() {
   document.getElementById('modal-price-night').innerText = formatCurrency(night);
   document.getElementById('modal-price-both').innerText = formatCurrency(both);
 
-  // Atualiza as opÃ§Ãµes do select de Período do lote com as tarifas vigentes
+  // Atualiza as opÃ§ões do select de Período do lote com as tarifas vigentes
   const batchDefaultSelect = document.getElementById('batch-default-period');
   if (batchDefaultSelect) {
     batchDefaultSelect.options[0].text = `${texts['legend-morning']} (${formatCurrency(morning)})`;
@@ -765,7 +765,7 @@ function getWeekRange(dateStr) {
   };
 }
 
-// Aplica Créditos de adiantamento disponÃ­veis a um dia trabalhado que tenha saldo pendente
+// Aplica Créditos de adiantamento disponíveis a um dia trabalhado que tenha saldo pendente
 function applyAdvanceCreditsToDay(day) {
   if (day.period === 'none' || day.period === 'off') return;
   
@@ -845,7 +845,7 @@ function initDashboard() {
 }
 
 function updateDashboardData() {
-  // CÃ¡lculos financeiros totais
+  // Cálculos financeiros totais
   let totalEarnings = 0;
   let totalReceived = 0;
   let totalPending = 0;
@@ -859,7 +859,7 @@ function updateDashboardData() {
   Object.keys(db.workedDays).forEach(dateStr => {
     const dayData = db.workedDays[dateStr];
     
-    // Desconsidera dias sem Período ou folga do cÃ¡lculo financeiro
+    // Desconsidera dias sem Período ou folga do cálculo financeiro
     if (dayData.period !== 'none' && dayData.period !== 'off') {
       const rate = dayData.rate || 0;
       totalEarnings += rate;
@@ -915,15 +915,15 @@ function updateDashboardData() {
       if (pendingIcon) pendingIcon.innerHTML = `<i data-lucide="alert-circle"></i>`;
     }
     
-    // Atualiza os Ã­cones Lucide no card recÃ©m-modificado
+    // Atualiza os ícones Lucide no card recÃ©m-modificado
     lucide.createIcons();
   }
 
-  // Atualiza grÃ¡fico
+  // Atualiza gráfico
   renderEarningsChart();
 }
 
-// Cria/Atualiza o grÃ¡fico dinÃƒÂ¢mico
+// Cria/Atualiza o gráfico dinÃƒÂ¢mico
 function renderEarningsChart() {
   const ctx = document.getElementById('earningsChart').getContext('2d');
   const lang = db.settings.language === 'it-IT' ? 'it-IT' : 'pt-BR';
@@ -1020,7 +1020,7 @@ function renderEarningsChart() {
   });
 }
 
-// ação rÃ¡pida para registrar turno no dia de hoje
+// ação rápida para registrar turno no dia de hoje
 function quickLogShift(period) {
   const todayStr = formatDateISO(new Date());
   let rate = 0;
@@ -1048,7 +1048,7 @@ function quickLogShift(period) {
     status: existing.amountPaid >= rate ? 'paid' : (existing.amountPaid > 0 ? 'partial' : 'unpaid'),
     amountPaid: existing.amountPaid || 0,
     pendingAmount: Math.max(0, rate - (existing.amountPaid || 0)),
-    notes: existing.notes || 'Registrado via ação RÃ¡pida',
+    notes: existing.notes || 'Registrado via ação Rápida',
     paymentsApplied: existing.paymentsApplied || {}
   };
 
@@ -1626,7 +1626,7 @@ function processPayment(event) {
       return;
     }
     
-    // ConstrÃ³i notas descritivas
+    // Constrói notas descritivas
     paymentNotes = `${texts['opt-cash']}: ${formatCurrency(cashAmount)} / ${texts['opt-deposit']}: ${formatCurrency(depositAmount)}`;
   } else {
     paymentNotes = texts['opt-' + paymentMethod.toLowerCase().replace('Ã©', 'e')] || paymentMethod;
@@ -2106,6 +2106,8 @@ window.closeBatchRemoveModal = closeBatchRemoveModal;
 window.refundPaymentCreditsFromDay = refundPaymentCreditsFromDay;
 window.deletePayment = deletePayment;
 window.openDayModal = openDayModal;
+
+
 
 
 
