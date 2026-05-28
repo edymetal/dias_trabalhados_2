@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    APP CONTROLLER & LOGIC - CONTROLE DE DIAS TRABALHADOS
    ========================================================================== */
 
@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.22';
-const APP_BUILD_DATE = '2026-05-28 10:43:47';
+const APP_VERSION = '1.0.23';
+const APP_BUILD_DATE = '2026-05-28 11:13:11';
 
 // CONFIGURAÇÃO DO FIREBASE
 const firebaseConfig = {
@@ -22,37 +22,54 @@ const firebaseConfig = {
   measurementId: "G-B2TPPJMH55"
 };
 
-// Lista de e-mails permitidos
-const ALLOWED_EMAILS = [
-  'edneypugliese.dev@gmail.com'
-];
-
-// Inicializa Firebase
-const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
-const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
+// Configuração de Acesso (Whitelist)
+const MASTER_ADMINS = ['edneypugliese.dev@gmail.com', 'edneypugleise@gmail.com'];
 
 // Monitora o estado de autenticação
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    if (ALLOWED_EMAILS.includes(user.email)) {
-      console.log("Usuário autorizado:", user.email);
-      
-      // Preenche dados do perfil
-      document.getElementById('user-photo').src = user.photoURL || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
-      document.getElementById('user-name').innerText = user.displayName || 'Usuário';
-      document.getElementById('user-email').innerText = user.email;
-      document.getElementById('user-profile').style.display = 'flex';
+    try {
+      // Busca a lista de e-mails autorizados no banco de dados
+      const authRef = ref(database, 'authorized_emails');
+      const snapshot = await get(authRef);
+      let allowedEmails = snapshot.val();
 
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('app-content').style.display = 'flex';
-      await initDatabase();
-    } else {
-      console.warn("Acesso negado para:", user.email);
-      alert("Acesso negado! O e-mail " + user.email + " não tem permissão para acessar este sistema.");
-      showLoginError("Acesso restrito. Seu e-mail não está na lista de permissões.");
-      await signOut(auth);
+      // Se a lista não existir no banco (primeira vez), inicializa com os Master Admins
+      if (!allowedEmails) {
+        allowedEmails = [...MASTER_ADMINS];
+        await set(authRef, allowedEmails);
+      }
+
+      // Verifica se o usuário tem permissão
+      if (allowedEmails.includes(user.email) || MASTER_ADMINS.includes(user.email)) {
+        console.log("Usuário autorizado:", user.email);
+        
+        // Preenche dados do perfil
+        document.getElementById('user-photo').src = user.photoURL || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
+        document.getElementById('user-name').innerText = user.displayName || 'Usuário';
+        document.getElementById('user-email').innerText = user.email;
+        document.getElementById('user-profile').style.display = 'flex';
+
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app-content').style.display = 'flex';
+        await initDatabase();
+      } else {
+        console.warn("Acesso negado para:", user.email);
+        alert("Acesso negado! O e-mail " + user.email + " não tem permissão para acessar este sistema.");
+        showLoginError("Acesso restrito. Seu e-mail não está na lista de permissões.");
+        await signOut(auth);
+      }
+    } catch (error) {
+      console.error("Erro ao verificar permissões:", error);
+      // Fallback de segurança: permite os Master Admins mesmo se o banco falhar
+      if (MASTER_ADMINS.includes(user.email)) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app-content').style.display = 'flex';
+        await initDatabase();
+      } else {
+        showLoginError("Erro de conexão ao verificar permissões.");
+        await signOut(auth);
+      }
     }
   } else {
     document.getElementById('login-screen').style.display = 'flex';
