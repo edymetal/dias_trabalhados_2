@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.25';
-const APP_BUILD_DATE = '2026-05-28 11:19:45';
+const APP_VERSION = '1.0.26';
+const APP_BUILD_DATE = '2026-05-28 11:20:20';
 
 // CONFIGURAÇÃO DO FIREBASE
 const firebaseConfig = {
