@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.28';
-const APP_BUILD_DATE = '2026-05-28 11:28:51';
+const APP_VERSION = '1.0.29';
+const APP_BUILD_DATE = '2026-05-28 15:22:12';
 
 // CONFIGURAÇÃO DO FIREBASE
 const firebaseConfig = {
@@ -711,12 +711,37 @@ function initNavigation() {
   const sections = document.querySelectorAll('.app-section');
   const pageTitle = document.getElementById('page-title');
   const pageSubtitle = document.getElementById('page-subtitle');
+  const sidebar = document.querySelector('.sidebar');
+  const sidebarOverlay = document.getElementById('sidebar-overlay');
+  const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
+
+  // Função para fechar sidebar no mobile
+  const closeSidebar = () => {
+    if (window.innerWidth <= 1024) {
+      sidebar.classList.remove('active');
+      sidebarOverlay.classList.remove('active');
+    }
+  };
+
+  if (btnToggleSidebar) {
+    btnToggleSidebar.addEventListener('click', () => {
+      sidebar.classList.toggle('active');
+      sidebarOverlay.classList.toggle('active');
+    });
+  }
+
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener('click', closeSidebar);
+  }
 
   navItems.forEach(item => {
     item.addEventListener('click', () => {
       const tabName = item.getAttribute('data-tab');
       const texts = translations[db.settings.language || 'pt-BR'];
       
+      // Fecha a sidebar se estiver no mobile
+      closeSidebar();
+
       // Atualizar classe ativa na navegação
       navItems.forEach(i => i.classList.remove('active'));
       item.classList.add('active');
@@ -757,6 +782,9 @@ function initNavigation() {
       lucide.createIcons();
     });
   });
+
+  // Inicializa ícones Lucide (como o botão de menu)
+  lucide.createIcons();
 }
 
 // Atualiza os valores monetários nos formulários e textos
