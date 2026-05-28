@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.17';
-const APP_BUILD_DATE = '2026-05-28 10:03:44';
+const APP_VERSION = '1.0.18';
+const APP_BUILD_DATE = '2026-05-28 10:08:18';
 
 // CONFIGURAÇÃO DO FIREBASE
 const firebaseConfig = {
@@ -652,17 +652,19 @@ function renderAppVersion() {
   document.getElementById('val-app-build-date').innerText = APP_BUILD_DATE;
 }
 
-// Inicializa a data atual no cabeÃ§alho
+// Inicializa a data atual no cabeçalho
 function initCurrentDate() {
-  const lang = db.settings.language === 'it-IT' ? 'it-IT' : 'pt-BR';
+  const lang = (db && db.settings && db.settings.language === 'it-IT') ? 'it-IT' : 'pt-BR';
   const options = { day: 'numeric', month: 'long', year: 'numeric' };
   const todayStr = new Date().toLocaleDateString(lang, options);
-  document.getElementById('current-header-date').innerText = todayStr;
+  const headerDateEl = document.getElementById('current-header-date');
+  if (headerDateEl) headerDateEl.innerText = todayStr;
   
   const today = new Date();
   const day = String(today.getDate()).padStart(2, '0');
   const month = String(today.getMonth() + 1).padStart(2, '0');
-  document.getElementById('quick-today-date').innerText = `${day}/${month}`;
+  const quickDateEl = document.getElementById('quick-today-date');
+  if (quickDateEl) quickDateEl.innerText = `${day}/${month}`;
 }
 
 // Define o comportamento de navegação por abas
