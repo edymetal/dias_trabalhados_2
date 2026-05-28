@@ -3,8 +3,8 @@
    ========================================================================== */
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.7';
-const APP_BUILD_DATE = '2026-05-28 08:11:52';
+const APP_VERSION = '1.0.8';
+const APP_BUILD_DATE = '2026-05-28 08:15:00';
 
 // CONFIGURAÇÃO DO FIREBASE
 const firebaseConfig = {
