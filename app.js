@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.16';
-const APP_BUILD_DATE = '2026-05-28 09:58:41';
+const APP_VERSION = '1.0.17';
+const APP_BUILD_DATE = '2026-05-28 10:03:44';
 
 // CONFIGURAÇÃO DO FIREBASE
 const firebaseConfig = {
@@ -465,7 +465,6 @@ const WEEKDAY_NAMES = [];
 document.addEventListener('DOMContentLoaded', async () => {
   renderAppVersion();
   initNavigation();
-  initDashboard();
   initCurrentDate();
 
   // Configura botão de login do Google
@@ -886,6 +885,7 @@ function initDashboard() {
 }
 
 function updateDashboardData() {
+  if (!db) return; // Segurança contra carga incompleta
   // Cálculos financeiros totais
   let totalEarnings = 0;
   let totalReceived = 0;
@@ -966,6 +966,7 @@ function updateDashboardData() {
 
 // Cria/Atualiza o gráfico dinÃƒÂ¢mico
 function renderEarningsChart() {
+  if (!db) return; // Segurança contra carga incompleta
   const ctx = document.getElementById('earningsChart').getContext('2d');
   const lang = db.settings.language === 'it-IT' ? 'it-IT' : 'pt-BR';
   const texts = translations[db.settings.language || 'pt-BR'];
