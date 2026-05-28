@@ -3,8 +3,8 @@
    ========================================================================== */
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.4';
-const APP_BUILD_DATE = '2026-05-28 07:35:12';
+const APP_VERSION = '1.0.5';
+const APP_BUILD_DATE = '2026-05-28 07:39:09';
 
 // Configurações do Banco de Dados Local (LocalStorage)
 const DB_STORAGE_KEY = 'fluxoturno_db';
@@ -565,6 +565,11 @@ function initNavigation() {
       // Atualizar classe ativa na navegação
       navItems.forEach(i => i.classList.remove('active'));
       item.classList.add('active');
+
+      // Se estiver em mobile, rola o item para o centro da visão no menu scrollable
+      if (window.innerWidth <= 768) {
+        item.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
 
       // Mostrar seção correspondente com animação
       sections.forEach(sec => {
