@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.24';
-const APP_BUILD_DATE = '2026-05-28 11:16:50';
+const APP_VERSION = '1.0.25';
+const APP_BUILD_DATE = '2026-05-28 11:19:45';
 
 // CONFIGURAÇÃO DO FIREBASE
 const firebaseConfig = {
@@ -24,6 +24,12 @@ const firebaseConfig = {
 
 // Configuração de Acesso (Whitelist)
 const MASTER_ADMINS = ['edneypugliese.dev@gmail.com', 'edneypugleise@gmail.com'];
+
+// Inicializa Firebase
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
 
 // Monitora o estado de autenticação
 onAuthStateChanged(auth, async (user) => {
