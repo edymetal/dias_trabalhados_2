@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.18';
-const APP_BUILD_DATE = '2026-05-28 10:08:18';
+const APP_VERSION = '1.0.19';
+const APP_BUILD_DATE = '2026-05-28 10:22:17';
 
 // CONFIGURAÇÃO DO FIREBASE
 const firebaseConfig = {
@@ -24,8 +24,7 @@ const firebaseConfig = {
 
 // Lista de e-mails permitidos
 const ALLOWED_EMAILS = [
-  'edneypugliese.dev@gmail.com',
-  'seu-email@gmail.com'
+  'edneypugliese.dev@gmail.com'
 ];
 
 // Inicializa Firebase
