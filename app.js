@@ -6,9 +6,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-// VersÃ£o da aplicaÃ§Ã£o (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.12';
-const APP_BUILD_DATE = '2026-05-28 09:31:40';
+// Versão da aplicação (gerenciada automaticamente pelo Git Hook)
+const APP_VERSION = '1.0.13';
+const APP_BUILD_DATE = '2026-05-28 09:37:36';
 
 // CONFIGURAÃƒâ€¡ÃƒÆ’O DO FIREBASE
 const firebaseConfig = {
@@ -27,7 +27,7 @@ const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 const auth = getAuth(app);
 
-// ConfiguraÃ§Ãµes do Banco de Dados Local (LocalStorage)
+// Configurações do Banco de Dados Local (LocalStorage)
 const DB_STORAGE_KEY = 'fluxoturno_db';
 
 // Estado Inicial do Banco de Dados
@@ -36,8 +36,8 @@ const DEFAULT_DB = {
     morningRate: 35.00,
     nightRate: 25.00,
     currency: 'EUR',
-    offDays: [4], // Quinta-feira (4) por padrÃ£o
-    halfDays: {}, // Meio perÃ­odo padrÃ£o por dia da semana
+    offDays: [4], // Quinta-feira (4) por padrão
+    halfDays: {}, // Meio Período padrão por dia da semana
     language: 'pt-BR'
   },
   workedDays: {}, // Formato: { 'YYYY-MM-DD': { date, period, rate, status, amountPaid, pendingAmount, notes, paymentsApplied: { paymentId: amount } } }
@@ -49,49 +49,49 @@ const translations = {
   'pt-BR': {
     // Sidebar
     'nav-dashboard': 'Dashboard',
-    'nav-calendar': 'CalendÃ¡rio',
+    'nav-calendar': 'Calendário',
     'nav-payments': 'Pagamentos',
     'nav-history': 'Histórico',
-    'nav-settings': 'ConfiguraÃ§Ãµes',
-    'sidebar-version': 'VersÃ£o:',
+    'nav-settings': 'Configurações',
+    'sidebar-version': 'Versão:',
     'sidebar-updated': 'Atualizado:',
     
     // Header
     'header-dashboard-title': 'Dashboard',
-    'header-dashboard-subtitle': 'VisÃ£o geral do seu trabalho e finanças.',
-    'header-calendar-title': 'CalendÃ¡rio',
-    'header-calendar-subtitle': 'Visualize o mÃªs de trabalho e configure seus turnos clicando nos dias.',
+    'header-dashboard-subtitle': 'Visão geral do seu trabalho e finanças.',
+    'header-calendar-title': 'Calendário',
+    'header-calendar-subtitle': 'Visualize o mês de trabalho e configure seus turnos clicando nos dias.',
     'header-payments-title': 'Pagamentos',
     'header-payments-subtitle': 'Selecione os ciclos semanais para registrar recebimentos totais ou parciais.',
     'header-history-title': 'Histórico',
-    'header-history-subtitle': 'Registro completo de pagamentos e pendÃªncias finalizadas.',
-    'header-settings-title': 'ConfiguraÃ§Ãµes',
-    'header-settings-subtitle': 'Ajustes finos do sistema, exportaÃ§Ã£o de dados e tarifas padrÃ£o.',
+    'header-history-subtitle': 'Registro completo de pagamentos e pendências finalizadas.',
+    'header-settings-title': 'Configurações',
+    'header-settings-subtitle': 'Ajustes finos do sistema, exportação de dados e tarifas padrão.',
 
     // Dashboard
     'stat-total-accumulated': 'Total Acumulado',
     'stat-total-received': 'Total Recebido',
     'stat-total-pending': 'Total Pendente',
     'stat-this-week': 'Esta Semana',
-    'chart-title': 'Ganhos vs. Recebimentos por MÃªs',
-    'quick-actions-title': 'AÃ§Ãµes RÃ¡pidas',
+    'chart-title': 'Ganhos vs. Recebimentos por mês',
+    'quick-actions-title': 'Ações Rápidas',
     'quick-actions-desc': 'Registre rapidamente o seu turno para o dia de hoje',
-    'btn-morning-shift': 'Turno da ManhÃ£',
+    'btn-morning-shift': 'Turno da Manhã',
     'btn-night-shift': 'Turno da Noite',
     'btn-both-shifts': 'Ambos os Turnos',
     'btn-off-day': 'Dia de Folga',
-    'rate-default': 'Valor padrÃ£o:',
+    'rate-default': 'Valor padrão:',
     'log-rest': 'Registrar descanso',
 
     // Calendar
-    'btn-batch-launch': 'Lançar VÃ¡rios Dias',
-    'btn-batch-remove': 'Remover VÃ¡rios Dias',
+    'btn-batch-launch': 'Lançar Vários Dias',
+    'btn-batch-remove': 'Remover Vários Dias',
     'btn-today': 'Hoje',
     'legend-paid': 'Pago',
     'legend-partial': 'Parcialmente Pago',
     'legend-pending': 'Pendente',
     'legend-off': 'Folga',
-    'legend-morning': 'ManhÃ£',
+    'legend-morning': 'Manhã',
     'legend-night': 'Noite',
     'legend-both': 'Ambos',
 
@@ -104,10 +104,10 @@ const translations = {
     'summary-total-due': 'Valor Total Devido:',
     'summary-already-paid': 'Saldo Pendente nas Selecionadas:',
     'summary-to-pay': 'Falta Pagar:',
-    'label-received-amount': 'Valor Recebido (â‚¬)',
+    'label-received-amount': 'Valor Recebido (€)',
     'label-payment-date': 'Data do Recebimento',
-    'label-payment-method': 'MÃ©todo de Pagamento',
-    'label-notes': 'EspecificaÃ§Ã£o / Notas',
+    'label-payment-method': 'Método de Pagamento',
+    'label-notes': 'Especificação / Notas',
     'btn-confirm-receipt': 'Confirmar Recebimento',
     'opt-cash': 'Dinheiro',
     'opt-deposit': 'depósito',
@@ -120,71 +120,71 @@ const translations = {
     'payment-history-title': 'Histórico de Pagamentos Efetuados',
     'th-date': 'Data Recebimento',
     'th-amount': 'Valor Pago',
-    'th-period': 'PerÃ­odo Coberto',
-    'th-status': 'Status / PendÃªncia',
-    'th-notes': 'ObservaÃ§Ãµes',
-    'th-actions': 'AÃ§Ãµes',
+    'th-period': 'Período Coberto',
+    'th-status': 'Status / pendência',
+    'th-notes': 'Observações',
+    'th-actions': 'Ações',
     'btn-refund': 'Estornar',
     'status-processed': 'Processado',
 
     // Settings
-    'settings-rates-title': 'ConfiguraÃ§Ã£o de Tarifas',
-    'settings-rates-desc': 'Defina os valores padrÃ£o para cada perÃ­odo trabalhado. Novos dias utilizarÃ£o essas taxas.',
-    'label-morning-rate': 'Valor PerÃ­odo da ManhÃ£ (â‚¬)',
-    'label-night-rate': 'Valor PerÃ­odo da Noite (â‚¬)',
+    'settings-rates-title': 'Configuração de Tarifas',
+    'settings-rates-desc': 'Defina os valores padrão para cada Período trabalhado. Novos dias utilizarão essas taxas.',
+    'label-morning-rate': 'Valor Período da Manhã (€)',
+    'label-night-rate': 'Valor Período da Noite (€)',
     'btn-save-rates': 'Salvar Tarifas',
-    'settings-offdays-title': 'Folga Semanal PadrÃ£o',
-    'settings-offdays-desc': 'Selecione os dias da semana que sÃ£o suas folgas padrÃ£o. Eles serÃ£o sugeridos no Lançamento em lote e exibidos no calendÃ¡rio.',
+    'settings-offdays-title': 'Folga Semanal padrão',
+    'settings-offdays-desc': 'Selecione os dias da semana que são suas folgas padrão. Eles serão sugeridos no Lançamento em lote e exibidos no Calendário.',
     'btn-save-offdays': 'Salvar Folgas',
-    'settings-backup-title': 'Backup e RestauraÃ§Ã£o',
+    'settings-backup-title': 'Backup e Restauração',
     'settings-backup-desc': 'Exporte seus dados para seguranÃ§a ou importe o arquivo JSON em outro dispositivo.',
     'btn-export': 'Exportar Dados (JSON)',
     'btn-import': 'Importar Dados (JSON)',
     'danger-zone': 'Zona de Perigo',
-    'danger-zone-desc': 'Esta aÃ§Ã£o excluirÃ¡ permanentemente todos os registros de dias trabalhados e pagamentos.',
+    'danger-zone-desc': 'Esta ação excluirá permanentemente todos os registros de dias trabalhados e pagamentos.',
     'btn-clear-all': 'Apagar Todo o Histórico',
     'label-language': 'Idioma do Sistema',
 
     // Modals
-    'modal-period-label': 'Selecione o PerÃ­odo Trabalhado',
-    'modal-custom-rate': 'Valor Customizado para este Dia (â‚¬)',
-    'modal-notes-label': 'ObservaÃ§Ãµes',
-    'modal-fin-info': 'InformaÃ§Ãµes Financeiras do Dia',
+    'modal-period-label': 'Selecione o Período Trabalhado',
+    'modal-custom-rate': 'Valor Customizado para este Dia (€)',
+    'modal-notes-label': 'Observações',
+    'modal-fin-info': 'Informações Financeiras do Dia',
     'modal-status': 'Status:',
-    'modal-received': 'Valor JÃ¡ Recebido:',
+    'modal-received': 'Valor Já Recebido:',
     'modal-pending': 'Saldo Devedor:',
     'btn-delete': 'Excluir',
     'btn-save-record': 'Salvar Registro',
     'batch-title': 'Lançamento em Lote',
     'batch-start': 'Data Inicial',
     'batch-end': 'Data Final',
-    'batch-default-period': 'PerÃ­odo PadrÃ£o para Dias ÃƒÅ¡teis',
-    'batch-offday-note': 'Obs: Os dias de folga semanal configurados serÃ£o prÃ©-marcados como "Folga" automaticamente.',
+    'batch-default-period': 'Período padrão para Dias Úteis',
+    'batch-offday-note': 'Obs: Os dias de folga semanal configurados serão pré-marcados como "Folga" automaticamente.',
     'batch-customize-title': 'Personalizar Dias do Intervalo',
     'btn-cancel': 'Cancelar',
     'btn-save-batch': 'Salvar Lote de Dias',
     'batch-remove-title': 'Remover Dias em Lote',
-    'batch-remove-select': 'Selecionar Dias para RemoÃ§Ã£o',
-    'btn-confirm-remove': 'Confirmar RemoÃ§Ã£o',
+    'batch-remove-select': 'Selecionar Dias para Remoção',
+    'btn-confirm-remove': 'Confirmar Remoção',
 
     // Days & Months
     'day-0': 'Domingo',
     'day-1': 'Segunda-feira',
-    'day-2': 'TerÃ§a-feira',
+    'day-2': 'Terça-feira',
     'day-3': 'Quarta-feira',
     'day-4': 'Quinta-feira',
     'day-5': 'Sexta-feira',
-    'day-6': 'SÃ¡bado',
+    'day-6': 'Sábado',
     'short-day-0': 'Dom',
     'short-day-1': 'Seg',
     'short-day-2': 'Ter',
     'short-day-3': 'Qua',
     'short-day-4': 'Qui',
     'short-day-5': 'Sex',
-    'short-day-6': 'SÃ¡b',
+    'short-day-6': 'Sáb',
     'month-0': 'Janeiro',
     'month-1': 'Fevereiro',
-    'month-2': 'MarÃ§o',
+    'month-2': 'Março',
     'month-3': 'Abril',
     'month-4': 'Maio',
     'month-5': 'Junho',
@@ -199,31 +199,31 @@ const translations = {
     'msg-save-success': 'Salvo com sucesso!',
     'msg-delete-confirm': 'Tem certeza que deseja excluir?',
     'msg-backup-success': 'Backup importado com sucesso!',
-    'msg-invalid-file': 'Arquivo invÃ¡lido!',
-    'msg-select-period': 'Por favor, selecione um perÃ­odo.',
+    'msg-invalid-file': 'Arquivo inválido!',
+    'msg-select-period': 'Por favor, selecione um Período.',
     'msg-payment-success': 'Pagamento registrado com sucesso!',
     'msg-undo-confirm': 'Tem certeza que deseja estornar este pagamento?',
     'msg-undo-success': 'Pagamento estornado com sucesso!',
-    'msg-clear-confirm': 'ATENÃƒâ€¡ÃƒÆ’O: VocÃª perderÃ¡ definitivamente todos os registros. Deseja prosseguir?',
+    'msg-clear-confirm': 'ATENÇÃO: Você perderá definitivamente todos os registros. Deseja prosseguir?',
     'msg-batch-save-success': 'registros de dia salvos/atualizados com sucesso!',
     'msg-batch-remove-success': 'registros de dia removidos com sucesso!',
-    'msg-all-pending': 'Todas com PendÃªncia',
+    'msg-all-pending': 'Todas com pendência',
     'msg-no-days': 'Nenhum dia de trabalho registrado para processar pagamentos.',
     'msg-no-history': 'Nenhum registro de pagamento recebido no Histórico.',
     'msg-no-batch-days': 'Selecione as datas inicial e final para visualizar e personalizar os dias.',
     'msg-no-remove-days': 'Selecione as datas inicial e final para visualizar os dias com registros.',
     'opt-mixed': 'Misto (Dinheiro + depósito)',
-    'label-cash-amount': 'Valor em Dinheiro (â‚¬)',
-    'label-deposit-amount': 'Valor em depósito (â‚¬)',
+    'label-cash-amount': 'Valor em Dinheiro (€)',
+    'label-deposit-amount': 'Valor em depósito (€)',
     'msg-invalid-mixed-sum': 'A soma dos valores em dinheiro e depósito deve ser igual ao valor total recebido!',
-    'stat-total-credit': 'CrÃ©dito Antecipado',
+    'stat-total-credit': 'Crédito Antecipado',
     'general-balance-title': 'Saldo Geral Consolidado',
-    'general-balance-credit': 'CrÃ©dito DisponÃ­vel (Adiantado)',
+    'general-balance-credit': 'Crédito Disponível (Adiantado)',
     'general-balance-pending': 'Total Geral a Receber',
     'general-balance-zero': 'Tudo Pago / Zerado',
-    'settings-halfdays-title': 'Meio PerÃ­odo PadrÃ£o',
-    'settings-halfdays-desc': 'Defina os dias da semana em que vocÃª trabalha meio perÃ­odo fixo e qual o perÃ­odo padrÃ£o (ManhÃ£ ou Noite).',
-    'btn-save-halfdays': 'Salvar Meio PerÃ­odo'
+    'settings-halfdays-title': 'Meio Período padrão',
+    'settings-halfdays-desc': 'Defina os dias da semana em que Você trabalha meio Período fixo e qual o Período padrão (Manhã ou Noite).',
+    'btn-save-halfdays': 'Salvar Meio Período'
   },
   'it-IT': {
     // Sidebar
@@ -283,7 +283,7 @@ const translations = {
     'summary-total-due': 'Totale Dovuto:',
     'summary-already-paid': 'Saldo Pendente nelle Selezionate:',
     'summary-to-pay': 'Da Pagare:',
-    'label-received-amount': 'Importo Ricevuto (â‚¬)',
+    'label-received-amount': 'Importo Ricevuto (€)',
     'label-payment-date': 'Data di Incasso',
     'label-payment-method': 'Metodo di Pagamento',
     'label-notes': 'Specifiche / Note',
@@ -309,8 +309,8 @@ const translations = {
     // Settings
     'settings-rates-title': 'Configurazione Tariffe',
     'settings-rates-desc': 'Definisci i valori standard per ogni periodo lavorato. I nuovi giorni useranno queste tariffe.',
-    'label-morning-rate': 'Valore Periodo Mattina (â‚¬)',
-    'label-night-rate': 'Valore Periodo Sera (â‚¬)',
+    'label-morning-rate': 'Valore Periodo Mattina (€)',
+    'label-night-rate': 'Valore Periodo Sera (€)',
     'btn-save-rates': 'Salva Tariffe',
     'settings-offdays-title': 'Riposo Settimanale Standard',
     'settings-offdays-desc': 'Seleziona i giorni della settimana che sono i tuoi riposi standard.',
@@ -326,7 +326,7 @@ const translations = {
 
     // Modals
     'modal-period-label': 'Seleziona il Periodo Lavorato',
-    'modal-custom-rate': 'Valore Personalizzato per questo Giorno (â‚¬)',
+    'modal-custom-rate': 'Valore Personalizzato per questo Giorno (€)',
     'modal-notes-label': 'Note',
     'modal-fin-info': 'Informazioni Finanziarie del Giorno',
     'modal-status': 'Stato:',
@@ -392,8 +392,8 @@ const translations = {
     'msg-no-batch-days': 'Seleziona le date di inizio e fine per visualizzare e personalizzare i giorni.',
     'msg-no-remove-days': 'Seleziona le date di inizio e fine per visualizzare i giorni con i record.',
     'opt-mixed': 'Misto (Contanti + Deposito)',
-    'label-cash-amount': 'Importo in Contanti (â‚¬)',
-    'label-deposit-amount': 'Importo in Deposito (â‚¬)',
+    'label-cash-amount': 'Importo in Contanti (€)',
+    'label-deposit-amount': 'Importo in Deposito (€)',
     'msg-invalid-mixed-sum': 'La somma degli importi in contanti e deposito deve essere uguale all\'importo totale ricevuto!',
     'stat-total-credit': 'Credito Anticipato',
     'general-balance-title': 'Saldo Generale Consolidato',
@@ -425,7 +425,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initDashboard();
   initCurrentDate();
 
-  // Escuta alteraÃ§Ã£o do valor do pagamento para atualizar a divisÃ£o do Misto se estiver ativo
+  // Escuta alteração do valor do pagamento para atualizar a diVisão do Misto se estiver ativo
   const paymentAmountInput = document.getElementById('input-payment-amount');
   const inputCash = document.getElementById('input-payment-cash-amount');
   const inputDeposit = document.getElementById('input-payment-deposit-amount');
@@ -463,7 +463,7 @@ async function initDatabase() {
     await signInAnonymously(auth);
     console.log("Autenticado anonimamente no Firebase.");
   } catch (error) {
-    console.error("Erro na autenticaÃ§Ã£o anÃƒÂ´nima:", error.code, error.message);
+    console.error("Erro na autenticação anÃƒÂ´nima:", error.code, error.message);
   }
 
   // Tenta carregar do Firebase primeiro se estiver autenticado
@@ -575,7 +575,7 @@ function applyLanguage() {
   WEEKDAY_NAMES.length = 0;
   for (let i = 0; i < 7; i++) WEEKDAY_NAMES.push(texts[`day-${i}`]);
 
-  // Atualiza o CalendÃ¡rio se estiver visÃ­vel
+  // Atualiza o Calendário se estiver visÃ­vel
   if (document.getElementById('section-calendar').classList.contains('active')) {
     renderCalendar();
   }
@@ -606,7 +606,7 @@ function setLanguage(lang) {
   }
 }
 
-// Mostra a versÃ£o no rodapÃ© do menu
+// Mostra a Versão no rodapÃ© do menu
 function renderAppVersion() {
   document.getElementById('val-app-version').innerText = APP_VERSION;
   document.getElementById('val-app-build-date').innerText = APP_BUILD_DATE;
@@ -625,7 +625,7 @@ function initCurrentDate() {
   document.getElementById('quick-today-date').innerText = `${day}/${month}`;
 }
 
-// Define o comportamento de navegaÃ§Ã£o por abas
+// Define o comportamento de navegação por abas
 function initNavigation() {
   const navItems = document.querySelectorAll('.nav-item');
   const sections = document.querySelectorAll('.app-section');
@@ -637,16 +637,16 @@ function initNavigation() {
       const tabName = item.getAttribute('data-tab');
       const texts = translations[db.settings.language || 'pt-BR'];
       
-      // Atualizar classe ativa na navegaÃ§Ã£o
+      // Atualizar classe ativa na navegação
       navItems.forEach(i => i.classList.remove('active'));
       item.classList.add('active');
 
-      // Se estiver em mobile, rola o item para o centro da visÃ£o no menu scrollable
+      // Se estiver em mobile, rola o item para o centro da Visão no menu scrollable
       if (window.innerWidth <= 768) {
         item.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       }
 
-      // Mostrar seÃ§Ã£o correspondente com animaÃ§Ã£o
+      // Mostrar seÃ§Ã£o correspondente com animação
       sections.forEach(sec => {
         sec.classList.remove('active');
         if (sec.id === `section-${tabName}`) {
@@ -658,7 +658,7 @@ function initNavigation() {
       pageTitle.innerText = texts[`nav-${tabName}`];
       pageSubtitle.innerText = texts[`header-${tabName}-subtitle`];
 
-      // AÃ§Ãµes especÃ­ficas ao abrir cada tela
+      // Ações especÃ­ficas ao abrir cada tela
       if (tabName === 'dashboard') {
         updateDashboardData();
       } else if (tabName === 'calendar') {
@@ -694,7 +694,7 @@ function updateRateLabels() {
   document.getElementById('modal-price-night').innerText = formatCurrency(night);
   document.getElementById('modal-price-both').innerText = formatCurrency(both);
 
-  // Atualiza as opÃ§Ãµes do select de perÃ­odo do lote com as tarifas vigentes
+  // Atualiza as opÃ§Ãµes do select de Período do lote com as tarifas vigentes
   const batchDefaultSelect = document.getElementById('batch-default-period');
   if (batchDefaultSelect) {
     batchDefaultSelect.options[0].text = `${texts['legend-morning']} (${formatCurrency(morning)})`;
@@ -746,7 +746,7 @@ function getWeekRange(dateStr) {
   const day = parseInt(parts[2], 10);
   
   const date = new Date(year, month, day);
-  const dayOfWeek = date.getDay(); // 0 (Dom) a 6 (SÃ¡b)
+  const dayOfWeek = date.getDay(); // 0 (Dom) a 6 (Sáb)
   
   // Ajusta para segunda-feira ser o dia 1 e domingo o dia 7
   const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
@@ -765,14 +765,14 @@ function getWeekRange(dateStr) {
   };
 }
 
-// Aplica crÃ©ditos de adiantamento disponÃ­veis a um dia trabalhado que tenha saldo pendente
+// Aplica Créditos de adiantamento disponÃ­veis a um dia trabalhado que tenha saldo pendente
 function applyAdvanceCreditsToDay(day) {
   if (day.period === 'none' || day.period === 'off') return;
   
   day.pendingAmount = Math.max(0, day.rate - (day.amountPaid || 0));
   if (day.pendingAmount <= 0) return;
   
-  // Encontra pagamentos com adiantamento disponÃ­vel, ordenados por data ascendente (mais antigos primeiro)
+  // Encontra pagamentos com adiantamento Disponível, ordenados por data ascendente (mais antigos primeiro)
   const paymentsWithAdvance = db.payments
     .filter(p => (p.advanceRemaining || 0) > 0)
     .sort((a, b) => a.date.localeCompare(b.date));
@@ -798,7 +798,7 @@ function applyAdvanceCreditsToDay(day) {
   }
 }
 
-// Reembolsa valores pagos com adiantamento/crÃ©dito de volta para os pagamentos de origem se a tarifa do dia for reduzida ou o dia for deletado
+// Reembolsa valores pagos com adiantamento/Crédito de volta para os pagamentos de origem se a tarifa do dia for reduzida ou o dia for deletado
 function refundPaymentCreditsFromDay(day, newRate) {
   if (!day.paymentsApplied || Object.keys(day.paymentsApplied).length === 0) return;
   
@@ -859,7 +859,7 @@ function updateDashboardData() {
   Object.keys(db.workedDays).forEach(dateStr => {
     const dayData = db.workedDays[dateStr];
     
-    // Desconsidera dias sem perÃ­odo ou folga do cÃ¡lculo financeiro
+    // Desconsidera dias sem Período ou folga do cÃ¡lculo financeiro
     if (dayData.period !== 'none' && dayData.period !== 'off') {
       const rate = dayData.rate || 0;
       totalEarnings += rate;
@@ -877,7 +877,7 @@ function updateDashboardData() {
   // Total Recebido Ã© a soma real de todos os pagamentos efetuados
   totalReceived = db.payments.reduce((acc, pay) => acc + pay.amount, 0);
 
-  // Total de adiantamento/crÃ©dito ativo nos pagamentos
+  // Total de adiantamento/Crédito ativo nos pagamentos
   const totalAdvance = db.payments.reduce((acc, pay) => acc + (pay.advanceRemaining || 0), 0);
 
   // Atualiza os elementos da tela
@@ -885,7 +885,7 @@ function updateDashboardData() {
   document.getElementById('stat-total-received').innerText = formatCurrency(totalReceived);
   document.getElementById('stat-this-week-earnings').innerText = formatCurrency(thisWeekEarnings);
 
-  // AtualizaÃ§Ã£o dinÃƒÂ¢mica do Card de Pendente / CrÃ©dito
+  // Atualização dinÃƒÂ¢mica do Card de Pendente / Crédito
   const pendingCard = document.querySelector('.stat-card.stat-pending');
   if (pendingCard) {
     const pendingTitle = pendingCard.querySelector('p');
@@ -894,10 +894,10 @@ function updateDashboardData() {
     const texts = translations[db.settings.language || 'pt-BR'];
 
     if (totalAdvance > 0) {
-      // Transforma em card de CrÃ©dito
+      // Transforma em card de Crédito
       pendingCard.style.borderLeft = '4px solid var(--accent-purple)';
       pendingCard.classList.add('stat-credit-active');
-      if (pendingTitle) pendingTitle.innerText = texts['stat-total-credit'] || 'CrÃ©dito Antecipado';
+      if (pendingTitle) pendingTitle.innerText = texts['stat-total-credit'] || 'Crédito Antecipado';
       if (pendingValue) {
         pendingValue.innerText = formatCurrency(totalAdvance);
         pendingValue.style.color = 'var(--accent-purple)';
@@ -929,7 +929,7 @@ function renderEarningsChart() {
   const lang = db.settings.language === 'it-IT' ? 'it-IT' : 'pt-BR';
   const texts = translations[db.settings.language || 'pt-BR'];
   
-  // Agrupar ganhos e pagamentos recebidos por mÃªs
+  // Agrupar ganhos e pagamentos recebidos por mês
   const monthlyData = {};
   
   // Preencher os Ãºltimos 6 meses para garantir dados ordenados
@@ -945,7 +945,7 @@ function renderEarningsChart() {
     };
   }
 
-  // Acumular ganhos por mÃªs
+  // Acumular ganhos por mês
   Object.keys(db.workedDays).forEach(dateStr => {
     const dayData = db.workedDays[dateStr];
     if (dayData.period !== 'none' && dayData.period !== 'off') {
@@ -956,7 +956,7 @@ function renderEarningsChart() {
     }
   });
 
-  // Acumular recebimentos por mÃªs
+  // Acumular recebimentos por mês
   db.payments.forEach(pay => {
     const monthKey = pay.date.substring(0, 7); // YYYY-MM
     if (monthlyData[monthKey]) {
@@ -1020,7 +1020,7 @@ function renderEarningsChart() {
   });
 }
 
-// AÃ§Ã£o rÃ¡pida para registrar turno no dia de hoje
+// ação rÃ¡pida para registrar turno no dia de hoje
 function quickLogShift(period) {
   const todayStr = formatDateISO(new Date());
   let rate = 0;
@@ -1030,13 +1030,13 @@ function quickLogShift(period) {
   else if (period === 'night') rate = db.settings.nightRate;
   else if (period === 'both') rate = db.settings.morningRate + db.settings.nightRate;
   
-  // Se o dia jÃ¡ tiver registro financeiro de pagamento, mantÃ©m o valor pago e atualiza
+  // Se o dia Já tiver registro financeiro de pagamento, mantÃ©m o valor pago e atualiza
   const existing = db.workedDays[todayStr] || {
     amountPaid: 0,
     paymentsApplied: {}
   };
 
-  // Se o novo rate for menor que o amountPaid jÃ¡ registrado, devolvemos
+  // Se o novo rate for menor que o amountPaid Já registrado, devolvemos
   if (existing.amountPaid > rate) {
     refundPaymentCreditsFromDay(existing, rate);
   }
@@ -1048,11 +1048,11 @@ function quickLogShift(period) {
     status: existing.amountPaid >= rate ? 'paid' : (existing.amountPaid > 0 ? 'partial' : 'unpaid'),
     amountPaid: existing.amountPaid || 0,
     pendingAmount: Math.max(0, rate - (existing.amountPaid || 0)),
-    notes: existing.notes || 'Registrado via AÃ§Ã£o RÃ¡pida',
+    notes: existing.notes || 'Registrado via ação RÃ¡pida',
     paymentsApplied: existing.paymentsApplied || {}
   };
 
-  // Aplica crÃ©ditos de adiantamento, se houver
+  // Aplica Créditos de adiantamento, se houver
   applyAdvanceCreditsToDay(newDay);
 
   db.workedDays[todayStr] = newDay;
@@ -1339,7 +1339,7 @@ function saveDayDetails(event) {
 
   const existing = db.workedDays[dateStr] || { amountPaid: 0, paymentsApplied: {} };
 
-  // Se o novo rate for menor que o amountPaid jÃ¡ registrado (ou se mudou para off/none), devolvemos
+  // Se o novo rate for menor que o amountPaid Já registrado (ou se mudou para off/none), devolvemos
   if (existing.amountPaid > rate) {
     refundPaymentCreditsFromDay(existing, rate);
   }
@@ -1354,7 +1354,7 @@ function saveDayDetails(event) {
     paymentsApplied: existing.paymentsApplied || {}
   };
 
-  // Aplica crÃ©ditos de adiantamento, se houver
+  // Aplica Créditos de adiantamento, se houver
   applyAdvanceCreditsToDay(newDay);
 
   db.workedDays[dateStr] = newDay;
@@ -1372,7 +1372,7 @@ function deleteDayRecord() {
   if (!data) return;
   if (data.amountPaid > 0) {
     if (!confirm(texts['msg-delete-confirm'])) return;
-    // Devolve os crÃ©ditos aplicados a este dia para os pagamentos originais
+    // Devolve os Créditos aplicados a este dia para os pagamentos originais
     refundPaymentCreditsFromDay(data, 0);
   }
   delete db.workedDays[dateStr];
@@ -1492,7 +1492,7 @@ function updatePaymentSummary() {
     if (generalAdvance > 0) {
       balanceBox.style.border = '1px solid var(--accent-purple)';
       balanceBox.style.background = 'var(--accent-purple-glow)';
-      if (balanceLabel) balanceLabel.innerText = texts['general-balance-credit'] || 'CrÃ©dito DisponÃ­vel (Adiantado)';
+      if (balanceLabel) balanceLabel.innerText = texts['general-balance-credit'] || 'Crédito Disponível (Adiantado)';
       if (balanceValue) {
         balanceValue.innerText = formatCurrency(generalAdvance);
         balanceValue.style.color = 'var(--accent-purple)';
@@ -1588,7 +1588,7 @@ function toggleCustomNotesInput() {
     customNotesGroup.style.display = 'none';
     mixedAmountsGroup.style.display = 'block';
     
-    // Divide o valor total entre os dois campos (50/50 por padrÃ£o)
+    // Divide o valor total entre os dois campos (50/50 por padrão)
     const totalAmount = parseFloat(document.getElementById('input-payment-amount').value) || 0;
     document.getElementById('input-payment-cash-amount').value = (totalAmount / 2).toFixed(2);
     document.getElementById('input-payment-deposit-amount').value = (totalAmount - (totalAmount / 2)).toFixed(2);
@@ -1620,7 +1620,7 @@ function processPayment(event) {
     cashAmount = parseFloat(document.getElementById('input-payment-cash-amount').value) || 0;
     depositAmount = parseFloat(document.getElementById('input-payment-deposit-amount').value) || 0;
     
-    // ValidaÃ§Ã£o da soma (tolerÃƒÂ¢ncia a ponto flutuante de 0.01)
+    // Validação da soma (tolerÃƒÂ¢ncia a ponto flutuante de 0.01)
     if (Math.abs((cashAmount + depositAmount) - paymentAmount) > 0.01) {
       alert(texts['msg-invalid-mixed-sum'] || 'A soma dos valores em dinheiro e depósito deve ser igual ao valor total recebido!');
       return;
@@ -1717,7 +1717,7 @@ function renderPaymentHistory() {
     }
 
     const hasAdvance = pay.advanceRemaining > 0;
-    const advanceBadge = hasAdvance ? `<div style="font-size:0.75rem; color: var(--accent-purple); font-weight:600; margin-top: 2px;"><i data-lucide="coins" style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-right: 2px;"></i>CrÃ©dito: ${formatCurrency(pay.advanceRemaining)}</div>` : '';
+    const advanceBadge = hasAdvance ? `<div style="font-size:0.75rem; color: var(--accent-purple); font-weight:600; margin-top: 2px;"><i data-lucide="coins" style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-right: 2px;"></i>Crédito: ${formatCurrency(pay.advanceRemaining)}</div>` : '';
 
     tr.innerHTML = `
       <td>${formatDateStringDisplay(pay.date)}</td>
@@ -1769,7 +1769,7 @@ function loadSettingsFields() {
     if (chk) chk.checked = offDays.includes(i);
   }
 
-  // Carrega configuraÃ§Ãµes de meio perÃ­odo padrÃ£o
+  // Carrega Configurações de meio Período padrão
   const halfDays = db.settings.halfDays || {};
   for (let i = 0; i <= 6; i++) {
     const chk = document.getElementById(`halfday-active-${i}`);
@@ -1984,7 +1984,7 @@ function saveBatchShifts(event) {
       const rate = isNaN(rateVal) ? getStandardRateForPeriod(period) : rateVal;
       const existing = db.workedDays[date] || { amountPaid: 0, paymentsApplied: {} };
       
-      // Se o novo rate for menor que o amountPaid jÃ¡ registrado, devolvemos
+      // Se o novo rate for menor que o amountPaid Já registrado, devolvemos
       if (existing.amountPaid > rate) {
         refundPaymentCreditsFromDay(existing, rate);
       }
@@ -2004,7 +2004,7 @@ function saveBatchShifts(event) {
         paymentsApplied: existing.paymentsApplied || {}
       };
       
-      // Aplica crÃ©ditos de adiantamento, se houver
+      // Aplica Créditos de adiantamento, se houver
       applyAdvanceCreditsToDay(newDay);
       
       db.workedDays[date] = newDay;
@@ -2106,6 +2106,9 @@ window.closeBatchRemoveModal = closeBatchRemoveModal;
 window.refundPaymentCreditsFromDay = refundPaymentCreditsFromDay;
 window.deletePayment = deletePayment;
 window.openDayModal = openDayModal;
+
+
+
 
 
 
