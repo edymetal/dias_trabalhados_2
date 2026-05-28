@@ -1416,12 +1416,33 @@ body {
   }
 
   .calendar-day {
-    min-height: 70px;
+    min-height: 85px; /* Aumentado para garantir espaço */
+    aspect-ratio: auto !important; /* Remover o quadrado fixo */
     padding: 0.35rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 4px;
+  }
+
+  .day-status-indicator {
+    top: 0.35rem;
+    right: 0.35rem;
   }
 
   .day-number {
     font-size: 0.85rem;
+    margin-bottom: 2px;
+  }
+
+  .day-value {
+    font-size: 0.7rem;
+    line-height: 1.1;
+  }
+
+  .day-pending-value {
+    font-size: 0.6rem;
+    margin-top: 1px;
   }
 
   .day-badge {
@@ -1440,7 +1461,7 @@ body {
   }
   
   .calendar-day {
-    min-height: 55px;
+    min-height: 75px;
   }
 
   .actions-row {
