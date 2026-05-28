@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.21';
-const APP_BUILD_DATE = '2026-05-28 10:31:44';
+const APP_VERSION = '1.0.22';
+const APP_BUILD_DATE = '2026-05-28 10:43:47';
 
 // CONFIGURAÇÃO DO FIREBASE
 const firebaseConfig = {
@@ -38,17 +38,26 @@ onAuthStateChanged(auth, async (user) => {
   if (user) {
     if (ALLOWED_EMAILS.includes(user.email)) {
       console.log("Usuário autorizado:", user.email);
+      
+      // Preenche dados do perfil
+      document.getElementById('user-photo').src = user.photoURL || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
+      document.getElementById('user-name').innerText = user.displayName || 'Usuário';
+      document.getElementById('user-email').innerText = user.email;
+      document.getElementById('user-profile').style.display = 'flex';
+
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('app-content').style.display = 'flex';
       await initDatabase();
     } else {
       console.warn("Acesso negado para:", user.email);
+      alert("Acesso negado! O e-mail " + user.email + " não tem permissão para acessar este sistema.");
       showLoginError("Acesso restrito. Seu e-mail não está na lista de permissões.");
       await signOut(auth);
     }
   } else {
     document.getElementById('login-screen').style.display = 'flex';
     document.getElementById('app-content').style.display = 'none';
+    document.getElementById('user-profile').style.display = 'none';
   }
 });
 
