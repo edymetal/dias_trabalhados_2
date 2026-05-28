@@ -3,8 +3,19 @@
    ========================================================================== */
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.5';
-const APP_BUILD_DATE = '2026-05-28 07:39:09';
+const APP_VERSION = '1.0.6';
+const APP_BUILD_DATE = '2026-05-28 08:08:58';
+
+// CONFIGURAÇÃO DO FIREBASE (Cole seu firebaseConfig completo aqui)
+const firebaseConfig = {
+  databaseURL: "https://dias-trabalhados-bf99a-default-rtdb.firebaseio.com/"
+};
+
+// Inicializa Firebase (Compat)
+if (firebaseConfig.apiKey) {
+  firebase.initializeApp(firebaseConfig);
+}
+const database = firebaseConfig.apiKey ? firebase.database() : null;
 
 // Configurações do Banco de Dados Local (LocalStorage)
 const DB_STORAGE_KEY = 'fluxoturno_db';
@@ -397,16 +408,12 @@ const WEEKDAY_NAMES = [];
    INICIALIZAÇÃO DA APLICAÇÃO
    ========================================================================== */
 
-document.addEventListener('DOMContentLoaded', () => {
-  initDatabase();
-  applyLanguage();
+document.addEventListener('DOMContentLoaded', async () => {
+  await initDatabase();
   renderAppVersion();
   initNavigation();
   initDashboard();
   initCurrentDate();
-  
-  // Atualiza as tarifas padrão no modal e nas ações rápidas
-  updateRateLabels();
 
   // Escuta alteração do valor do pagamento para atualizar a divisão do Misto se estiver ativo
   const paymentAmountInput = document.getElementById('input-payment-amount');
@@ -439,45 +446,94 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Inicializa o banco de dados carregando do localStorage
-function initDatabase() {
+// Inicializa o banco de dados carregando do Firebase ou localStorage
+async function initDatabase() {
+  // Tenta carregar do Firebase primeiro se estiver configurado
+  if (database) {
+    try {
+      const snapshot = await database.ref('fluxoTurnoDB').once('value');
+      const cloudData = snapshot.val();
+      if (cloudData) {
+        db = cloudData;
+        console.log("Dados carregados do Firebase com sucesso.");
+      } else {
+        loadFromLocalStorage();
+        await saveToStorage(); // Sincroniza o local inicial para o cloud novo
+      }
+    } catch (e) {
+      console.error("Erro ao carregar do Firebase, tentando local...", e);
+      loadFromLocalStorage();
+    }
+  } else {
+    loadFromLocalStorage();
+  }
+
+  // Garantir estruturas básicas e retrocompatibilidade
+  if (!db.settings) {
+    db.settings = { ...DEFAULT_DB.settings };
+  } else {
+    if (!db.settings.offDays) db.settings.offDays = [4];
+    if (!db.settings.halfDays) db.settings.halfDays = {};
+    if (!db.settings.language) db.settings.language = 'pt-BR';
+    if (db.settings.morningRate === 80) db.settings.morningRate = 35;
+    if (db.settings.nightRate === 100) db.settings.nightRate = 25;
+  }
+  if (!db.workedDays) db.workedDays = {};
+  if (!db.payments) db.payments = [];
+  
+  db.payments.forEach(pay => {
+    if (pay.advanceRemaining === undefined) {
+      pay.advanceRemaining = 0;
+    }
+  });
+  
+  // Após carregar, se estivermos na UI principal, renderizamos tudo
+  if (typeof renderCalendar === 'function') {
+    renderAll();
+  }
+}
+
+function loadFromLocalStorage() {
   const stored = localStorage.getItem(DB_STORAGE_KEY);
   if (stored) {
     try {
       db = JSON.parse(stored);
-      // Garantir compatibilidade com formatos legados caso existam
-      if (!db.settings) {
-        db.settings = { ...DEFAULT_DB.settings };
-      } else {
-        if (!db.settings.offDays) db.settings.offDays = [4];
-        if (!db.settings.halfDays) db.settings.halfDays = {};
-        if (!db.settings.language) db.settings.language = 'pt-BR';
-        if (db.settings.morningRate === 80) db.settings.morningRate = 35; // Atualizar se for o valor antigo
-        if (db.settings.nightRate === 100) db.settings.nightRate = 25; // Atualizar se for o valor antigo
-      }
-      if (!db.workedDays) db.workedDays = {};
-      if (!db.payments) db.payments = [];
-      
-      // Garante retrocompatibilidade para o saldo de adiantamento
-      db.payments.forEach(pay => {
-        if (pay.advanceRemaining === undefined) {
-          pay.advanceRemaining = 0;
-        }
-      });
     } catch (e) {
-      console.error("Erro ao ler banco de dados local. Resetando para o padrão.", e);
+      console.error("Erro ao ler banco de dados local.", e);
       db = JSON.parse(JSON.stringify(DEFAULT_DB));
-      saveToStorage();
     }
   } else {
     db = JSON.parse(JSON.stringify(DEFAULT_DB));
-    saveToStorage();
   }
 }
 
-// Salva o estado atual no localStorage
-function saveToStorage() {
+// Salva o estado atual no localStorage e no Firebase
+async function saveToStorage() {
+  // Salva Localmente
   localStorage.setItem(DB_STORAGE_KEY, JSON.stringify(db));
+  
+  // Salva na Nuvem (Firebase)
+  if (database) {
+    try {
+      await database.ref('fluxoTurnoDB').set(db);
+    } catch (e) {
+      console.error("Erro ao salvar no Firebase:", e);
+    }
+  }
+}
+
+// Função auxiliar para renderizar toda a UI (chamada após carga inicial)
+function renderAll() {
+  if (document.getElementById('calendar-days-grid')) {
+    updateDashboardData();
+    renderCalendar();
+    renderWeeksList();
+    renderPaymentHistory();
+    loadSettingsFields();
+    updatePaymentSummary();
+    updateRateLabels();
+    applyLanguage();
+  }
 }
 
 // Aplica as traduções baseadas no idioma atual
