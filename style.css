@@ -420,26 +420,29 @@ body {
   padding: 1.25rem;
   border: 1px solid var(--border-light);
   border-radius: var(--border-radius-sm);
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.05); /* Aumentado de 0.02 para 0.05 */
+  color: var(--text-primary); /* Forçar cor do texto */
   cursor: pointer;
   transition: var(--transition-smooth);
   text-align: left;
 }
 
 .quick-log-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08); /* Aumentado de 0.05 para 0.08 */
   border-color: var(--accent-purple);
   transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .quick-log-info h4 {
   font-size: 0.95rem;
   font-weight: 600;
+  color: var(--text-primary); /* Garantir visibilidade */
 }
 
 .quick-log-info p {
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: #a1a1aa; /* Um pouco mais claro que o text-muted padrão */
   margin-top: 0.25rem;
 }
 
