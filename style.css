@@ -593,6 +593,59 @@ body {
   white-space: nowrap;
 }
 
+/* Calendar Compact View Mode */
+.calendar-wrapper.compact-view {
+  transform-origin: top center;
+}
+
+.compact-view .calendar-grid {
+  gap: 0.35rem;
+  padding: 0 1rem 1rem 1rem;
+}
+
+.compact-view .calendar-day {
+  min-height: 70px;
+  padding: 0.45rem;
+  gap: 4px;
+}
+
+.compact-view .day-number {
+  font-size: 0.9rem;
+}
+
+.compact-view .day-badge {
+  font-size: 0.6rem;
+  padding: 1px 4px;
+}
+
+.compact-view .day-badge i {
+  width: 8px;
+  height: 8px;
+}
+
+.compact-view .day-value {
+  font-size: 0.65rem;
+  margin-top: 0;
+}
+
+.compact-view .day-status-indicator i {
+  width: 10px;
+  height: 10px;
+}
+
+@media (max-width: 768px) {
+  .compact-view .calendar-grid {
+    gap: 0.15rem;
+    padding: 0 0.5rem 0.5rem 0.5rem;
+  }
+  
+  .compact-view .calendar-day {
+    min-height: 65px;
+    padding: 0.25rem;
+    gap: 2px;
+  }
+}
+
 /* Day State Visualizer Styles */
 .day-worked-morning {
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(139, 92, 246, 0.05));

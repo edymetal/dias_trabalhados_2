@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.37';
-const APP_BUILD_DATE = '2026-05-30 13:39:09';
+const APP_VERSION = '1.0.38';
+const APP_BUILD_DATE = '2026-05-30 13:44:08';
 
 
 
@@ -787,6 +787,23 @@ function initNavigation() {
       lucide.createIcons();
     });
   });
+
+  // Funcionalidade de Zoom do Calendário
+  const btnToggleZoom = document.getElementById('btn-toggle-calendar-zoom');
+  if (btnToggleZoom) {
+    btnToggleZoom.addEventListener('click', () => {
+      const calendarWrapper = document.querySelector('.calendar-wrapper');
+      const isCompact = calendarWrapper.classList.toggle('compact-view');
+      
+      // Atualiza o ícone
+      if (isCompact) {
+        btnToggleZoom.innerHTML = '<i data-lucide="zoom-in"></i>';
+      } else {
+        btnToggleZoom.innerHTML = '<i data-lucide="zoom-out"></i>';
+      }
+      lucide.createIcons();
+    });
+  }
 
   // Inicializa ícones Lucide (como o botão de menu)
   lucide.createIcons();
