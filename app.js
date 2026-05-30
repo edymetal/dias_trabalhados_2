@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.34';
-const APP_BUILD_DATE = '2026-05-28 17:00:26';
+const APP_VERSION = '1.0.35';
+const APP_BUILD_DATE = '2026-05-30 13:28:03';
 
 
 
@@ -1288,7 +1288,7 @@ function createDayElement(dayNum, dateStr, isOtherMonth, container) {
     const detailsContainer = document.createElement('div');
     detailsContainer.style.display = 'flex';
     detailsContainer.style.flexDirection = 'column';
-    detailsContainer.style.gap = '2px';
+    detailsContainer.style.gap = '6px';
     detailsContainer.style.width = '100%';
 
     const badge = document.createElement('span');
@@ -1331,7 +1331,7 @@ function createDayElement(dayNum, dateStr, isOtherMonth, container) {
     const detailsContainer = document.createElement('div');
     detailsContainer.style.display = 'flex';
     detailsContainer.style.flexDirection = 'column';
-    detailsContainer.style.gap = '2px';
+    detailsContainer.style.gap = '6px';
     detailsContainer.style.width = '100%';
     const badge = document.createElement('span');
     badge.className = 'day-badge';
