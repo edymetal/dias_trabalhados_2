@@ -596,53 +596,91 @@ body {
 /* Calendar Compact View Mode */
 .calendar-wrapper.compact-view {
   transform-origin: top center;
+  gap: 0.5rem;
+}
+
+.compact-view .calendar-header {
+  padding: 0.75rem 1rem 0.5rem 1rem;
+}
+
+.compact-view .calendar-nav-title {
+  font-size: 1.1rem;
 }
 
 .compact-view .calendar-grid {
-  gap: 0.35rem;
-  padding: 0 1rem 1rem 1rem;
+  gap: 4px;
+  padding: 0 0.75rem 0.75rem 0.75rem;
 }
 
 .compact-view .calendar-day {
-  min-height: 70px;
-  padding: 0.45rem;
-  gap: 4px;
+  min-height: 50px;
+  padding: 4px;
+  gap: 2px;
 }
 
 .compact-view .day-number {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .compact-view .day-badge {
-  font-size: 0.6rem;
-  padding: 1px 4px;
+  font-size: 0.55rem;
+  padding: 1px 3px;
+  gap: 2px;
 }
 
 .compact-view .day-badge i {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 
 .compact-view .day-value {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   margin-top: 0;
 }
 
+.compact-view .day-status-indicator {
+  top: 4px;
+  right: 4px;
+}
+
 .compact-view .day-status-indicator i {
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
+}
+
+.compact-view .calendar-legend {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  gap: 0.75rem;
 }
 
 @media (max-width: 768px) {
   .compact-view .calendar-grid {
-    gap: 0.15rem;
-    padding: 0 0.5rem 0.5rem 0.5rem;
+    gap: 2px;
+    padding: 0 0.4rem 0.4rem 0.4rem;
   }
   
   .compact-view .calendar-day {
-    min-height: 65px;
-    padding: 0.25rem;
-    gap: 2px;
+    min-height: 42px;
+    padding: 2px;
+    gap: 1px;
+  }
+
+  .compact-view .day-badge {
+    padding: 1px 2px;
+    font-size: 0.5rem;
+  }
+
+  .compact-view .day-badge span {
+    display: none; /* Esconde o texto da badge no mobile compacto, deixa só o ícone */
+  }
+
+  .compact-view .day-number {
+    font-size: 0.75rem;
+  }
+
+  .compact-view .day-value {
+    font-size: 0.55rem;
   }
 }
 
