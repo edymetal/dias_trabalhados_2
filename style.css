@@ -1412,12 +1412,13 @@ body {
 
   .calendar-grid {
     gap: 0.25rem;
+    padding: 0 1rem 1rem 1rem;
   }
 
   .calendar-day {
     min-height: 125px; /* Aumentado significativamente para dar "ar" */
     aspect-ratio: auto !important;
-    padding: 0.65rem; /* Mais respiro */
+    padding: 0.65rem 0.4rem; /* Reduzido o lateral para caber melhor */
     display: flex;
     flex-direction: column;
     justify-content: space-between; /* Empurra os valores para o rodapé */
