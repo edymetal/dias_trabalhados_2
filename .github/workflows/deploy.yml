@@ -20,8 +20,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Inject Firebase API Key
+        env:
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
         run: |
-          sed -i "s/___FIREBASE_API_KEY___/${{ secrets.FIREBASE_API_KEY }}/g" app.js
+          sed -i "s|___FIREBASE_API_KEY___|${FIREBASE_API_KEY}|g" app.js
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
