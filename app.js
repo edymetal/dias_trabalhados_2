@@ -7,21 +7,18 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.53';
-const APP_BUILD_DATE = '2026-06-03 19:58:28';
+const APP_VERSION = '1.0.54';
+const APP_BUILD_DATE = '2026-06-03 20:01:05';
 
 
 
 
 // CONFIGURAÇÃO DO FIREBASE
-let firebaseApiKey = "___FIREBASE_API_KEY___";
+let firebaseApiKey = "AIzaSyAlY3MVb-8jvvcwjOtd0VqRP427MISJDjg";
 
-// 1. Tenta usar a chave injetada via arquivo externo no GitHub Pages (global)
-if (typeof window.FIREBASE_ENV_KEY !== 'undefined') {
-  firebaseApiKey = window.FIREBASE_ENV_KEY;
-}
-// 2. Fallback para desenvolvimento local via firebase-config.js
-else if (firebaseApiKey.includes("___") && typeof LOCAL_FIREBASE_API_KEY !== 'undefined') {
+// Fallback para desenvolvimento local: se a chave do GitHub não foi injetada,
+// tenta usar a chave definida no arquivo firebase-config.js (carregado no index.html)
+if (firebaseApiKey.includes("___") && typeof LOCAL_FIREBASE_API_KEY !== 'undefined') {
   firebaseApiKey = LOCAL_FIREBASE_API_KEY;
 }
 
