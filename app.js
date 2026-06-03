@@ -7,15 +7,23 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.43';
-const APP_BUILD_DATE = '2026-06-03 13:57:20';
+const APP_VERSION = '1.0.44';
+const APP_BUILD_DATE = '2026-06-03 14:04:52';
 
 
 
 
 // CONFIGURAÇÃO DO FIREBASE
+let firebaseApiKey = "___FIREBASE_API_KEY___";
+
+// Fallback para desenvolvimento local: se a chave do GitHub não foi injetada,
+// tenta usar a chave definida no arquivo firebase-config.js (carregado no index.html)
+if (firebaseApiKey.includes("___") && typeof LOCAL_FIREBASE_API_KEY !== 'undefined') {
+  firebaseApiKey = LOCAL_FIREBASE_API_KEY;
+}
+
 const firebaseConfig = {
-  apiKey: "___FIREBASE_API_KEY___",
+  apiKey: firebaseApiKey,
   authDomain: "dias-trabalhados-bf99a.firebaseapp.com",
   databaseURL: "https://dias-trabalhados-bf99a-default-rtdb.firebaseio.com",
   projectId: "dias-trabalhados-bf99a",

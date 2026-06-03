@@ -22,6 +22,10 @@ credentials.json
 Thumbs.db
 .DS_Store
 
+# Configuração Local (Segredos)
+firebase-config.js
+app.js_cleanup.txt
+
 # Pasta de build/dist
 dist/
 build/
