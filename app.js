@@ -7,14 +7,14 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.44';
-const APP_BUILD_DATE = '2026-06-03 14:04:52';
+const APP_VERSION = '1.0.45';
+const APP_BUILD_DATE = '2026-06-03 19:33:03';
 
 
 
 
 // CONFIGURAÇÃO DO FIREBASE
-let firebaseApiKey = "___FIREBASE_API_KEY___";
+let firebaseApiKey = "AIzaSyAlY3MVb-8jvvcwjOtd0VqRP427MISJDjg";
 
 // Fallback para desenvolvimento local: se a chave do GitHub não foi injetada,
 // tenta usar a chave definida no arquivo firebase-config.js (carregado no index.html)
