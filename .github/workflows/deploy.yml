@@ -20,10 +20,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create Environment Config
-        env:
-          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
         run: |
-          echo "window.FIREBASE_ENV_KEY = '${FIREBASE_API_KEY}';" > env-config.js
+          echo "window.FIREBASE_ENV_KEY = '${{ secrets.FIREBASE_API_KEY }}';" > ./env-config.js
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
