@@ -19,9 +19,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Create Environment Config
+      - name: Inject Firebase API Key
+        env:
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
         run: |
-          echo "window.FIREBASE_ENV_KEY = '${{ secrets.FIREBASE_API_KEY }}';" > ./env-config.js
+          sed -i "s|___FIREBASE_API_KEY___|${FIREBASE_API_KEY}|g" index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
