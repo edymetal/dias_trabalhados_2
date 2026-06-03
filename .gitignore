@@ -1,0 +1,28 @@
+# Dependências
+node_modules/
+.npm/
+
+# Variáveis de Ambiente e Segredos
+.env
+.env.local
+.env.*.local
+*.secret
+credentials.json
+
+# IDEs e Ferramentas
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Sistema
+Thumbs.db
+.DS_Store
+
+# Pasta de build/dist
+dist/
+build/
+out/

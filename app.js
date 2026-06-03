@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.40';
-const APP_BUILD_DATE = '2026-05-30 13:54:10';
+const APP_VERSION = '1.0.41';
+const APP_BUILD_DATE = '2026-06-03 13:31:56';
 
 
 
@@ -34,58 +34,61 @@ const database = getDatabase(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-// Monitora o estado de autenticação
 onAuthStateChanged(auth, async (user) => {
   if (user) {
+    // 1. Verificação imediata para Master Admins (sem necessidade de rede)
+    if (MASTER_ADMINS.includes(user.email)) {
+      console.log("Master Admin autenticado:", user.email);
+      setupUserProfile(user);
+      await initDatabase();
+      return;
+    }
+
+    // 2. Verificação via Whitelist no Banco de Dados para outros usuários
     try {
-      // Busca a lista de e-mails autorizados no banco de dados
       const authRef = ref(database, 'authorized_emails');
       const snapshot = await get(authRef);
-      let allowedEmails = snapshot.val();
+      const allowedEmails = snapshot.val() || [];
 
-      // Se a lista não existir no banco (primeira vez), inicializa com os Master Admins
-      if (!allowedEmails) {
-        allowedEmails = [...MASTER_ADMINS];
-        await set(authRef, allowedEmails);
-      }
-
-      // Verifica se o usuário tem permissão
-      if (allowedEmails.includes(user.email) || MASTER_ADMINS.includes(user.email)) {
-        console.log("Usuário autorizado:", user.email);
-        
-        // Preenche dados do perfil
-        document.getElementById('user-photo').src = user.photoURL || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
-        document.getElementById('user-name').innerText = user.displayName || 'Usuário';
-        document.getElementById('user-email').innerText = user.email;
-        document.getElementById('user-profile').style.display = 'flex';
-
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('app-content').style.display = 'flex';
+      if (allowedEmails.includes(user.email)) {
+        console.log("Usuário autorizado via whitelist:", user.email);
+        setupUserProfile(user);
         await initDatabase();
       } else {
-        console.warn("Acesso negado para:", user.email);
-        alert("Acesso negado! O e-mail " + user.email + " não tem permissão para acessar este sistema.");
-        showLoginError("Acesso restrito. Seu e-mail não está na lista de permissões.");
-        await signOut(auth);
+        handleAccessDenied(user.email);
       }
     } catch (error) {
       console.error("Erro ao verificar permissões:", error);
-      // Fallback de segurança: permite os Master Admins mesmo se o banco falhar
-      if (MASTER_ADMINS.includes(user.email)) {
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('app-content').style.display = 'flex';
-        await initDatabase();
-      } else {
-        showLoginError("Erro de conexão ao verificar permissões.");
-        await signOut(auth);
-      }
+      showLoginError("Erro de conexão ao verificar permissões.");
+      await signOut(auth);
     }
   } else {
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('app-content').style.display = 'none';
-    document.getElementById('user-profile').style.display = 'none';
+    showLoginScreen();
   }
 });
+
+// Funções auxiliares para limpar o fluxo de autenticação
+function setupUserProfile(user) {
+  document.getElementById('user-photo').src = user.photoURL || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
+  document.getElementById('user-name').innerText = user.displayName || 'Usuário';
+  document.getElementById('user-email').innerText = user.email;
+  document.getElementById('user-profile').style.display = 'flex';
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-content').style.display = 'flex';
+}
+
+function handleAccessDenied(email) {
+  console.warn("Acesso negado para:", email);
+  alert("Acesso negado! O e-mail " + email + " não tem permissão para acessar este sistema.");
+  showLoginError("Acesso restrito. Seu e-mail não está na lista de permissões.");
+  signOut(auth);
+}
+
+function showLoginScreen() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app-content').style.display = 'none';
+  document.getElementById('user-profile').style.display = 'none';
+}
 
 function showLoginError(msg) {
   const errorEl = document.getElementById('login-error-msg');
@@ -545,7 +548,7 @@ async function initDatabase() {
   // Tenta carregar do Firebase primeiro se estiver autenticado
   if (database && auth.currentUser) {
     try {
-      const dbRef = ref(database, 'fluxoTurnoDB');
+      const dbRef = ref(database, `userData/${auth.currentUser.uid}/db`);
       const snapshot = await get(dbRef);
       const cloudData = snapshot.val();
       if (cloudData) {
@@ -610,7 +613,7 @@ async function saveToStorage() {
   // Salva na Nuvem (Firebase) se estiver autenticado
   if (database && auth.currentUser) {
     try {
-      await set(ref(database, 'fluxoTurnoDB'), db);
+      await set(ref(database, `userData/${auth.currentUser.uid}/db`), db);
     } catch (e) {
       console.error("Erro ao salvar no Firebase:", e);
     }
