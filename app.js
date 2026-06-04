@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.56';
-const APP_BUILD_DATE = '2026-06-04 15:21:42';
+const APP_VERSION = '1.0.57';
+const APP_BUILD_DATE = '2026-06-04 15:25:11';
 
 
 
@@ -1104,6 +1104,7 @@ function renderEarningsChart() {
 
   earningsChart = new Chart(ctx, {
     type: 'bar',
+    plugins: [ChartDataLabels],
     data: {
       labels: labels,
       datasets: [
@@ -1126,6 +1127,14 @@ function renderEarningsChart() {
             color: '#94a3b8',
             font: { family: 'Outfit', size: 12 }
           }
+        },
+        datalabels: {
+          anchor: 'end',
+          align: 'top',
+          formatter: (value) => value > 0 ? formatCurrency(value) : '',
+          color: '#cbd5e1',
+          font: { family: 'Outfit', weight: '600', size: 11 },
+          offset: 4
         }
       },
       scales: {
@@ -1135,12 +1144,13 @@ function renderEarningsChart() {
         },
         y: {
           grid: { color: 'rgba(255, 255, 255, 0.05)' },
-          ticks: { color: '#94a3b8', font: { family: 'Outfit' } }
+          ticks: { color: '#94a3b8', font: { family: 'Outfit' } },
+          grace: '15%'
         }
       }
     }
   });
-}
+  }
 
 // ação rápida para registrar turno no dia de hoje
 function quickLogShift(period) {
