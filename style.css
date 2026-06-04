@@ -1451,18 +1451,19 @@ body {
 .auth-logo {
   width: 64px;
   height: 64px;
-  background: var(--accent-purple-glow);
+  background: linear-gradient(135deg, var(--accent-purple), var(--status-paid));
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 1.5rem;
+  box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
 }
 
 .auth-logo i {
   width: 32px;
   height: 32px;
-  color: var(--accent-purple);
+  color: #fff;
 }
 
 .user-profile-card {
