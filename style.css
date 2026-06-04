@@ -1100,6 +1100,11 @@ body {
   box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
 }
 
+.form-input option {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
 .btn-primary {
   width: 100%;
   padding: 0.8rem 1.5rem;
