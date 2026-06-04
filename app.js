@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.69';
-const APP_BUILD_DATE = '2026-06-04 17:31:46';
+const APP_VERSION = '1.0.70';
+const APP_BUILD_DATE = '2026-06-04 17:38:27';
 
 
 
@@ -1992,6 +1992,7 @@ function processPayment(event) {
 function renderPaymentHistory() {
   const tableBody = document.getElementById('payment-history-table-body');
   const texts = translations[db.settings.language || 'pt-BR'];
+  const lang = db.settings.language === 'it-IT' ? 'it-IT' : 'pt-BR';
   tableBody.innerHTML = '';
   const sorted = [...db.payments].sort((a, b) => b.date.localeCompare(a.date));
 
@@ -2000,7 +2001,30 @@ function renderPaymentHistory() {
     return;
   }
 
+  let lastMonthKey = null;
+
   sorted.forEach(pay => {
+    // Identifica o mês e ano do pagamento para agrupamento
+    const payDate = parseLocalDate(pay.date);
+    const monthKey = `${payDate.getFullYear()}-${String(payDate.getMonth() + 1).padStart(2, '0')}`;
+    
+    // Se mudou o mês, insere um cabeçalho de seção
+    if (monthKey !== lastMonthKey) {
+      const monthLabel = payDate.toLocaleDateString(lang, { month: 'long', year: 'numeric' });
+      const monthHeader = document.createElement('tr');
+      monthHeader.className = 'history-month-header';
+      monthHeader.innerHTML = `
+        <td colspan="6" style="background: rgba(139, 92, 246, 0.05); padding: 1rem; border-left: 4px solid var(--accent-purple);">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <i data-lucide="calendar" style="width: 18px; height: 18px; color: var(--accent-purple);"></i>
+            <span style="font-weight: 700; color: var(--text-primary); text-transform: capitalize;">${monthLabel}</span>
+          </div>
+        </td>
+      `;
+      tableBody.appendChild(monthHeader);
+      lastMonthKey = monthKey;
+    }
+
     const tr = document.createElement('tr');
     let periodText = '...';
     if (pay.coveredDays && pay.coveredDays.length > 0) {
