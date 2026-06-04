@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.63';
-const APP_BUILD_DATE = '2026-06-04 16:14:54';
+const APP_VERSION = '1.0.64';
+const APP_BUILD_DATE = '2026-06-04 16:57:11';
 
 
 
@@ -1261,10 +1261,10 @@ function renderAnnualMethodChart(cash, deposit) {
   const hasData = cash > 0 || deposit > 0;
   const dataValues = hasData ? [cash, deposit] : [1];
   const backgroundColors = hasData 
-    ? ['rgba(245, 158, 11, 0.75)', 'rgba(16, 185, 129, 0.75)'] 
+    ? ['rgba(16, 185, 129, 0.75)', 'rgba(139, 92, 246, 0.75)'] 
     : ['rgba(255, 255, 255, 0.05)'];
   const borderColors = hasData 
-    ? ['#f59e0b', '#10b981'] 
+    ? ['#10b981', '#8b5cf6'] 
     : ['rgba(255, 255, 255, 0.1)'];
   const labels = hasData 
     ? [texts['opt-cash'] || 'Dinheiro', texts['opt-deposit'] || 'Depósito'] 

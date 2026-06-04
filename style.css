@@ -473,11 +473,11 @@ body {
 }
 
 .annual-stat-item.deposit-border {
-  border-left: 4px solid var(--status-paid);
+  border-left: 4px solid var(--accent-purple);
 }
 
 .annual-stat-item.cash-border {
-  border-left: 4px solid var(--status-partial);
+  border-left: 4px solid var(--status-paid);
 }
 
 .annual-stat-item.worked-border {
@@ -1860,6 +1860,15 @@ body {
 .batch-day-rate-input:focus {
   outline: none;
   border-color: var(--accent-purple);
+}
+
+/* Payment Method Specific Colors */
+#input-payment-cash-amount {
+  border-left: 3px solid var(--status-paid);
+}
+
+#input-payment-deposit-amount {
+  border-left: 3px solid var(--accent-purple);
 }
 
 @media (max-width: 600px) {
