@@ -481,7 +481,7 @@ body {
 }
 
 .annual-stat-item.worked-border {
-  border-left: 4px solid var(--accent-purple);
+  border-left: 4px solid var(--status-partial);
 }
 
 .annual-stat-item span {
