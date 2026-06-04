@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.70';
-const APP_BUILD_DATE = '2026-06-04 17:38:27';
+const APP_VERSION = '1.0.71';
+const APP_BUILD_DATE = '2026-06-04 17:42:25';
 
 
 
@@ -226,14 +226,14 @@ const translations = {
     // Settings
     'settings-rates-title': 'Configuração de Tarifas',
     'settings-rates-desc': 'Defina os valores padrão para cada Período trabalhado. Novos dias utilizarão essas taxas.',
-    'label-morning-rate': 'Valor Período da Manhà(€)',
+    'label-morning-rate': 'Valor Período da Manhã (€)',
     'label-night-rate': 'Valor Período da Noite (€)',
     'btn-save-rates': 'Salvar Tarifas',
-    'settings-offdays-title': 'Folga Semanal padrão',
+    'settings-offdays-title': 'Folga Semanal Padrão',
     'settings-offdays-desc': 'Selecione os dias da semana que são suas folgas padrão. Eles serão sugeridos no Lançamento em lote e exibidos no Calendário.',
     'btn-save-offdays': 'Salvar Folgas',
     'settings-backup-title': 'Backup e Restauração',
-    'settings-backup-desc': 'Exporte seus dados para seguranÃ§a ou importe o arquivo JSON em outro dispositivo.',
+    'settings-backup-desc': 'Exporte seus dados para segurança ou importe o arquivo JSON em outro dispositivo.',
     'btn-export': 'Exportar Dados (JSON)',
     'btn-import': 'Importar Dados (JSON)',
     'danger-zone': 'Zona de Perigo',
@@ -322,7 +322,7 @@ const translations = {
     'general-balance-pending': 'Total Geral a Receber',
     'general-balance-zero': 'Tudo Pago / Zerado',
     'settings-halfdays-title': 'Meio Período padrão',
-    'settings-halfdays-desc': 'Defina os dias da semana em que Você trabalha meio Período fixo e qual o Período padrão (Manhàou Noite).',
+    'settings-halfdays-desc': 'Defina os dias da semana em que você trabalha meio período fixo e qual o período padrão (Manhã ou Noite).',
     'btn-save-halfdays': 'Salvar Meio Período'
   },
   'it-IT': {
@@ -424,7 +424,7 @@ const translations = {
     'btn-export': 'Esporta Dati (JSON)',
     'btn-import': 'Importa Dati (JSON)',
     'danger-zone': 'Zona di Pericolo',
-    'danger-zone-desc': 'Questa azione eliminerÃƒÂ  permanentemente tutti i record di giorni lavorati e pagamenti.',
+    'danger-zone-desc': 'Questa azione eliminerà permanentemente tutti i record di giorni lavorati e pagamenti.',
     'btn-clear-all': 'Cancella Tutta la Cronologia',
     'label-language': 'Lingua del Sistema',
     'label-theme': 'Tema del Sistema',
@@ -438,7 +438,7 @@ const translations = {
     'modal-notes-label': 'Note',
     'modal-fin-info': 'Informazioni Finanziarie del Giorno',
     'modal-status': 'Stato:',
-    'modal-received': 'Importo GiÃƒÂ  Ricevuto:',
+    'modal-received': 'Importo Già Ricevuto:',
     'modal-pending': 'Saldo Debitore:',
     'btn-delete': 'Elimina',
     'btn-save-record': 'Salva Record',
@@ -456,11 +456,11 @@ const translations = {
 
     // Days & Months
     'day-0': 'Domenica',
-    'day-1': 'LunedÃƒÂ¬',
-    'day-2': 'MartedÃƒÂ¬',
-    'day-3': 'MercoledÃƒÂ¬',
-    'day-4': 'GiovedÃƒÂ¬',
-    'day-5': 'VenerdÃƒÂ¬',
+    'day-1': 'Lunedì',
+    'day-2': 'Martedì',
+    'day-3': 'Mercoledì',
+    'day-4': 'Giovedì',
+    'day-5': 'Venerdì',
     'day-6': 'Sabato',
     'short-day-0': 'Dom',
     'short-day-1': 'Lun',
@@ -492,8 +492,8 @@ const translations = {
     'msg-undo-confirm': 'Sei sicuro di voler stornare questo pagamento?',
     'msg-undo-success': 'Pagamento stornato con successo!',
     'msg-clear-confirm': 'ATTENZIONE: Perderai permanentemente tutti i record. Vuoi procedere?',
-    'msg-batch-save-success': 'record giornalieri salvati/aggiornati con sucesso!',
-    'msg-batch-remove-success': 'record giornalieri rimossi con sucesso!',
+    'msg-batch-save-success': 'record giornalieri salvati/aggiornati con successo!',
+    'msg-batch-remove-success': 'record giornalieri rimossi con successo!',
     'msg-all-pending': 'Tutte con Pendenza',
     'msg-no-days': 'Nessun giorno di lavoro registrato per elaborare i pagamenti.',
     'msg-no-history': 'Nessun registro di pagamento ricevuto nella cronologia.',
