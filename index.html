@@ -179,14 +179,44 @@
 
         <!-- Dashboard Layout -->
         <div class="dashboard-grid">
-          <!-- Charts -->
-          <div class="glass-card dashboard-card">
-            <h2 class="dashboard-card-title">
-              <i data-lucide="bar-chart-3"></i>
-              <span data-i18n="chart-title">Total Recebido por Mês</span>
-            </h2>
-            <div class="chart-container">
-              <canvas id="earningsChart"></canvas>
+          <!-- Coluna de Gráficos -->
+          <div class="dashboard-charts-column">
+            <!-- Gráfico Mensal -->
+            <div class="glass-card dashboard-card">
+              <h2 class="dashboard-card-title">
+                <i data-lucide="bar-chart-3"></i>
+                <span data-i18n="chart-title">Total Recebido por Mês</span>
+              </h2>
+              <div class="chart-container">
+                <canvas id="earningsChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Resumo Anual (Dinheiro vs Depósito e Dias Trabalhados) -->
+            <div class="glass-card dashboard-card">
+              <h2 class="dashboard-card-title">
+                <i data-lucide="pie-chart"></i>
+                <span data-i18n="chart-annual-summary-title">Resumo Financeiro Anual</span>
+              </h2>
+              <div class="annual-summary-content">
+                <div class="chart-container-annual">
+                  <canvas id="annualMethodChart"></canvas>
+                </div>
+                <div class="annual-stats">
+                  <div class="annual-stat-item deposit-border">
+                    <span data-i18n="annual-received-deposit">Recebido por Depósito</span>
+                    <h4 id="annual-received-deposit-val">€ 0,00</h4>
+                  </div>
+                  <div class="annual-stat-item cash-border">
+                    <span data-i18n="annual-received-cash">Recebido em Dinheiro</span>
+                    <h4 id="annual-received-cash-val">€ 0,00</h4>
+                  </div>
+                  <div class="annual-stat-item worked-border">
+                    <span data-i18n="annual-worked-days">Dias Trabalhados no Ano</span>
+                    <h4 id="annual-worked-days-val">0 dias</h4>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 

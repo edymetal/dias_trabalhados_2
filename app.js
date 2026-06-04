@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.62';
-const APP_BUILD_DATE = '2026-06-04 16:02:11';
+const APP_VERSION = '1.0.63';
+const APP_BUILD_DATE = '2026-06-04 16:14:54';
 
 
 
@@ -166,6 +166,10 @@ const translations = {
     'stat-total-pending': 'Total Pendente',
     'stat-this-week': 'Esta Semana',
     'chart-title': 'Total Recebido por Mês',
+    'chart-annual-summary-title': 'Resumo Financeiro Anual',
+    'annual-received-deposit': 'Recebido por Depósito',
+    'annual-received-cash': 'Recebido em Dinheiro',
+    'annual-worked-days': 'Dias Trabalhados no Ano',
     'quick-actions-title': 'Ações Rápidas',
     'quick-actions-desc': 'Registre rapidamente o seu turno para o dia de hoje',
     'btn-morning-shift': 'Turno da Manhã',
@@ -349,6 +353,10 @@ const translations = {
     'stat-total-pending': 'Totale Pendente',
     'stat-this-week': 'Questa Settimana',
     'chart-title': 'Totale Ricevuto per Mese',
+    'chart-annual-summary-title': 'Riepilogo Finanziario Annuale',
+    'annual-received-deposit': 'Ricevuto tramite Deposito',
+    'annual-received-cash': 'Ricevuto in Contanti',
+    'annual-worked-days': 'Giorni Lavorati nell\'Anno',
     'quick-actions-title': 'Azioni Rapide',
     'quick-actions-desc': 'Registra rapidamente il tuo turno per oggi',
     'btn-morning-shift': 'Turno Mattina',
@@ -510,6 +518,7 @@ let db = null;
 let currentYear = new Date().getFullYear();
 let currentMonth = new Date().getMonth(); // 0-indexed (0 = Jan, 11 = Dez)
 let earningsChart = null;
+let annualMethodChart = null;
 let selectedWeeks = []; // Lista de chaves de semana selecionadas ('YYYY-MM-DD_YYYY-MM-DD')
 const MONTH_NAMES = [];
 const WEEKDAY_NAMES = [];
@@ -1092,8 +1101,62 @@ function updateDashboardData() {
     lucide.createIcons();
   }
 
-  // Atualiza gráfico
+  // Calcular totais do ano atual
+  const year = new Date().getFullYear();
+  let annualReceivedCash = 0;
+  let annualReceivedDeposit = 0;
+  let annualWorkedDays = 0;
+
+  // Acumular pagamentos do ano atual
+  db.payments.forEach(pay => {
+    const payYear = parseLocalDate(pay.date)?.getFullYear() || new Date(pay.date).getFullYear();
+    if (payYear === year) {
+      if (pay.cashAmount !== undefined && pay.depositAmount !== undefined) {
+        annualReceivedCash += pay.cashAmount;
+        annualReceivedDeposit += pay.depositAmount;
+      } else {
+        // Fallback robusto para registros antigos (parsing de notes)
+        const notesLower = (pay.notes || '').toLowerCase();
+        if (notesLower.includes('misto') || (notesLower.includes('dinheiro') && notesLower.includes('depósito')) || (notesLower.includes('contanti') && notesLower.includes('deposito'))) {
+          const cashMatch = notesLower.match(/(?:dinheiro|contanti):\s*[^0-9]*([0-9]+(?:[.,][0-9]{2})?)/);
+          const depositMatch = notesLower.match(/(?:depósito|deposito):\s*[^0-9]*([0-9]+(?:[.,][0-9]{2})?)/);
+          annualReceivedCash += cashMatch ? parseFloat(cashMatch[1].replace(',', '.')) : (pay.amount / 2);
+          annualReceivedDeposit += depositMatch ? parseFloat(depositMatch[1].replace(',', '.')) : (pay.amount / 2);
+        } else if (notesLower.includes('dinheiro') || notesLower.includes('contanti') || notesLower === 'dinheiro' || notesLower === 'contanti') {
+          annualReceivedCash += pay.amount;
+        } else if (notesLower.includes('depósito') || notesLower.includes('deposito') || notesLower === 'depósito' || notesLower === 'deposito') {
+          annualReceivedDeposit += pay.amount;
+        } else {
+          annualReceivedDeposit += pay.amount; // Assume depósito como padrão se não for identificado
+        }
+      }
+    }
+  });
+
+  // Contar dias trabalhados no ano atual
+  Object.keys(db.workedDays).forEach(dateStr => {
+    const dayData = db.workedDays[dateStr];
+    const dayYear = parseInt(dateStr.substring(0, 4), 10);
+    if (dayYear === year) {
+      if (dayData.period !== 'none' && dayData.period !== 'off') {
+        annualWorkedDays++;
+      }
+    }
+  });
+
+  // Atualizar elementos no Dashboard
+  const depositValEl = document.getElementById('annual-received-deposit-val');
+  const cashValEl = document.getElementById('annual-received-cash-val');
+  const workedDaysEl = document.getElementById('annual-worked-days-val');
+  const texts = translations[db.settings.language || 'pt-BR'];
+
+  if (depositValEl) depositValEl.innerText = formatCurrency(annualReceivedDeposit);
+  if (cashValEl) cashValEl.innerText = formatCurrency(annualReceivedCash);
+  if (workedDaysEl) workedDaysEl.innerText = `${annualWorkedDays} ${annualWorkedDays === 1 ? texts['week-day'] : texts['week-days']}`;
+
+  // Atualiza gráficos
   renderEarningsChart();
+  renderAnnualMethodChart(annualReceivedCash, annualReceivedDeposit);
 }
 
 // Cria/Atualiza o gráfico dinÃƒÂ¢mico
@@ -1181,7 +1244,69 @@ function renderEarningsChart() {
       }
     }
   });
+}
+
+// Cria/Atualiza o gráfico anual de métodos de pagamento (Dinheiro vs Depósito)
+function renderAnnualMethodChart(cash, deposit) {
+  if (!db) return; // Segurança contra carga incompleta
+  const canvas = document.getElementById('annualMethodChart');
+  if (!canvas) return; // Se não estiver no dashboard (ex: executando testes), sai da função
+  const ctx = canvas.getContext('2d');
+  const texts = translations[db.settings.language || 'pt-BR'];
+  
+  if (annualMethodChart) {
+    annualMethodChart.destroy();
   }
+
+  const hasData = cash > 0 || deposit > 0;
+  const dataValues = hasData ? [cash, deposit] : [1];
+  const backgroundColors = hasData 
+    ? ['rgba(245, 158, 11, 0.75)', 'rgba(16, 185, 129, 0.75)'] 
+    : ['rgba(255, 255, 255, 0.05)'];
+  const borderColors = hasData 
+    ? ['#f59e0b', '#10b981'] 
+    : ['rgba(255, 255, 255, 0.1)'];
+  const labels = hasData 
+    ? [texts['opt-cash'] || 'Dinheiro', texts['opt-deposit'] || 'Depósito'] 
+    : ['Nenhum dado'];
+
+  annualMethodChart = new Chart(ctx, {
+    type: 'doughnut',
+    plugins: [ChartDataLabels],
+    data: {
+      labels: labels,
+      datasets: [{
+        data: dataValues,
+        backgroundColor: backgroundColors,
+        borderColor: borderColors,
+        borderWidth: 1,
+        hoverOffset: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '70%',
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          enabled: hasData,
+          callbacks: {
+            label: function(context) {
+              const value = context.raw;
+              return `${context.label}: ${formatCurrency(value)}`;
+            }
+          }
+        },
+        datalabels: {
+          display: false
+        }
+      }
+    }
+  });
+}
 
 // ação rápida para registrar turno no dia de hoje
 function quickLogShift(period) {
@@ -1836,6 +1961,9 @@ function processPayment(event) {
     id: paymentId,
     date: paymentDate,
     amount: paymentAmount,
+    method: paymentMethod,
+    cashAmount: paymentMethod === 'Dinheiro' ? paymentAmount : (paymentMethod === 'Misto' ? cashAmount : 0),
+    depositAmount: paymentMethod === 'Depósito' ? paymentAmount : (paymentMethod === 'Misto' ? depositAmount : 0),
     coveredDays: covered,
     notes: paymentNotes,
     advanceRemaining: remaining
