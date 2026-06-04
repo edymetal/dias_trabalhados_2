@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.55';
-const APP_BUILD_DATE = '2026-06-04 15:14:57';
+const APP_VERSION = '1.0.56';
+const APP_BUILD_DATE = '2026-06-04 15:21:42';
 
 
 
@@ -164,7 +164,7 @@ const translations = {
     'stat-total-received': 'Total Recebido',
     'stat-total-pending': 'Total Pendente',
     'stat-this-week': 'Esta Semana',
-    'chart-title': 'Ganhos vs. Recebimentos por mês',
+    'chart-title': 'Total Recebido por Mês',
     'quick-actions-title': 'Ações Rápidas',
     'quick-actions-desc': 'Registre rapidamente o seu turno para o dia de hoje',
     'btn-morning-shift': 'Turno da Manhã',
@@ -343,7 +343,7 @@ const translations = {
     'stat-total-received': 'Totale Ricevuto',
     'stat-total-pending': 'Totale Pendente',
     'stat-this-week': 'Questa Settimana',
-    'chart-title': 'Guadagni vs. Incassi per Mese',
+    'chart-title': 'Totale Ricevuto per Mese',
     'quick-actions-title': 'Azioni Rapide',
     'quick-actions-desc': 'Registra rapidamente il tuo turno per oggi',
     'btn-morning-shift': 'Turno Mattina',
@@ -1083,21 +1083,9 @@ function renderEarningsChart() {
     const label = d.toLocaleDateString(lang, { month: 'short', year: 'numeric' });
     monthlyData[monthKey] = {
       label: label.charAt(0).toUpperCase() + label.slice(1),
-      earned: 0,
       received: 0
     };
   }
-
-  // Acumular ganhos por mês
-  Object.keys(db.workedDays).forEach(dateStr => {
-    const dayData = db.workedDays[dateStr];
-    if (dayData.period !== 'none' && dayData.period !== 'off') {
-      const monthKey = dateStr.substring(0, 7); // YYYY-MM
-      if (monthlyData[monthKey]) {
-        monthlyData[monthKey].earned += dayData.rate || 0;
-      }
-    }
-  });
 
   // Acumular recebimentos por mês
   db.payments.forEach(pay => {
@@ -1108,7 +1096,6 @@ function renderEarningsChart() {
   });
 
   const labels = Object.keys(monthlyData).map(k => monthlyData[k].label);
-  const earnedValues = Object.keys(monthlyData).map(k => monthlyData[k].earned);
   const receivedValues = Object.keys(monthlyData).map(k => monthlyData[k].received);
 
   if (earningsChart) {
@@ -1120,14 +1107,6 @@ function renderEarningsChart() {
     data: {
       labels: labels,
       datasets: [
-        {
-          label: texts['nav-history'],
-          data: earnedValues,
-          backgroundColor: 'rgba(139, 92, 246, 0.65)',
-          borderColor: 'rgb(139, 92, 246)',
-          borderWidth: 1,
-          borderRadius: 6
-        },
         {
           label: texts['stat-total-received'],
           data: receivedValues,
