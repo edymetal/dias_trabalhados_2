@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.64';
-const APP_BUILD_DATE = '2026-06-04 16:57:11';
+const APP_VERSION = '1.0.65';
+const APP_BUILD_DATE = '2026-06-04 17:04:58';
 
 
 
@@ -1181,11 +1181,12 @@ function renderEarningsChart() {
     };
   }
 
-  // Acumular recebimentos por mês
-  db.payments.forEach(pay => {
-    const monthKey = pay.date.substring(0, 7); // YYYY-MM
+  // Acumular recebimentos por mês de trabalho (valor pago pelos dias daquele mês)
+  Object.keys(db.workedDays).forEach(dateStr => {
+    const dayData = db.workedDays[dateStr];
+    const monthKey = dateStr.substring(0, 7); // YYYY-MM
     if (monthlyData[monthKey]) {
-      monthlyData[monthKey].received += pay.amount || 0;
+      monthlyData[monthKey].received += dayData.amountPaid || 0;
     }
   });
 
