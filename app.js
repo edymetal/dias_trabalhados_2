@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.60';
-const APP_BUILD_DATE = '2026-06-04 15:43:58';
+const APP_VERSION = '1.0.61';
+const APP_BUILD_DATE = '2026-06-04 15:52:37';
 
 
 
@@ -129,7 +129,8 @@ const DEFAULT_DB = {
     halfDays: {
       0: 'morning' // Domingo (0) como Meio Período (Manhã) padrão
     },
-    language: 'pt-BR'
+    language: 'pt-BR',
+    theme: 'dark'
   },
   workedDays: {}, // Formato: { 'YYYY-MM-DD': { date, period, rate, status, amountPaid, pendingAmount, notes, paymentsApplied: { paymentId: amount } } }
   payments: []    // Formato: [{ id, date, amount, coveredDays: [], notes }]
@@ -235,6 +236,10 @@ const translations = {
     'danger-zone-desc': 'Esta ação excluirá permanentemente todos os registros de dias trabalhados e pagamentos.',
     'btn-clear-all': 'Apagar Todo o Histórico',
     'label-language': 'Idioma do Sistema',
+    'label-theme': 'Tema do Sistema',
+    'settings-theme-desc': 'Escolha entre o tema claro ou escuro.',
+    'theme-dark': 'Escuro',
+    'theme-light': 'Claro',
 
     // Modals
     'modal-period-label': 'Selecione o Período Trabalhado',
@@ -414,6 +419,10 @@ const translations = {
     'danger-zone-desc': 'Questa azione eliminerÃƒÂ  permanentemente tutti i record di giorni lavorati e pagamenti.',
     'btn-clear-all': 'Cancella Tutta la Cronologia',
     'label-language': 'Lingua del Sistema',
+    'label-theme': 'Tema del Sistema',
+    'settings-theme-desc': 'Scegli tra il tema chiaro o scuro.',
+    'theme-dark': 'Scuro',
+    'theme-light': 'Chiaro',
 
     // Modals
     'modal-period-label': 'Seleziona il Periodo Lavorato',
@@ -581,9 +590,14 @@ async function initDatabase() {
     if (!db.settings.offDays) db.settings.offDays = [4];
     if (!db.settings.halfDays) db.settings.halfDays = {};
     if (!db.settings.language) db.settings.language = 'pt-BR';
+    if (!db.settings.theme) db.settings.theme = 'dark';
     if (db.settings.morningRate === 80) db.settings.morningRate = 35;
     if (db.settings.nightRate === 100) db.settings.nightRate = 25;
   }
+  
+  // Aplicar tema carregado do banco de dados
+  applyTheme(db.settings.theme);
+
   if (!db.workedDays) db.workedDays = {};
   if (!db.payments) db.payments = [];
   
@@ -691,6 +705,23 @@ function setLanguage(lang) {
       renderEarningsChart();
     }
   }
+}
+
+// Aplica o tema na página
+function applyTheme(theme) {
+  const t = theme || 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  const themeSelect = document.getElementById('setting-theme');
+  if (themeSelect) {
+    themeSelect.value = t;
+  }
+}
+
+// Altera o tema, salva e aplica
+function changeTheme(theme) {
+  db.settings.theme = theme;
+  saveToStorage();
+  applyTheme(theme);
 }
 
 // Mostra a Versão no rodapé do menu e na tela de login
@@ -1895,6 +1926,10 @@ function loadSettingsFields() {
   document.getElementById('setting-morning-rate').value = db.settings.morningRate;
   document.getElementById('setting-night-rate').value = db.settings.nightRate;
   document.getElementById('setting-language').value = db.settings.language || 'pt-BR';
+  const themeSelect = document.getElementById('setting-theme');
+  if (themeSelect) {
+    themeSelect.value = db.settings.theme || 'dark';
+  }
   const offDays = db.settings.offDays || [4];
   for (let i = 0; i <= 6; i++) {
     const chk = document.getElementById(`offday-${i}`);
@@ -2233,6 +2268,7 @@ window.exportDatabase = exportDatabase;
 window.importDatabase = importDatabase;
 window.clearDatabase = clearDatabase;
 window.setLanguage = setLanguage;
+window.changeTheme = changeTheme;
 window.saveRatesSettings = saveRatesSettings;
 window.saveOffDaysSettings = saveOffDaysSettings;
 window.saveHalfDaysSettings = saveHalfDaysSettings;
