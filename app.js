@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.73';
-const APP_BUILD_DATE = '2026-06-05 19:31:57';
+const APP_VERSION = '1.0.74';
+const APP_BUILD_DATE = '2026-06-05 19:37:23';
 
 
 
@@ -206,7 +206,7 @@ const translations = {
     'label-notes': 'Especificação / Notas',
     'btn-confirm-receipt': 'Confirmar Recebimento',
     'opt-cash': 'Dinheiro',
-    'opt-deposit': 'depósito',
+    'opt-deposit': 'Depósito',
     'opt-others': 'Outros (Especificar)',
     'week-to': 'a',
     'week-days': 'dias',
@@ -1261,7 +1261,8 @@ function renderEarningsChart() {
     const label = d.toLocaleDateString(lang, { month: 'short', year: 'numeric' });
     monthlyData[monthKey] = {
       label: label.charAt(0).toUpperCase() + label.slice(1),
-      received: 0
+      cash: 0,
+      deposit: 0
     };
   }
 
@@ -1269,13 +1270,48 @@ function renderEarningsChart() {
   Object.keys(db.workedDays).forEach(dateStr => {
     const dayData = db.workedDays[dateStr];
     const monthKey = dateStr.substring(0, 7); // YYYY-MM
-    if (monthlyData[monthKey]) {
-      monthlyData[monthKey].received += dayData.amountPaid || 0;
+    
+    if (monthlyData[monthKey] && dayData.paymentsApplied) {
+      Object.keys(dayData.paymentsApplied).forEach(payId => {
+        const amt = dayData.paymentsApplied[payId];
+        const pay = db.payments.find(p => p.id === payId);
+        if (pay) {
+          // Calcula a proporção de dinheiro e depósito deste pagamento específico
+          let cashRatio = 0;
+          let depositRatio = 0;
+          
+          if (pay.cashAmount !== undefined && pay.depositAmount !== undefined) {
+            cashRatio = pay.cashAmount / pay.amount;
+            depositRatio = pay.depositAmount / pay.amount;
+          } else {
+            const notesLower = (pay.notes || '').toLowerCase();
+            const method = pay.method || '';
+            if (method === 'Dinheiro' || method === 'Contanti' || notesLower.includes('dinheiro') || notesLower.includes('contanti')) {
+              cashRatio = 1;
+            } else if (method === 'Depósito' || method === 'Deposito' || notesLower.includes('depósito') || notesLower.includes('deposito')) {
+              depositRatio = 1;
+            } else if (notesLower.includes('misto')) {
+              const cashMatch = notesLower.match(/(?:dinheiro|contanti):\s*[^0-9]*([0-9]+(?:[.,][0-9]{2})?)/);
+              const depositMatch = notesLower.match(/(?:depósito|deposito):\s*[^0-9]*([0-9]+(?:[.,][0-9]{2})?)/);
+              const cVal = cashMatch ? parseFloat(cashMatch[1].replace(',', '.')) : (pay.amount / 2);
+              const dVal = depositMatch ? parseFloat(depositMatch[1].replace(',', '.')) : (pay.amount / 2);
+              cashRatio = cVal / pay.amount;
+              depositRatio = dVal / pay.amount;
+            } else {
+              depositRatio = 1; // Padrão
+            }
+          }
+          
+          monthlyData[monthKey].cash += amt * cashRatio;
+          monthlyData[monthKey].deposit += amt * depositRatio;
+        }
+      });
     }
   });
 
   const labels = Object.keys(monthlyData).map(k => monthlyData[k].label);
-  const receivedValues = Object.keys(monthlyData).map(k => monthlyData[k].received);
+  const cashValues = Object.keys(monthlyData).map(k => monthlyData[k].cash);
+  const depositValues = Object.keys(monthlyData).map(k => monthlyData[k].deposit);
 
   if (earningsChart) {
     earningsChart.destroy();
@@ -1288,12 +1324,22 @@ function renderEarningsChart() {
       labels: labels,
       datasets: [
         {
-          label: texts['stat-total-received'],
-          data: receivedValues,
+          label: texts['opt-cash'] || 'Dinheiro',
+          data: cashValues,
           backgroundColor: 'rgba(16, 185, 129, 0.65)',
           borderColor: 'rgb(16, 185, 129)',
           borderWidth: 1,
-          borderRadius: 6
+          borderRadius: 4,
+          stack: 'stack1'
+        },
+        {
+          label: texts['opt-deposit'] || 'Depósito',
+          data: depositValues,
+          backgroundColor: 'rgba(139, 92, 246, 0.65)',
+          borderColor: 'rgb(139, 92, 246)',
+          borderWidth: 1,
+          borderRadius: 4,
+          stack: 'stack1'
         }
       ]
     },
@@ -1302,28 +1348,50 @@ function renderEarningsChart() {
       maintainAspectRatio: false,
       plugins: {
         legend: {
+          display: true,
+          position: 'top',
           labels: {
             color: '#94a3b8',
-            font: { family: 'Outfit', size: 12 }
+            font: { family: 'Outfit', size: 11 },
+            boxWidth: 12
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              let label = context.dataset.label || '';
+              if (label) label += ': ';
+              if (context.parsed.y !== null) label += formatCurrency(context.parsed.y);
+              return label;
+            },
+            footer: function(items) {
+              let total = 0;
+              items.forEach(item => total += item.parsed.y);
+              return `Total: ${formatCurrency(total)}`;
+            }
           }
         },
         datalabels: {
-          anchor: 'end',
-          align: 'top',
-          formatter: (value) => value > 0 ? formatCurrency(value) : '',
-          color: '#cbd5e1',
-          font: { family: 'Outfit', weight: '600', size: 11 },
-          offset: 4
+          anchor: 'center',
+          align: 'center',
+          formatter: (value) => value > 5 ? formatCurrency(value) : '',
+          color: '#fff',
+          font: { family: 'Outfit', weight: '700', size: 10 },
+          display: function(context) {
+            return context.dataset.data[context.dataIndex] > 0;
+          }
         }
       },
       scales: {
         x: {
+          stacked: true,
           grid: { display: false },
-          ticks: { color: '#94a3b8', font: { family: 'Outfit' } }
+          ticks: { color: '#94a3b8', font: { family: 'Outfit', size: 11 } }
         },
         y: {
+          stacked: true,
           grid: { color: 'rgba(255, 255, 255, 0.05)' },
-          ticks: { color: '#94a3b8', font: { family: 'Outfit' } },
+          ticks: { color: '#94a3b8', font: { family: 'Outfit', size: 11 } },
           grace: '15%'
         }
       }
