@@ -175,6 +175,16 @@
               <i data-lucide="calendar-range"></i>
             </div>
           </div>
+
+          <div class="glass-card stat-card" id="stat-card-countdown">
+            <div class="stat-info">
+              <p data-i18n="stat-next-payment">Próximo Pagamento</p>
+              <h3 id="stat-payment-countdown">...</h3>
+            </div>
+            <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+              <i data-lucide="calendar-clock"></i>
+            </div>
+          </div>
         </div>
 
         <!-- Dashboard Layout -->
@@ -685,6 +695,50 @@
                 <option value="light" data-i18n="theme-light">Claro</option>
               </select>
             </div>
+          </div>
+
+          <!-- Ciclo de Pagamento Settings -->
+          <div class="glass-card settings-card">
+            <h2 class="dashboard-card-title">
+              <i data-lucide="calendar-clock"></i>
+              <span data-i18n="settings-payment-cycle-title">Ciclo de Pagamento</span>
+            </h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;" data-i18n="settings-payment-cycle-desc">
+              Defina quando você costuma receber seus pagamentos para acompanhar o prazo no Dashboard.
+            </p>
+
+            <form id="settings-payment-cycle-form" onsubmit="savePaymentCycleSettings(event)">
+              <div class="form-group">
+                <label for="setting-payment-type" data-i18n="label-payment-type">Tipo de Ciclo</label>
+                <select class="form-input" id="setting-payment-type" onchange="togglePaymentCycleInputs()">
+                  <option value="weekly" data-i18n="opt-weekly">Semanal (Dia da Semana)</option>
+                  <option value="monthly" data-i18n="opt-monthly">Mensal (Dia do Mês)</option>
+                </select>
+              </div>
+
+              <div class="form-group" id="group-payment-week" style="display: block;">
+                <label for="setting-payment-day-week" data-i18n="label-payment-day-week">Dia da Semana de Recebimento</label>
+                <select class="form-input" id="setting-payment-day-week">
+                  <option value="0" data-i18n="day-0">Domingo</option>
+                  <option value="1" data-i18n="day-1">Segunda-feira</option>
+                  <option value="2" data-i18n="day-2">Terça-feira</option>
+                  <option value="3" data-i18n="day-3">Quarta-feira</option>
+                  <option value="4" data-i18n="day-4">Quinta-feira</option>
+                  <option value="5" data-i18n="day-5">Sexta-feira</option>
+                  <option value="6" data-i18n="day-6">Sábado</option>
+                </select>
+              </div>
+
+              <div class="form-group" id="group-payment-month" style="display: none;">
+                <label for="setting-payment-day-month" data-i18n="label-payment-day-month">Dia do Mês de Recebimento</label>
+                <input type="number" min="1" max="31" class="form-input" id="setting-payment-day-month" placeholder="Ex: 5">
+              </div>
+
+              <button type="submit" class="btn-primary">
+                <i data-lucide="save"></i>
+                <span data-i18n="btn-save-payment-cycle">Salvar Ciclo de Pagamento</span>
+              </button>
+            </form>
           </div>
 
           <!-- Backup and Restore -->

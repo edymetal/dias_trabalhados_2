@@ -385,6 +385,7 @@ body {
 .stat-card.stat-received::after { background: var(--status-paid); }
 .stat-card.stat-pending::after { background: var(--status-unpaid); }
 .stat-card.stat-partial::after { background: var(--status-partial); }
+#stat-card-countdown::after { background: #3b82f6; }
 
 /* Credit Active State for Pending Card */
 .stat-card.stat-pending.stat-credit-active::after {

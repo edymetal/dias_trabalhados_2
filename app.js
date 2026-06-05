@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.75';
-const APP_BUILD_DATE = '2026-06-05 19:48:33';
+const APP_VERSION = '1.0.76';
+const APP_BUILD_DATE = '2026-06-05 19:57:43';
 
 
 
@@ -326,7 +326,19 @@ const translations = {
     'settings-halfdays-desc': 'Defina os dias da semana em que você trabalha meio período fixo e qual o período padrão (Manhã ou Noite).',
     'btn-save-halfdays': 'Salvar Meio Período',
     'legend-projected': 'Crédito Antecipado',
-    'badge-projected': 'Crédito'
+    'badge-projected': 'Crédito',
+    'settings-payment-cycle-title': 'Ciclo de Pagamento',
+    'settings-payment-cycle-desc': 'Defina quando você costuma receber seus pagamentos para acompanhar o prazo no Dashboard.',
+    'label-payment-type': 'Tipo de Ciclo',
+    'opt-weekly': 'Semanal (Dia da Semana)',
+    'opt-monthly': 'Mensal (Dia do Mês)',
+    'label-payment-day-week': 'Dia da Semana de Recebimento',
+    'label-payment-day-month': 'Dia do Mês de Recebimento',
+    'btn-save-payment-cycle': 'Salvar Ciclo de Pagamento',
+    'stat-next-payment': 'Próximo Pagamento',
+    'msg-payment-today': 'Pagamento é HOJE!',
+    'msg-days-left': 'faltam {n} dias',
+    'msg-day-left': 'falta 1 dia'
   },
   'it-IT': {
     // Sidebar
@@ -516,7 +528,19 @@ const translations = {
     'settings-halfdays-desc': 'Definisci i giorni della settimana in cui lavori mezza giornata fissa e il periodo standard (Mattina o Sera).',
     'btn-save-halfdays': 'Salva Mezza Giornata',
     'legend-projected': 'Credito Anticipato',
-    'badge-projected': 'Credito'
+    'badge-projected': 'Credito',
+    'settings-payment-cycle-title': 'Ciclo di Pagamento',
+    'settings-payment-cycle-desc': 'Definisci quando ricevi solitamente i tuoi pagamenti per monitorare la scadenza nella Dashboard.',
+    'label-payment-type': 'Tipo di Ciclo',
+    'opt-weekly': 'Settimanale (Giorno della Settimana)',
+    'opt-monthly': 'Mensile (Giorno del Mese)',
+    'label-payment-day-week': 'Giorno della Settimana di Incasso',
+    'label-payment-day-month': 'Giorno del Mese di Incasso',
+    'btn-save-payment-cycle': 'Salva Ciclo di Pagamento',
+    'stat-next-payment': 'Prossimo Pagamento',
+    'msg-payment-today': 'Il pagamento è OGGI!',
+    'msg-days-left': 'mancano {n} giorni',
+    'msg-day-left': 'manca 1 giorno'
     }
     };
 
@@ -1152,9 +1176,11 @@ function updateDashboardData() {
   const totalAdvance = db.payments.reduce((acc, pay) => acc + (pay.advanceRemaining || 0), 0);
 
   // Atualiza os elementos da tela
-  document.getElementById('stat-total-earnings').innerText = formatCurrency(totalEarnings);
   document.getElementById('stat-total-received').innerText = formatCurrency(totalReceived);
   document.getElementById('stat-this-week-earnings').innerText = formatCurrency(thisWeekEarnings);
+
+  // Atualiza contagem regressiva para pagamento
+  updatePaymentCountdown();
 
   // Atualização dinÃƒÂ¢mica do Card de Pendente / Crédito
   const pendingCard = document.querySelector('.stat-card.stat-pending');
@@ -2286,6 +2312,78 @@ function loadSettingsFields() {
       }
     }
   }
+
+  // Carrega Ciclo de Pagamento
+  const cycle = db.settings.paymentCycle || { type: 'weekly', day: 5 };
+  document.getElementById('setting-payment-type').value = cycle.type;
+  if (cycle.type === 'weekly') {
+    document.getElementById('setting-payment-day-week').value = cycle.day;
+  } else {
+    document.getElementById('setting-payment-day-month').value = cycle.day;
+  }
+  togglePaymentCycleInputs();
+}
+
+function togglePaymentCycleInputs() {
+  const type = document.getElementById('setting-payment-type').value;
+  document.getElementById('group-payment-week').style.display = type === 'weekly' ? 'block' : 'none';
+  document.getElementById('group-payment-month').style.display = type === 'monthly' ? 'block' : 'none';
+}
+
+function savePaymentCycleSettings(event) {
+  event.preventDefault();
+  const type = document.getElementById('setting-payment-type').value;
+  let day = 0;
+  if (type === 'weekly') {
+    day = parseInt(document.getElementById('setting-payment-day-week').value, 10);
+  } else {
+    day = parseInt(document.getElementById('setting-payment-day-month').value, 10);
+  }
+  db.settings.paymentCycle = { type, day };
+  saveToStorage();
+  updateDashboardData();
+  alert(translations[db.settings.language]['msg-save-success']);
+}
+
+function updatePaymentCountdown() {
+  const countdownEl = document.getElementById('stat-payment-countdown');
+  if (!countdownEl) return;
+
+  const cycle = db.settings.paymentCycle || { type: 'weekly', day: 5 };
+  const texts = translations[db.settings.language || 'pt-BR'];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let nextPayDate = new Date(today);
+  
+  if (cycle.type === 'weekly') {
+    const targetDay = cycle.day; // 0-6
+    const currentDay = today.getDay();
+    let diff = targetDay - currentDay;
+    if (diff < 0) diff += 7;
+    // Se diff é 0 mas Já passou do horário (ou queremos o próximo), diff poderia ser 7, mas aqui diff 0 significa hoje
+    nextPayDate.setDate(today.getDate() + diff);
+  } else {
+    const targetDay = cycle.day; // 1-31
+    nextPayDate.setDate(targetDay);
+    if (nextPayDate < today) {
+      nextPayDate.setMonth(today.getMonth() + 1);
+    }
+  }
+
+  const timeDiff = nextPayDate.getTime() - today.getTime();
+  const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+  if (daysDiff === 0) {
+    countdownEl.innerText = texts['msg-payment-today'];
+    countdownEl.style.color = 'var(--status-paid)';
+  } else if (daysDiff === 1) {
+    countdownEl.innerText = texts['msg-day-left'];
+    countdownEl.style.color = '';
+  } else {
+    countdownEl.innerText = texts['msg-days-left'].replace('{n}', daysDiff);
+    countdownEl.style.color = '';
+  }
 }
 
 function toggleHalfDaySelect(dayIndex) {
@@ -2605,6 +2703,8 @@ window.changeTheme = changeTheme;
 window.saveRatesSettings = saveRatesSettings;
 window.saveOffDaysSettings = saveOffDaysSettings;
 window.saveHalfDaysSettings = saveHalfDaysSettings;
+window.savePaymentCycleSettings = savePaymentCycleSettings;
+window.togglePaymentCycleInputs = togglePaymentCycleInputs;
 window.toggleHalfDaySelect = toggleHalfDaySelect;
 window.closeDayModal = closeDayModal;
 window.saveDayDetails = saveDayDetails;
