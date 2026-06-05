@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.71';
-const APP_BUILD_DATE = '2026-06-04 17:42:25';
+const APP_VERSION = '1.0.72';
+const APP_BUILD_DATE = '2026-06-05 19:24:15';
 
 
 
@@ -323,7 +323,9 @@ const translations = {
     'general-balance-zero': 'Tudo Pago / Zerado',
     'settings-halfdays-title': 'Meio Período padrão',
     'settings-halfdays-desc': 'Defina os dias da semana em que você trabalha meio período fixo e qual o período padrão (Manhã ou Noite).',
-    'btn-save-halfdays': 'Salvar Meio Período'
+    'btn-save-halfdays': 'Salvar Meio Período',
+    'legend-projected': 'Crédito Antecipado',
+    'badge-projected': 'Crédito'
   },
   'it-IT': {
     // Sidebar
@@ -510,7 +512,9 @@ const translations = {
     'general-balance-zero': 'Tutto Pagato / Bilancio Zero',
     'settings-halfdays-title': 'Mezza Giornata Standard',
     'settings-halfdays-desc': 'Definisci i giorni della settimana in cui lavori mezza giornata fissa e il periodo standard (Mattina o Sera).',
-    'btn-save-halfdays': 'Salva Mezza Giornata'
+    'btn-save-halfdays': 'Salva Mezza Giornata',
+    'legend-projected': 'Credito Anticipato',
+    'badge-projected': 'Credito'
     }
     };
 
@@ -946,6 +950,86 @@ function getWeekRange(dateStr) {
   };
 }
 
+// Calcula dias projetados no futuro que seriam cobertos pelo Crédito Antecipado disponível
+function calculateProjectedCreditDays() {
+  const totalCredit = db.payments.reduce((acc, p) => acc + (p.advanceRemaining || 0), 0);
+  if (totalCredit <= 0) return {};
+
+  const projectedDays = {};
+  let remainingCredit = totalCredit;
+  
+  // Encontrar a última data registrada no banco para começar a projeção a partir dela
+  const workedDates = Object.keys(db.workedDays).sort();
+  let lastDate;
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (workedDates.length > 0) {
+    lastDate = parseLocalDate(workedDates[workedDates.length - 1]);
+    // Se a última data for no passado, começamos a projetar a partir de amanhã
+    if (lastDate < today) lastDate = today;
+  } else {
+    lastDate = today;
+  }
+
+  let current = new Date(lastDate);
+  current.setDate(current.getDate() + 1);
+  
+  const offDays = db.settings.offDays || [];
+  const halfDays = db.settings.halfDays || {};
+  const morningRate = db.settings.morningRate;
+  const nightRate = db.settings.nightRate;
+  const bothRate = morningRate + nightRate;
+
+  let iterations = 0;
+  const MAX_ITERATIONS = 90; // Projetar no máximo 3 meses para performance e segurança
+
+  while (remainingCredit > 0.01 && iterations < MAX_ITERATIONS) {
+    iterations++;
+    const dateStr = formatDateISO(current);
+    const dayOfWeek = current.getDay();
+
+    // Pular se o dia Já estiver registrado no banco (Já foi tratado pelo applyAdvanceCreditsToDay)
+    if (db.workedDays[dateStr]) {
+      current.setDate(current.getDate() + 1);
+      continue;
+    }
+
+    // Pular se for folga configurada
+    if (offDays.includes(dayOfWeek)) {
+      current.setDate(current.getDate() + 1);
+      continue;
+    }
+
+    let rate = bothRate;
+    let period = 'both';
+    
+    // Verifica se é meio Período padrão
+    if (halfDays[dayOfWeek]) {
+      period = halfDays[dayOfWeek];
+      rate = (period === 'morning') ? morningRate : nightRate;
+    }
+
+    const apply = Math.min(remainingCredit, rate);
+    
+    projectedDays[dateStr] = {
+      date: dateStr,
+      period: period,
+      rate: rate,
+      amountPaid: apply,
+      pendingAmount: Math.max(0, rate - apply),
+      status: apply >= (rate - 0.01) ? 'paid' : 'partial',
+      isProjected: true
+    };
+
+    remainingCredit -= apply;
+    current.setDate(current.getDate() + 1);
+  }
+
+  return projectedDays;
+}
+
 // Aplica Créditos de adiantamento disponíveis a um dia trabalhado que tenha saldo pendente
 function applyAdvanceCreditsToDay(day) {
   if (day.period === 'none' || day.period === 'off') return;
@@ -1364,6 +1448,9 @@ function renderCalendar() {
   const grid = document.getElementById('calendar-days-grid');
   grid.innerHTML = ''; 
 
+  // Calcula projeção de Créditos para exibição visual
+  const projectedDays = calculateProjectedCreditDays();
+
   const dayNames = [
     texts['short-day-1'], texts['short-day-2'], texts['short-day-3'], 
     texts['short-day-4'], texts['short-day-5'], texts['short-day-6'], texts['short-day-0']
@@ -1385,12 +1472,12 @@ function renderCalendar() {
     const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
     const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
     const dateStr = formatDateISO(new Date(prevYear, prevMonth, dayNum));
-    createDayElement(dayNum, dateStr, true, grid);
+    createDayElement(dayNum, dateStr, true, grid, projectedDays);
   }
 
   for (let i = 1; i <= lastDay; i++) {
     const dateStr = formatDateISO(new Date(currentYear, currentMonth, i));
-    createDayElement(i, dateStr, false, grid);
+    createDayElement(i, dateStr, false, grid, projectedDays);
   }
 
   const totalCells = grid.children.length - 7;
@@ -1400,20 +1487,27 @@ function renderCalendar() {
     const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
     const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear;
     const dateStr = formatDateISO(new Date(nextYear, nextMonth, i));
-    createDayElement(i, dateStr, true, grid);
+    createDayElement(i, dateStr, true, grid, projectedDays);
   }
 
   lucide.createIcons();
 }
 
-function createDayElement(dayNum, dateStr, isOtherMonth, container) {
+function createDayElement(dayNum, dateStr, isOtherMonth, container, projectedDays = {}) {
   const dayElement = document.createElement('div');
   dayElement.className = 'glass-card calendar-day';
   if (isOtherMonth) {
     dayElement.classList.add('other-month');
   }
 
-  const data = db.workedDays[dateStr];
+  let data = db.workedDays[dateStr];
+  const isProjected = !data && projectedDays[dateStr];
+  
+  if (isProjected) {
+    data = projectedDays[dateStr];
+    dayElement.classList.add(data.status === 'paid' ? 'day-projected-paid' : 'day-projected-partial');
+  }
+
   const texts = translations[db.settings.language || 'pt-BR'];
 
   const numSpan = document.createElement('span');
@@ -1497,6 +1591,13 @@ function createDayElement(dayNum, dateStr, isOtherMonth, container) {
         valDiv.innerText = formatCurrency(data.rate);
       }
       detailsContainer.appendChild(valDiv);
+
+      if (isProjected) {
+        const projBadge = document.createElement('span');
+        projBadge.className = 'projected-badge';
+        projBadge.innerText = texts['badge-projected'];
+        detailsContainer.appendChild(projBadge);
+      }
     }
     dayElement.appendChild(detailsContainer);
   } else if (!data && isDefaultOffDay) {
