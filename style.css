@@ -857,6 +857,12 @@ body {
   border: 1px dashed var(--status-off);
 }
 
+.day-vacation {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(59, 130, 246, 0.05));
+  border: 1px dashed #06b6d4;
+  border-left: 4px solid #06b6d4 !important;
+}
+
 /* Projected Credit Days Style */
 .day-projected-paid {
   border: 1.5px dashed var(--accent-purple) !important;

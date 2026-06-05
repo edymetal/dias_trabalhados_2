@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.74';
-const APP_BUILD_DATE = '2026-06-05 19:37:23';
+const APP_VERSION = '1.0.75';
+const APP_BUILD_DATE = '2026-06-05 19:48:33';
 
 
 
@@ -187,6 +187,7 @@ const translations = {
     'legend-partial': 'Parcialmente Pago',
     'legend-pending': 'Pendente',
     'legend-off': 'Folga',
+    'legend-vacation': 'Férias',
     'legend-morning': 'Manhã',
     'legend-night': 'Noite',
     'legend-both': 'Ambos',
@@ -376,6 +377,7 @@ const translations = {
     'legend-partial': 'Parzialmente Pagato',
     'legend-pending': 'Pendente',
     'legend-off': 'Riposo',
+    'legend-vacation': 'Ferie',
     'legend-morning': 'Mattina',
     'legend-night': 'Sera',
     'legend-both': 'Entrambi',
@@ -886,6 +888,9 @@ function updateRateLabels() {
     batchDefaultSelect.options[1].text = `${texts['legend-night']} (${formatCurrency(night)})`;
     batchDefaultSelect.options[2].text = `${texts['legend-both']} (${formatCurrency(both)})`;
     batchDefaultSelect.options[3].text = `${texts['legend-off']} (${formatCurrency(0)})`;
+    if (batchDefaultSelect.options[4]) {
+      batchDefaultSelect.options[4].text = `${texts['legend-vacation']} (${formatCurrency(0)})`;
+    }
   }
 }
 
@@ -1600,8 +1605,9 @@ function createDayElement(dayNum, dateStr, isOtherMonth, container, projectedDay
     else if (data.period === 'night') dayElement.classList.add('day-worked-night');
     else if (data.period === 'both') dayElement.classList.add('day-worked-both');
     else if (data.period === 'off') dayElement.classList.add('day-off');
+    else if (data.period === 'vacation') dayElement.classList.add('day-vacation');
 
-    if (data.period !== 'off') {
+    if (data.period !== 'off' && data.period !== 'vacation') {
       if (data.status === 'paid') dayElement.classList.add('day-status-paid');
       else if (data.status === 'partial') dayElement.classList.add('day-status-partial');
       else if (data.status === 'unpaid') dayElement.classList.add('day-status-unpaid');
@@ -1646,11 +1652,15 @@ function createDayElement(dayNum, dateStr, isOtherMonth, container, projectedDay
       badge.innerHTML = `<i data-lucide="coffee" style="width: 10px; height: 10px; display: inline; vertical-align: middle; margin-right: 2px;"></i> ${texts['legend-off']}`;
       badge.style.background = 'rgba(100, 116, 139, 0.15)';
       badge.style.color = '#94a3b8';
+    } else if (data.period === 'vacation') {
+      badge.innerHTML = `<i data-lucide="palmtree" style="width: 10px; height: 10px; display: inline; vertical-align: middle; margin-right: 2px;"></i> ${texts['legend-vacation']}`;
+      badge.style.background = 'rgba(6, 182, 212, 0.15)';
+      badge.style.color = '#06b6d4';
     }
     
     detailsContainer.appendChild(badge);
 
-    if (data.period !== 'off') {
+    if (data.period !== 'off' && data.period !== 'vacation') {
       const valDiv = document.createElement('div');
       valDiv.className = 'day-value';
       if (data.status === 'partial') {
@@ -2414,6 +2424,7 @@ function generateBatchDaysList() {
           <option value="night" ${period === 'night' ? 'selected' : ''}>${texts['legend-night']}</option>
           <option value="both" ${period === 'both' ? 'selected' : ''}>${texts['legend-both']}</option>
           <option value="off" ${period === 'off' ? 'selected' : ''}>${texts['legend-off']}</option>
+          <option value="vacation" ${period === 'vacation' ? 'selected' : ''}>${texts['legend-vacation']}</option>
         </select>
         <input type="number" class="batch-day-rate-input" value="${existing ? existing.rate : ''}" placeholder="${getStandardRateForPeriod(period).toFixed(2)}" ${period === 'off' ? 'disabled' : ''}>
       </div>
@@ -2426,7 +2437,7 @@ function generateBatchDaysList() {
 
 function updateBatchRowRate(select) {
   const input = select.closest('.batch-day-row').querySelector('.batch-day-rate-input');
-  if (select.value === 'off') { input.value = ''; input.disabled = true; }
+  if (select.value === 'off' || select.value === 'vacation') { input.value = ''; input.disabled = true; }
   else { input.disabled = false; input.placeholder = getStandardRateForPeriod(select.value).toFixed(2); }
 }
 
