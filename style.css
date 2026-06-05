@@ -386,6 +386,16 @@ body {
 .stat-card.stat-pending::after { background: var(--status-unpaid); }
 .stat-card.stat-partial::after { background: var(--status-partial); }
 
+/* Credit Active State for Pending Card */
+.stat-card.stat-pending.stat-credit-active::after {
+  background: var(--accent-purple);
+}
+
+.stat-card.stat-pending.stat-credit-active .stat-icon {
+  background: var(--accent-purple-glow);
+  color: var(--accent-purple);
+}
+
 .stat-info p {
   font-size: 0.85rem;
   text-transform: uppercase;

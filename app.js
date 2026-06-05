@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.72';
-const APP_BUILD_DATE = '2026-06-05 19:24:15';
+const APP_VERSION = '1.0.73';
+const APP_BUILD_DATE = '2026-06-05 19:31:57';
 
 
 
@@ -1161,14 +1161,14 @@ function updateDashboardData() {
 
     if (totalAdvance > 0) {
       // Transforma em card de Crédito
-      pendingCard.style.borderLeft = '4px solid var(--accent-purple)';
+      pendingCard.style.borderLeft = ''; // Deixa o CSS tratar via classe
       pendingCard.classList.add('stat-credit-active');
       if (pendingTitle) pendingTitle.innerText = texts['stat-total-credit'] || 'Crédito Antecipado';
       if (pendingValue) {
         pendingValue.innerText = formatCurrency(totalAdvance);
         pendingValue.style.color = 'var(--accent-purple)';
       }
-      if (pendingIcon) pendingIcon.innerHTML = `<i data-lucide="coins"></i>`;
+      if (pendingIcon) pendingIcon.innerHTML = `<i data-lucide="hand-coins"></i>`;
     } else {
       // Volta a ser card de Pendente
       pendingCard.style.borderLeft = '';
