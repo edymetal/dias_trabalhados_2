@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.76';
-const APP_BUILD_DATE = '2026-06-05 19:57:43';
+const APP_VERSION = '1.0.77';
+const APP_BUILD_DATE = '2026-06-05 20:03:57';
 
 
 
@@ -336,9 +336,9 @@ const translations = {
     'label-payment-day-month': 'Dia do Mês de Recebimento',
     'btn-save-payment-cycle': 'Salvar Ciclo de Pagamento',
     'stat-next-payment': 'Próximo Pagamento',
-    'msg-payment-today': 'Pagamento é HOJE!',
-    'msg-days-left': 'faltam {n} dias',
-    'msg-day-left': 'falta 1 dia'
+    'msg-payment-today': 'HOJE!',
+    'msg-days-left': '{n} dias',
+    'msg-day-left': '1 dia'
   },
   'it-IT': {
     // Sidebar
@@ -538,9 +538,9 @@ const translations = {
     'label-payment-day-month': 'Giorno del Mese di Incasso',
     'btn-save-payment-cycle': 'Salva Ciclo di Pagamento',
     'stat-next-payment': 'Prossimo Pagamento',
-    'msg-payment-today': 'Il pagamento è OGGI!',
-    'msg-days-left': 'mancano {n} giorni',
-    'msg-day-left': 'manca 1 giorno'
+    'msg-payment-today': 'OGGI!',
+    'msg-days-left': '{n} giorni',
+    'msg-day-left': '1 giorno'
     }
     };
 
@@ -2314,7 +2314,7 @@ function loadSettingsFields() {
   }
 
   // Carrega Ciclo de Pagamento
-  const cycle = db.settings.paymentCycle || { type: 'weekly', day: 5 };
+  const cycle = db.settings.paymentCycle || { type: 'weekly', day: 0 };
   document.getElementById('setting-payment-type').value = cycle.type;
   if (cycle.type === 'weekly') {
     document.getElementById('setting-payment-day-week').value = cycle.day;
@@ -2349,7 +2349,7 @@ function updatePaymentCountdown() {
   const countdownEl = document.getElementById('stat-payment-countdown');
   if (!countdownEl) return;
 
-  const cycle = db.settings.paymentCycle || { type: 'weekly', day: 5 };
+  const cycle = db.settings.paymentCycle || { type: 'weekly', day: 0 };
   const texts = translations[db.settings.language || 'pt-BR'];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
