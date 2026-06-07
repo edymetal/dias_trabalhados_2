@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.78';
-const APP_BUILD_DATE = '2026-06-07 19:07:16';
+const APP_VERSION = '1.0.79';
+const APP_BUILD_DATE = '2026-06-07 19:10:45';
 
 
 
@@ -2234,8 +2234,9 @@ function renderPaymentHistory() {
     let periodText = '...';
     if (pay.coveredDays && pay.coveredDays.length > 0) {
       const dates = [...pay.coveredDays].sort((a, b) => a.localeCompare(b));
-      const formattedDates = dates.map(d => formatDateStringDisplay(d)).join(', ');
-      periodText = `${formattedDates} (${dates.length} ${texts['week-days']})`;
+      const start = formatDateStringDisplay(dates[0]);
+      const end = formatDateStringDisplay(dates[dates.length - 1]);
+      periodText = dates.length === 1 ? start : `${start} ${texts['week-to']} ${end} (${dates.length} ${texts['week-days']})`;
     }
 
     const hasAdvance = pay.advanceRemaining > 0;
