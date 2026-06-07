@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.79';
-const APP_BUILD_DATE = '2026-06-07 19:10:45';
+const APP_VERSION = '1.0.80';
+const APP_BUILD_DATE = '2026-06-07 19:17:41';
 
 
 
@@ -2232,11 +2232,36 @@ function renderPaymentHistory() {
 
     const tr = document.createElement('tr');
     let periodText = '...';
-    if (pay.coveredDays && pay.coveredDays.length > 0) {
-      const dates = [...pay.coveredDays].sort((a, b) => a.localeCompare(b));
-      const start = formatDateStringDisplay(dates[0]);
-      const end = formatDateStringDisplay(dates[dates.length - 1]);
-      periodText = dates.length === 1 ? start : `${start} ${texts['week-to']} ${end} (${dates.length} ${texts['week-days']})`;
+    
+    // Calcula o período real + projeção baseada no crédito antecipado
+    let allDates = [...(pay.coveredDays || [])];
+    if (pay.advanceRemaining > 0) {
+      let lastDateISO = allDates.length > 0 ? [...allDates].sort().reverse()[0] : pay.date;
+      let current = parseLocalDate(lastDateISO);
+      current.setDate(current.getDate() + 1);
+      let rem = pay.advanceRemaining;
+      let safety = 0;
+      while (rem > 0.01 && safety < 60) {
+        const dayOfWeek = current.getDay();
+        if (!(db.settings.offDays || []).includes(dayOfWeek)) {
+          let rate = db.settings.morningRate + db.settings.nightRate;
+          if (db.settings.halfDays && db.settings.halfDays[dayOfWeek]) {
+            rate = (db.settings.halfDays[dayOfWeek] === 'morning') ? db.settings.morningRate : db.settings.nightRate;
+          }
+          const apply = Math.min(rem, rate);
+          allDates.push(formatDateISO(current));
+          rem -= apply;
+        }
+        current.setDate(current.getDate() + 1);
+        safety++;
+      }
+    }
+
+    if (allDates.length > 0) {
+      const sorted = [...new Set(allDates)].sort((a, b) => a.localeCompare(b));
+      const start = formatDateStringDisplay(sorted[0]);
+      const end = formatDateStringDisplay(sorted[sorted.length - 1]);
+      periodText = sorted.length === 1 ? start : `${start} ${texts['week-to']} ${end} (${sorted.length} ${texts['week-days']})`;
     }
 
     const hasAdvance = pay.advanceRemaining > 0;
