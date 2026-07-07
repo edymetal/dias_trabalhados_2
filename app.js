@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.85';
-const APP_BUILD_DATE = '2026-07-07 16:18:25';
+const APP_VERSION = '1.0.86';
+const APP_BUILD_DATE = '2026-07-07 19:05:41';
 
 
 
@@ -332,10 +332,8 @@ const translations = {
     'settings-autofill-desc': 'Quando ativado, o sistema cria automaticamente os dias pendentes desde a ativação até hoje usando as folgas, meio período e valores configurados.',
     'label-autofill-enabled': 'Preencher dias trabalhados automaticamente',
     'btn-save-autofill': 'Salvar preenchimento automático',
-    'calendar-autofill-enabled-title': 'Preenchimento automático ativado',
-    'calendar-autofill-enabled-desc': 'Novos dias pendentes serão preenchidos conforme suas configurações.',
-    'calendar-autofill-disabled-title': 'Preenchimento automático desativado',
-    'calendar-autofill-disabled-desc': 'Os dias não serão preenchidos automaticamente.',
+    'calendar-autofill-enabled-title': 'Auto-Preencher Ativo',
+    'calendar-autofill-disabled-title': 'Auto-Preencher Desativado',
     'legend-projected': 'Crédito Antecipado',
     'badge-projected': 'Crédito',
     'settings-payment-cycle-title': 'Ciclo de Pagamento',
@@ -542,10 +540,8 @@ const translations = {
     'settings-autofill-desc': 'Quando attiva, il sistema crea automaticamente i giorni mancanti dall attivazione fino a oggi usando riposi, mezze giornate e valori configurati.',
     'label-autofill-enabled': 'Compila automaticamente i giorni lavorati',
     'btn-save-autofill': 'Salva compilazione automatica',
-    'calendar-autofill-enabled-title': 'Compilazione automatica attiva',
-    'calendar-autofill-enabled-desc': 'I nuovi giorni mancanti saranno compilati secondo le tue impostazioni.',
-    'calendar-autofill-disabled-title': 'Compilazione automatica disattivata',
-    'calendar-autofill-disabled-desc': 'I giorni non saranno compilati automaticamente.',
+    'calendar-autofill-enabled-title': 'Auto-compilazione attiva',
+    'calendar-autofill-disabled-title': 'Auto-compilazione disattivata',
     'legend-projected': 'Credito Anticipato',
     'badge-projected': 'Credito',
     'settings-payment-cycle-title': 'Ciclo di Pagamento',
@@ -1567,7 +1563,6 @@ function updateCalendarAutoFillStatus() {
   const texts = translations[db.settings.language || 'pt-BR'];
   const iconEl = document.getElementById('calendar-autofill-icon');
   const titleEl = document.getElementById('calendar-autofill-title');
-  const descEl = document.getElementById('calendar-autofill-desc');
 
   statusEl.classList.toggle('is-enabled', enabled);
   statusEl.classList.toggle('is-disabled', !enabled);
@@ -1577,9 +1572,6 @@ function updateCalendarAutoFillStatus() {
   }
   if (titleEl) {
     titleEl.innerText = texts[enabled ? 'calendar-autofill-enabled-title' : 'calendar-autofill-disabled-title'];
-  }
-  if (descEl) {
-    descEl.innerText = texts[enabled ? 'calendar-autofill-enabled-desc' : 'calendar-autofill-disabled-desc'];
   }
 }
 
