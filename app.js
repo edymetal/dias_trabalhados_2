@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.87';
-const APP_BUILD_DATE = '2026-07-07 19:23:28';
+const APP_VERSION = '1.0.88';
+const APP_BUILD_DATE = '2026-07-07 19:26:42';
 
 
 
@@ -1245,7 +1245,6 @@ function updateDashboardData() {
 
   // Calcular totais do ano atual
   const year = new Date().getFullYear();
-  let annualTotalReceived = 0;
   let annualReceivedCash = 0;
   let annualReceivedDeposit = 0;
   let annualWorkedDays = 0;
@@ -1254,7 +1253,6 @@ function updateDashboardData() {
   db.payments.forEach(pay => {
     const payYear = parseLocalDate(pay.date)?.getFullYear() || new Date(pay.date).getFullYear();
     if (payYear === year) {
-      annualTotalReceived += pay.amount || 0;
       if (pay.cashAmount !== undefined && pay.depositAmount !== undefined) {
         annualReceivedCash += pay.cashAmount;
         annualReceivedDeposit += pay.depositAmount;
@@ -1276,6 +1274,7 @@ function updateDashboardData() {
       }
     }
   });
+  const annualTotalReceived = annualReceivedCash + annualReceivedDeposit;
 
   // Contar dias trabalhados no ano atual
   Object.keys(db.workedDays).forEach(dateStr => {
