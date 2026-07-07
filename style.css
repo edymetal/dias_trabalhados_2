@@ -635,6 +635,67 @@ body {
   padding: 0 !important;
 }
 
+.calendar-autofill-status {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin: -0.5rem 1.5rem 0 1.5rem;
+  padding: 0.9rem 1rem;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-light);
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--text-muted);
+}
+
+.calendar-autofill-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.calendar-autofill-icon svg,
+.calendar-autofill-icon i {
+  width: 22px;
+  height: 22px;
+}
+
+.calendar-autofill-status strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
+.calendar-autofill-status div > span {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.calendar-autofill-status.is-enabled {
+  border-color: rgba(33, 150, 243, 0.35);
+  background: rgba(33, 150, 243, 0.11);
+}
+
+.calendar-autofill-status.is-enabled svg,
+.calendar-autofill-status.is-enabled i,
+.calendar-autofill-status.is-enabled strong {
+  color: #42a5f5;
+}
+
+.calendar-autofill-status.is-disabled {
+  border-color: rgba(148, 163, 184, 0.18);
+  background: rgba(100, 116, 139, 0.1);
+}
+
+.calendar-autofill-status.is-disabled svg,
+.calendar-autofill-status.is-disabled i,
+.calendar-autofill-status.is-disabled strong {
+  color: #94a3b8;
+}
+
 .btn-icon {
   width: 36px;
   height: 36px;
