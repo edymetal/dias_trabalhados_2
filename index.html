@@ -670,6 +670,29 @@
             </form>
           </div>
 
+          <!-- Preenchimento Automático Config -->
+          <div class="glass-card settings-card">
+            <h2 class="dashboard-card-title">
+              <i data-lucide="calendar-check"></i>
+              <span data-i18n="settings-autofill-title">Preenchimento automático</span>
+            </h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;" data-i18n="settings-autofill-desc">
+              Quando ativado, o sistema cria automaticamente os dias pendentes desde a ativação até hoje usando as folgas, meio período e valores configurados.
+            </p>
+
+            <form id="settings-autofill-form" onsubmit="saveAutoFillSettings(event)">
+              <div class="checkbox-option">
+                <input type="checkbox" id="setting-autofill-enabled">
+                <label for="setting-autofill-enabled" data-i18n="label-autofill-enabled">Preencher dias trabalhados automaticamente</label>
+              </div>
+
+              <button type="submit" class="btn-primary" style="margin-top: 1.5rem;">
+                <i data-lucide="save"></i>
+                <span data-i18n="btn-save-autofill">Salvar preenchimento automático</span>
+              </button>
+            </form>
+          </div>
+
           <!-- Language Settings -->
           <div class="glass-card settings-card">
             <h2 class="dashboard-card-title">
