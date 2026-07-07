@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.86';
-const APP_BUILD_DATE = '2026-07-07 19:05:41';
+const APP_VERSION = '1.0.87';
+const APP_BUILD_DATE = '2026-07-07 19:23:28';
 
 
 
@@ -165,11 +165,12 @@ const translations = {
 
     // Dashboard
     'stat-total-accumulated': 'Total Acumulado',
-    'stat-total-received': 'Total Recebido',
+    'stat-total-received': 'Recebido no Mês',
     'stat-total-pending': 'Total Pendente',
     'stat-this-week': 'Esta Semana',
     'chart-title': 'Total Recebido por Mês',
     'chart-annual-summary-title': 'Resumo Financeiro Anual',
+    'annual-total-received': 'Total Recebido no Ano',
     'annual-received-deposit': 'Recebido por Depósito',
     'annual-received-cash': 'Recebido em Dinheiro',
     'annual-worked-days': 'Dias Trabalhados no Ano',
@@ -373,11 +374,12 @@ const translations = {
 
     // Dashboard
     'stat-total-accumulated': 'Totale Accumulato',
-    'stat-total-received': 'Totale Ricevuto',
+    'stat-total-received': 'Ricevuto nel Mese',
     'stat-total-pending': 'Totale Pendente',
     'stat-this-week': 'Questa Settimana',
     'chart-title': 'Totale Ricevuto per Mese',
     'chart-annual-summary-title': 'Riepilogo Finanziario Annuale',
+    'annual-total-received': 'Totale Ricevuto nell\'Anno',
     'annual-received-deposit': 'Ricevuto tramite Deposito',
     'annual-received-cash': 'Ricevuto in Contanti',
     'annual-worked-days': 'Giorni Lavorati nell\'Anno',
@@ -1189,8 +1191,13 @@ function updateDashboardData() {
     }
   });
 
-  // Total Recebido é a soma real de todos os pagamentos efetuados
-  totalReceived = db.payments.reduce((acc, pay) => acc + pay.amount, 0);
+  // Total Recebido do card principal considera apenas pagamentos do mês atual
+  const today = new Date();
+  const currentMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+  totalReceived = db.payments.reduce((acc, pay) => {
+    if (!pay.date || !pay.date.startsWith(currentMonthKey)) return acc;
+    return acc + (pay.amount || 0);
+  }, 0);
 
   // Total de adiantamento/Crédito ativo nos pagamentos
   const totalAdvance = db.payments.reduce((acc, pay) => acc + (pay.advanceRemaining || 0), 0);
@@ -1238,6 +1245,7 @@ function updateDashboardData() {
 
   // Calcular totais do ano atual
   const year = new Date().getFullYear();
+  let annualTotalReceived = 0;
   let annualReceivedCash = 0;
   let annualReceivedDeposit = 0;
   let annualWorkedDays = 0;
@@ -1246,6 +1254,7 @@ function updateDashboardData() {
   db.payments.forEach(pay => {
     const payYear = parseLocalDate(pay.date)?.getFullYear() || new Date(pay.date).getFullYear();
     if (payYear === year) {
+      annualTotalReceived += pay.amount || 0;
       if (pay.cashAmount !== undefined && pay.depositAmount !== undefined) {
         annualReceivedCash += pay.cashAmount;
         annualReceivedDeposit += pay.depositAmount;
@@ -1280,11 +1289,13 @@ function updateDashboardData() {
   });
 
   // Atualizar elementos no Dashboard
+  const annualTotalValEl = document.getElementById('annual-total-received-val');
   const depositValEl = document.getElementById('annual-received-deposit-val');
   const cashValEl = document.getElementById('annual-received-cash-val');
   const workedDaysEl = document.getElementById('annual-worked-days-val');
   const texts = translations[db.settings.language || 'pt-BR'];
 
+  if (annualTotalValEl) annualTotalValEl.innerText = formatCurrency(annualTotalReceived);
   if (depositValEl) depositValEl.innerText = formatCurrency(annualReceivedDeposit);
   if (cashValEl) cashValEl.innerText = formatCurrency(annualReceivedCash);
   if (workedDaysEl) workedDaysEl.innerText = `${annualWorkedDays} ${annualWorkedDays === 1 ? texts['week-day'] : texts['week-days']}`;

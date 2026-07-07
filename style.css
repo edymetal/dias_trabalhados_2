@@ -483,6 +483,10 @@ body {
   transition: var(--transition-smooth);
 }
 
+.annual-stat-item.annual-total-border {
+  border-left: 4px solid #3b82f6;
+}
+
 .annual-stat-item.deposit-border {
   border-left: 4px solid var(--accent-purple);
 }
