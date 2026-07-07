@@ -681,10 +681,11 @@
             </p>
 
             <form id="settings-autofill-form" onsubmit="saveAutoFillSettings(event)">
-              <div class="checkbox-option">
-                <input type="checkbox" id="setting-autofill-enabled">
-                <label for="setting-autofill-enabled" data-i18n="label-autofill-enabled">Preencher dias trabalhados automaticamente</label>
-              </div>
+              <label class="switch-option" for="setting-autofill-enabled">
+                <input type="checkbox" id="setting-autofill-enabled" class="toggle-input">
+                <span class="switch-label" data-i18n="label-autofill-enabled">Preencher dias trabalhados automaticamente</span>
+                <span class="toggle-slider" aria-hidden="true"></span>
+              </label>
 
               <button type="submit" class="btn-primary" style="margin-top: 1.5rem;">
                 <i data-lucide="save"></i>

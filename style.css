@@ -1188,6 +1188,81 @@ body {
   margin-bottom: 0 !important; /* Sobrescrever margem padrão de labels */
 }
 
+.switch-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 76px;
+  padding: 1rem;
+  border-radius: var(--border-radius-sm);
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--border-light);
+  transition: var(--transition-smooth);
+  cursor: pointer;
+}
+
+.switch-option:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.switch-label {
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+  user-select: none;
+}
+
+.toggle-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.toggle-slider {
+  position: relative;
+  flex: 0 0 56px;
+  width: 56px;
+  height: 32px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.25);
+  border: 1px solid var(--border-light);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: var(--transition-smooth);
+}
+
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #f8fafc;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  transition: var(--transition-smooth);
+}
+
+.toggle-input:checked ~ .toggle-slider {
+  background: linear-gradient(135deg, var(--accent-purple), #6366f1);
+  border-color: rgba(139, 92, 246, 0.7);
+  box-shadow: 0 0 18px rgba(139, 92, 246, 0.35);
+}
+
+.toggle-input:checked ~ .toggle-slider::before {
+  transform: translateX(24px);
+}
+
+.toggle-input:focus-visible ~ .toggle-slider {
+  outline: 2px solid var(--accent-purple-hover);
+  outline-offset: 3px;
+}
+
 /* Buttons and Inputs */
 .form-input {
   width: 100%;
