@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.89';
-const APP_BUILD_DATE = '2026-07-09 06:33:55';
+const APP_VERSION = '1.0.90';
+const APP_BUILD_DATE = '2026-07-09 06:39:52';
 
 
 
@@ -2515,14 +2515,13 @@ function loadSettingsFields() {
   togglePaymentCycleInputs();
 }
 
-function updateAutoFillStatusText() {
+function updateAutoFillStatusText(enabled = db.settings.autoFillWorkedDays) {
   const statusEl = document.getElementById('setting-autofill-status');
-  const autoFillToggle = document.getElementById('setting-autofill-enabled');
-  if (!statusEl || !autoFillToggle) return;
+  if (!statusEl) return;
 
   const lang = db.settings.language || 'pt-BR';
   const texts = translations[lang];
-  const key = autoFillToggle.checked ? 'status-enabled' : 'status-disabled';
+  const key = enabled ? 'status-enabled' : 'status-disabled';
 
   statusEl.setAttribute('data-i18n', key);
   statusEl.innerText = texts[key];
@@ -2556,7 +2555,7 @@ async function saveAutoFillSettings(event) {
   const todayStr = formatDateISO(new Date());
 
   db.settings.autoFillWorkedDays = enabled;
-  updateAutoFillStatusText();
+  updateAutoFillStatusText(enabled);
 
   if (enabled && !wasEnabled) {
     db.settings.autoFillStartedAt = todayStr;
@@ -2572,7 +2571,7 @@ async function saveAutoFillSettings(event) {
   renderCalendar();
   renderWeeksList();
   updateDashboardData();
-  updateAutoFillStatusText();
+  updateAutoFillStatusText(enabled);
 }
 
 function updatePaymentCountdown() {
