@@ -747,24 +747,6 @@
             </form>
           </div>
 
-          <!-- Preenchimento Automático Config -->
-          <div class="glass-card settings-card">
-            <h2 class="dashboard-card-title">
-              <i data-lucide="calendar-check"></i>
-              <span data-i18n="settings-autofill-title">Preenchimento automático</span>
-            </h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;" data-i18n="settings-autofill-desc">
-              Quando ativado, o sistema cria automaticamente os dias pendentes desde a ativação até hoje usando as folgas, meio período e valores configurados.
-            </p>
-
-            <div id="settings-autofill-form" class="autofill-toggle-group">
-              <label class="switch-option autofill-switch-option" for="setting-autofill-enabled">
-                <input type="checkbox" id="setting-autofill-enabled" class="toggle-input" onchange="saveAutoFillSettings(event)">
-                <span class="toggle-slider" aria-hidden="true"></span>
-              </label>
-              <span id="setting-autofill-status" class="autofill-status-text" data-i18n="status-disabled">Desativado</span>
-            </div>
-          </div>
 
           <!-- Language Settings -->
           <div class="glass-card settings-card">
@@ -797,6 +779,24 @@
                   <option value="dark" data-i18n="theme-dark">Escuro</option>
                   <option value="light" data-i18n="theme-light">Claro</option>
                 </select>
+              </div>
+            </div>
+
+            <div class="settings-subsection">
+              <h2 class="dashboard-card-title">
+                <i data-lucide="calendar-check"></i>
+                <span data-i18n="settings-autofill-title">Preenchimento automático</span>
+              </h2>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;" data-i18n="settings-autofill-desc">
+                Quando ativado, o sistema cria automaticamente os dias pendentes desde a ativação até hoje usando as folgas, meio período e valores configurados.
+              </p>
+
+              <div id="settings-autofill-form" class="autofill-toggle-group">
+                <label class="switch-option autofill-switch-option" for="setting-autofill-enabled">
+                  <input type="checkbox" id="setting-autofill-enabled" class="toggle-input" onchange="saveAutoFillSettings(event)">
+                  <span class="toggle-slider" aria-hidden="true"></span>
+                </label>
+                <span id="setting-autofill-status" class="autofill-status-text" data-i18n="status-disabled">Desativado</span>
               </div>
             </div>
           </div>
