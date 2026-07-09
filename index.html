@@ -691,18 +691,13 @@
               Quando ativado, o sistema cria automaticamente os dias pendentes desde a ativação até hoje usando as folgas, meio período e valores configurados.
             </p>
 
-            <form id="settings-autofill-form" onsubmit="saveAutoFillSettings(event)">
-              <label class="switch-option" for="setting-autofill-enabled">
-                <input type="checkbox" id="setting-autofill-enabled" class="toggle-input">
-                <span class="switch-label" data-i18n="label-autofill-enabled">Preencher dias trabalhados automaticamente</span>
+            <div id="settings-autofill-form" class="autofill-toggle-group">
+              <label class="switch-option autofill-switch-option" for="setting-autofill-enabled">
+                <input type="checkbox" id="setting-autofill-enabled" class="toggle-input" onchange="saveAutoFillSettings(event)">
                 <span class="toggle-slider" aria-hidden="true"></span>
               </label>
-
-              <button type="submit" class="btn-primary" style="margin-top: 1.5rem;">
-                <i data-lucide="save"></i>
-                <span data-i18n="btn-save-autofill">Salvar preenchimento automático</span>
-              </button>
-            </form>
+              <span id="setting-autofill-status" class="autofill-status-text" data-i18n="status-disabled">Desativado</span>
+            </div>
           </div>
 
           <!-- Language Settings -->

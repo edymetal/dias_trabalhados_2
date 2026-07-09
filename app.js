@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.88';
-const APP_BUILD_DATE = '2026-07-07 19:26:42';
+const APP_VERSION = '1.0.89';
+const APP_BUILD_DATE = '2026-07-09 06:33:55';
 
 
 
@@ -331,8 +331,8 @@ const translations = {
     'btn-save-halfdays': 'Salvar Meio Período',
     'settings-autofill-title': 'Preenchimento automático',
     'settings-autofill-desc': 'Quando ativado, o sistema cria automaticamente os dias pendentes desde a ativação até hoje usando as folgas, meio período e valores configurados.',
-    'label-autofill-enabled': 'Preencher dias trabalhados automaticamente',
-    'btn-save-autofill': 'Salvar preenchimento automático',
+    'status-enabled': 'Ativo',
+    'status-disabled': 'Desativado',
     'calendar-autofill-enabled-title': 'Auto-Preencher Ativo',
     'calendar-autofill-disabled-title': 'Auto-Preencher Desativado',
     'legend-projected': 'Crédito Antecipado',
@@ -540,8 +540,8 @@ const translations = {
     'btn-save-halfdays': 'Salva Mezza Giornata',
     'settings-autofill-title': 'Compilazione automatica',
     'settings-autofill-desc': 'Quando attiva, il sistema crea automaticamente i giorni mancanti dall attivazione fino a oggi usando riposi, mezze giornate e valori configurati.',
-    'label-autofill-enabled': 'Compila automaticamente i giorni lavorati',
-    'btn-save-autofill': 'Salva compilazione automatica',
+    'status-enabled': 'Attivo',
+    'status-disabled': 'Disattivato',
     'calendar-autofill-enabled-title': 'Auto-compilazione attiva',
     'calendar-autofill-disabled-title': 'Auto-compilazione disattivata',
     'legend-projected': 'Credito Anticipato',
@@ -744,6 +744,7 @@ function applyLanguage() {
   
   // Atualiza labels de tarifas
   updateRateLabels();
+  updateAutoFillStatusText();
 }
 
 // Muda o idioma e salva
@@ -2476,6 +2477,7 @@ function loadSettingsFields() {
   const autoFillToggle = document.getElementById('setting-autofill-enabled');
   if (autoFillToggle) {
     autoFillToggle.checked = !!db.settings.autoFillWorkedDays;
+    updateAutoFillStatusText();
   }
   const offDays = db.settings.offDays || [4];
   for (let i = 0; i <= 6; i++) {
@@ -2513,6 +2515,19 @@ function loadSettingsFields() {
   togglePaymentCycleInputs();
 }
 
+function updateAutoFillStatusText() {
+  const statusEl = document.getElementById('setting-autofill-status');
+  const autoFillToggle = document.getElementById('setting-autofill-enabled');
+  if (!statusEl || !autoFillToggle) return;
+
+  const lang = db.settings.language || 'pt-BR';
+  const texts = translations[lang];
+  const key = autoFillToggle.checked ? 'status-enabled' : 'status-disabled';
+
+  statusEl.setAttribute('data-i18n', key);
+  statusEl.innerText = texts[key];
+}
+
 function togglePaymentCycleInputs() {
   const type = document.getElementById('setting-payment-type').value;
   document.getElementById('group-payment-week').style.display = type === 'weekly' ? 'block' : 'none';
@@ -2535,12 +2550,13 @@ function savePaymentCycleSettings(event) {
 }
 
 async function saveAutoFillSettings(event) {
-  event.preventDefault();
+  if (event) event.preventDefault();
   const enabled = document.getElementById('setting-autofill-enabled').checked;
   const wasEnabled = !!db.settings.autoFillWorkedDays;
   const todayStr = formatDateISO(new Date());
 
   db.settings.autoFillWorkedDays = enabled;
+  updateAutoFillStatusText();
 
   if (enabled && !wasEnabled) {
     db.settings.autoFillStartedAt = todayStr;
@@ -2556,7 +2572,7 @@ async function saveAutoFillSettings(event) {
   renderCalendar();
   renderWeeksList();
   updateDashboardData();
-  alert(translations[db.settings.language]['msg-save-success']);
+  updateAutoFillStatusText();
 }
 
 function updatePaymentCountdown() {
