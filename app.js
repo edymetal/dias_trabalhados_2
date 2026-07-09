@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.99';
-const APP_BUILD_DATE = '2026-07-09 12:16:39';
+const APP_VERSION = '1.0.100';
+const APP_BUILD_DATE = '2026-07-09 12:23:04';
 
 
 
@@ -1085,6 +1085,25 @@ function parseLocalDate(dateStr) {
   return new Date(year, month - 1, day);
 }
 
+function getMonthDateRange(referenceDate = new Date()) {
+  const monthStart = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
+  const monthEnd = new Date(referenceDate.getFullYear(), referenceDate.getMonth() + 1, 0);
+
+  return {
+    startStr: formatDateISO(monthStart),
+    endStr: formatDateISO(monthEnd)
+  };
+}
+
+function calculateReceivedForWorkedDaysInMonth(workedDays, referenceDate = new Date()) {
+  const { startStr, endStr } = getMonthDateRange(referenceDate);
+
+  return Object.entries(workedDays || {}).reduce((total, [dateStr, dayData]) => {
+    if (dateStr < startStr || dateStr > endStr) return total;
+    return total + (dayData.amountPaid || 0);
+  }, 0);
+}
+
 // Retorna o intervalo da semana de Segunda a Domingo de um determinado dia
 function getWeekRange(dateStr) {
   const parts = dateStr.split('-');
@@ -1302,13 +1321,8 @@ function updateDashboardData() {
     }
   });
 
-  // Total Recebido do card principal considera apenas pagamentos do mês atual
-  const today = new Date();
-  const currentMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-  totalReceived = db.payments.reduce((acc, pay) => {
-    if (!pay.date || !pay.date.startsWith(currentMonthKey)) return acc;
-    return acc + (pay.amount || 0);
-  }, 0);
+  // Total Recebido no Mes considera o valor pago nos dias trabalhados do mes atual.
+  totalReceived = calculateReceivedForWorkedDaysInMonth(db.workedDays);
 
   // Total de adiantamento/Crédito ativo nos pagamentos
   const totalAdvance = db.payments.reduce((acc, pay) => acc + (pay.advanceRemaining || 0), 0);
