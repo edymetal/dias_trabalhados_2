@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.101';
-const APP_BUILD_DATE = '2026-07-09 12:23:58';
+const APP_VERSION = '1.0.102';
+const APP_BUILD_DATE = '2026-07-09 12:35:13';
 
 
 
@@ -636,6 +636,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderAppVersion();
   initNavigation();
   initCurrentDate();
+  initMondayFirstDateInputs();
 
   // Configura botão de login do Google
   const loginBtn = document.getElementById('btn-google-login');
@@ -919,6 +920,169 @@ function initCurrentDate() {
   const month = String(today.getMonth() + 1).padStart(2, '0');
   const quickDateEl = document.getElementById('quick-today-date');
   if (quickDateEl) quickDateEl.innerText = `${day}/${month}`;
+}
+
+// Datepicker customizado com semanas de segunda a domingo.
+
+let activeDateInput = null;
+let datePickerYear = new Date().getFullYear();
+let datePickerMonth = new Date().getMonth();
+
+function initMondayFirstDateInputs() {
+  document.querySelectorAll('input[type="date"]').forEach(input => {
+    input.type = 'text';
+    input.inputMode = 'none';
+    input.autocomplete = 'off';
+    input.placeholder = 'aaaa-mm-dd';
+    input.classList.add('date-input-custom');
+    input.setAttribute('aria-haspopup', 'dialog');
+
+    input.addEventListener('pointerdown', () => openMondayFirstDatePicker(input));
+    input.addEventListener('click', () => openMondayFirstDatePicker(input));
+    input.addEventListener('focus', () => openMondayFirstDatePicker(input));
+    input.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openMondayFirstDatePicker(input);
+      }
+
+      if (event.key === 'Escape') {
+        closeMondayFirstDatePicker();
+      }
+    });
+  });
+
+  document.addEventListener('click', event => {
+    const picker = document.getElementById('monday-first-date-picker');
+    if (!picker || !picker.classList.contains('active')) return;
+    if (picker.contains(event.target) || event.target === activeDateInput) return;
+    closeMondayFirstDatePicker();
+  });
+}
+
+function openMondayFirstDatePicker(input) {
+  activeDateInput = input;
+  const selectedDate = parseLocalDate(input.value) || new Date();
+  datePickerYear = selectedDate.getFullYear();
+  datePickerMonth = selectedDate.getMonth();
+
+  const picker = getMondayFirstDatePicker();
+  renderMondayFirstDatePicker();
+  positionMondayFirstDatePicker(input, picker);
+  picker.classList.add('active');
+}
+
+function closeMondayFirstDatePicker() {
+  const picker = document.getElementById('monday-first-date-picker');
+  if (picker) picker.classList.remove('active');
+  activeDateInput = null;
+}
+
+function getMondayFirstDatePicker() {
+  let picker = document.getElementById('monday-first-date-picker');
+  if (picker) return picker;
+
+  picker = document.createElement('div');
+  picker.id = 'monday-first-date-picker';
+  picker.className = 'date-picker-popover';
+  picker.setAttribute('role', 'dialog');
+  picker.setAttribute('aria-label', 'Selecionar data');
+  document.body.appendChild(picker);
+  return picker;
+}
+
+function positionMondayFirstDatePicker(input, picker) {
+  const rect = input.getBoundingClientRect();
+  const pickerWidth = Math.min(320, window.innerWidth - 24);
+  const left = Math.max(12, Math.min(rect.left, window.innerWidth - pickerWidth - 12));
+  const top = Math.min(rect.bottom + 8, window.innerHeight - 360);
+
+  picker.style.width = `${pickerWidth}px`;
+  picker.style.left = `${left}px`;
+  picker.style.top = `${Math.max(12, top)}px`;
+}
+
+function renderMondayFirstDatePicker() {
+  const picker = getMondayFirstDatePicker();
+  const texts = translations[getCurrentLanguage()] || translations['pt-BR'];
+  const monthLabel = texts[`month-${datePickerMonth}`] || new Date(datePickerYear, datePickerMonth, 1).toLocaleDateString(getCurrentLanguage(), { month: 'long' });
+  const weekLabels = [
+    texts['short-day-1'], texts['short-day-2'], texts['short-day-3'],
+    texts['short-day-4'], texts['short-day-5'], texts['short-day-6'], texts['short-day-0']
+  ];
+  const selectedISO = activeDateInput?.value || '';
+  const todayISO = formatDateISO(new Date());
+  const firstDay = new Date(datePickerYear, datePickerMonth, 1).getDay();
+  const firstDayIndex = firstDay === 0 ? 6 : firstDay - 1;
+  const lastDay = new Date(datePickerYear, datePickerMonth + 1, 0).getDate();
+  const prevLastDay = new Date(datePickerYear, datePickerMonth, 0).getDate();
+  const cells = [];
+
+  for (let i = firstDayIndex - 1; i >= 0; i--) {
+    const day = prevLastDay - i;
+    const month = datePickerMonth === 0 ? 11 : datePickerMonth - 1;
+    const year = datePickerMonth === 0 ? datePickerYear - 1 : datePickerYear;
+    cells.push({ day, dateStr: formatDateISO(new Date(year, month, day)), otherMonth: true });
+  }
+
+  for (let day = 1; day <= lastDay; day++) {
+    cells.push({ day, dateStr: formatDateISO(new Date(datePickerYear, datePickerMonth, day)), otherMonth: false });
+  }
+
+  const remainingCells = 42 - cells.length;
+  for (let day = 1; day <= remainingCells; day++) {
+    const month = datePickerMonth === 11 ? 0 : datePickerMonth + 1;
+    const year = datePickerMonth === 11 ? datePickerYear + 1 : datePickerYear;
+    cells.push({ day, dateStr: formatDateISO(new Date(year, month, day)), otherMonth: true });
+  }
+
+  picker.innerHTML = `
+    <div class="date-picker-header">
+      <button type="button" class="date-picker-nav" data-action="prev-month" aria-label="Mes anterior">
+        <i data-lucide="chevron-left"></i>
+      </button>
+      <strong>${monthLabel} ${datePickerYear}</strong>
+      <button type="button" class="date-picker-nav" data-action="next-month" aria-label="Proximo mes">
+        <i data-lucide="chevron-right"></i>
+      </button>
+    </div>
+    <div class="date-picker-grid">
+      ${weekLabels.map(label => `<span class="date-picker-weekday">${label}</span>`).join('')}
+      ${cells.map(cell => `
+        <button type="button" class="date-picker-day${cell.otherMonth ? ' is-other-month' : ''}${cell.dateStr === selectedISO ? ' is-selected' : ''}${cell.dateStr === todayISO ? ' is-today' : ''}" data-date="${cell.dateStr}">
+          ${cell.day}
+        </button>
+      `).join('')}
+    </div>
+    <div class="date-picker-footer">
+      <button type="button" data-action="clear-date">Limpar</button>
+      <button type="button" data-action="today-date">Hoje</button>
+    </div>
+  `;
+
+  picker.querySelector('[data-action="prev-month"]').addEventListener('click', () => changeDatePickerMonth(-1));
+  picker.querySelector('[data-action="next-month"]').addEventListener('click', () => changeDatePickerMonth(1));
+  picker.querySelector('[data-action="clear-date"]').addEventListener('click', () => setDateInputValue(''));
+  picker.querySelector('[data-action="today-date"]').addEventListener('click', () => setDateInputValue(todayISO));
+  picker.querySelectorAll('[data-date]').forEach(button => {
+    button.addEventListener('click', () => setDateInputValue(button.dataset.date));
+  });
+
+  lucide.createIcons();
+}
+
+function changeDatePickerMonth(offset) {
+  const next = new Date(datePickerYear, datePickerMonth + offset, 1);
+  datePickerYear = next.getFullYear();
+  datePickerMonth = next.getMonth();
+  renderMondayFirstDatePicker();
+}
+
+function setDateInputValue(value) {
+  if (!activeDateInput) return;
+  activeDateInput.value = value;
+  activeDateInput.dispatchEvent(new Event('change', { bubbles: true }));
+  closeMondayFirstDatePicker();
 }
 
 // Define o comportamento de navegação por abas
