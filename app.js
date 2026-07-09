@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.94';
-const APP_BUILD_DATE = '2026-07-09 07:14:35';
+const APP_VERSION = '1.0.95';
+const APP_BUILD_DATE = '2026-07-09 07:29:38';
 
 
 
@@ -67,7 +67,7 @@ onAuthStateChanged(auth, async (user) => {
       }
     } catch (error) {
       console.error("Erro ao verificar permissões:", error);
-      showLoginError("Erro de conexão ao verificar permissões.");
+      showLoginError(getText('msg-permission-connection-error'));
       await signOut(auth);
     }
   } else {
@@ -77,8 +77,9 @@ onAuthStateChanged(auth, async (user) => {
 
 // Funções auxiliares para limpar o fluxo de autenticação
 function setupUserProfile(user) {
+  const texts = translations[getCurrentLanguage()] || translations['pt-BR'];
   document.getElementById('user-photo').src = user.photoURL || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
-  document.getElementById('user-name').innerText = user.displayName || 'Usuário';
+  document.getElementById('user-name').innerText = user.displayName || texts['user-default-name'];
   document.getElementById('user-email').innerText = user.email;
   document.getElementById('user-profile').style.display = 'flex';
   document.getElementById('login-screen').style.display = 'none';
@@ -87,8 +88,8 @@ function setupUserProfile(user) {
 
 function handleAccessDenied(email) {
   console.warn("Acesso negado para:", email);
-  alert("Acesso negado! O e-mail " + email + " não tem permissão para acessar este sistema.");
-  showLoginError("Acesso restrito. Seu e-mail não está na lista de permissões.");
+  alert(getText('msg-access-denied').replace('{email}', email));
+  showLoginError(getText('msg-access-restricted'));
   signOut(auth);
 }
 
@@ -96,6 +97,7 @@ function showLoginScreen() {
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app-content').style.display = 'none';
   document.getElementById('user-profile').style.display = 'none';
+  applyStaticTranslations(getCurrentLanguage());
 }
 
 function showLoginError(msg) {
@@ -112,7 +114,7 @@ async function handleLogin() {
     await signInWithPopup(auth, provider);
   } catch (error) {
     console.error("Erro no login:", error);
-    showLoginError("Falha na autenticação com o Google. Tente novamente.");
+    showLoginError(getText('msg-google-auth-failed'));
   }
 }
 
@@ -142,6 +144,11 @@ const DEFAULT_DB = {
 // Traduções para Português e Italiano
 const translations = {
   'pt-BR': {
+    'app-title': 'Dias Trabalhados',
+    'login-subtitle': 'Gestão Profissional de Turnos',
+    'btn-google-login': 'Entrar com Google',
+    'btn-logout': 'Sair',
+    'user-default-name': 'Usuário',
     // Sidebar
     'nav-dashboard': 'Dashboard',
     'nav-calendar': 'Calendário',
@@ -187,6 +194,7 @@ const translations = {
     'btn-batch-launch': 'Lançar Vários Dias',
     'btn-batch-remove': 'Remover Vários Dias',
     'btn-today': 'Hoje',
+    'tooltip-toggle-calendar-zoom': 'Alternar zoom',
     'legend-paid': 'Pago',
     'legend-partial': 'Parcialmente Pago',
     'legend-pending': 'Pendente',
@@ -209,6 +217,7 @@ const translations = {
     'label-payment-date': 'Data do Recebimento',
     'label-payment-method': 'Método de Pagamento',
     'label-notes': 'Especificação / Notas',
+    'placeholder-payment-notes': 'Ex: Transferência Bancária, Cheque, etc.',
     'btn-confirm-receipt': 'Confirmar Recebimento',
     'opt-cash': 'Dinheiro',
     'opt-deposit': 'Depósito',
@@ -256,6 +265,7 @@ const translations = {
     // Modals
     'modal-period-label': 'Selecione o Período Trabalhado',
     'modal-custom-rate': 'Valor Customizado para este Dia (€)',
+    'placeholder-custom-rate': 'Usar valor padrão',
     'modal-notes-label': 'Observações',
     'modal-fin-info': 'Informações Financeiras do Dia',
     'modal-status': 'Status:',
@@ -304,6 +314,14 @@ const translations = {
     'month-11': 'Dezembro',
 
     // Alerts & Messages
+    'msg-permission-connection-error': 'Erro de conexão ao verificar permissões.',
+    'msg-access-denied': 'Acesso negado! O e-mail {email} não tem permissão para acessar este sistema.',
+    'msg-access-restricted': 'Acesso restrito. Seu e-mail não está na lista de permissões.',
+    'msg-google-auth-failed': 'Falha na autenticação com o Google. Tente novamente.',
+    'msg-import-error': 'Erro ao importar o arquivo!',
+    'msg-logout-confirm': 'Deseja realmente sair?',
+    'msg-quick-log-note': 'Registrado via ação rápida',
+    'msg-auto-note': 'Automático',
     'msg-save-success': 'Salvo com sucesso!',
     'msg-delete-confirm': 'Tem certeza que deseja excluir?',
     'msg-backup-success': 'Backup importado com sucesso!',
@@ -340,6 +358,7 @@ const translations = {
     'calendar-autofill-disabled-title': 'Auto-Preencher Desativado',
     'legend-projected': 'Crédito Antecipado',
     'badge-projected': 'Crédito',
+    'label-credit': 'Crédito',
     'settings-payment-cycle-title': 'Ciclo de Pagamento',
     'settings-payment-cycle-desc': 'Defina quando você costuma receber seus pagamentos para acompanhar o prazo no Dashboard.',
     'label-payment-type': 'Tipo de Ciclo',
@@ -354,6 +373,11 @@ const translations = {
     'msg-day-left': '1 dia'
   },
   'it-IT': {
+    'app-title': 'Giorni Lavorati',
+    'login-subtitle': 'Gestione professionale dei turni',
+    'btn-google-login': 'Accedi con Google',
+    'btn-logout': 'Esci',
+    'user-default-name': 'Utente',
     // Sidebar
     'nav-dashboard': 'Dashboard',
     'nav-calendar': 'Calendario',
@@ -399,6 +423,7 @@ const translations = {
     'btn-batch-launch': 'Inserimento Multiplo',
     'btn-batch-remove': 'Rimozione Multipla',
     'btn-today': 'Oggi',
+    'tooltip-toggle-calendar-zoom': 'Alterna zoom',
     'legend-paid': 'Pagato',
     'legend-partial': 'Parzialmente Pagato',
     'legend-pending': 'Pendente',
@@ -421,6 +446,7 @@ const translations = {
     'label-payment-date': 'Data di Incasso',
     'label-payment-method': 'Metodo di Pagamento',
     'label-notes': 'Specifiche / Note',
+    'placeholder-payment-notes': 'Es: Bonifico bancario, assegno, ecc.',
     'btn-confirm-receipt': 'Conferma Incasso',
     'opt-cash': 'Contanti',
     'opt-deposit': 'Deposito',
@@ -468,6 +494,7 @@ const translations = {
     // Modals
     'modal-period-label': 'Seleziona il Periodo Lavorato',
     'modal-custom-rate': 'Valore Personalizzato per questo Giorno (€)',
+    'placeholder-custom-rate': 'Usa valore standard',
     'modal-notes-label': 'Note',
     'modal-fin-info': 'Informazioni Finanziarie del Giorno',
     'modal-status': 'Stato:',
@@ -516,9 +543,17 @@ const translations = {
     'month-11': 'Dicembre',
 
     // Alerts & Messages
+    'msg-permission-connection-error': 'Errore di connessione durante la verifica dei permessi.',
+    'msg-access-denied': 'Accesso negato! L’email {email} non ha il permesso di accedere a questo sistema.',
+    'msg-access-restricted': 'Accesso limitato. La tua email non è nella lista dei permessi.',
+    'msg-google-auth-failed': 'Autenticazione con Google non riuscita. Riprova.',
+    'msg-import-error': 'Errore durante l’importazione del file!',
+    'msg-logout-confirm': 'Vuoi davvero uscire?',
+    'msg-quick-log-note': 'Registrato tramite azione rapida',
+    'msg-auto-note': 'Automatico',
     'msg-save-success': 'Salvato con successo!',
     'msg-delete-confirm': 'Sei sicuro di voler eliminare?',
-    'msg-backup-success': 'Backup importado con successo!',
+    'msg-backup-success': 'Backup importato con successo!',
     'msg-invalid-file': 'File non valido!',
     'msg-select-period': 'Per favore, seleziona un periodo.',
     'msg-payment-success': 'Pagamento registrato con successo!',
@@ -552,6 +587,7 @@ const translations = {
     'calendar-autofill-disabled-title': 'Auto-compilazione disattivata',
     'legend-projected': 'Credito Anticipato',
     'badge-projected': 'Credito',
+    'label-credit': 'Credito',
     'settings-payment-cycle-title': 'Ciclo di Pagamento',
     'settings-payment-cycle-desc': 'Definisci quando ricevi solitamente i tuoi pagamenti per monitorare la scadenza nella Dashboard.',
     'label-payment-type': 'Tipo di Ciclo',
@@ -723,18 +759,63 @@ function renderAll() {
   }
 }
 
-// Aplica as Traduções baseadas no idioma atual
-function applyLanguage() {
-  const lang = db.settings.language || 'pt-BR';
-  const texts = translations[lang];
-  
-  // Traduz elementos com atributo data-i18n
+function getCurrentLanguage() {
+  if (db?.settings?.language && translations[db.settings.language]) {
+    return db.settings.language;
+  }
+
+  try {
+    const stored = localStorage.getItem(DB_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      const lang = parsed?.settings?.language;
+      if (translations[lang]) return lang;
+    }
+  } catch (e) {
+    console.warn("Erro ao ler idioma salvo:", e);
+  }
+
+  return 'pt-BR';
+}
+
+function getText(key) {
+  const lang = getCurrentLanguage();
+  return translations[lang]?.[key] || translations['pt-BR'][key] || key;
+}
+
+function applyStaticTranslations(lang = getCurrentLanguage()) {
+  const texts = translations[lang] || translations['pt-BR'];
+  document.documentElement.lang = lang;
+  document.title = texts['app-title'] || document.title;
+
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     if (texts[key]) {
       el.innerText = texts[key];
     }
   });
+
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (texts[key]) {
+      el.setAttribute('placeholder', texts[key]);
+    }
+  });
+
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const key = el.getAttribute('data-i18n-title');
+    if (texts[key]) {
+      el.setAttribute('title', texts[key]);
+    }
+  });
+}
+
+// Aplica as Traduções baseadas no idioma atual
+function applyLanguage() {
+  const lang = getCurrentLanguage();
+  const texts = translations[lang];
+
+  applyStaticTranslations(lang);
 
   // Atualizar nomes dos meses e dias da semana globais
   MONTH_NAMES.length = 0;
@@ -807,7 +888,7 @@ function renderAppVersion() {
 
 // Inicializa a data atual no cabeçalho
 function initCurrentDate() {
-  const lang = (db && db.settings && db.settings.language === 'it-IT') ? 'it-IT' : 'pt-BR';
+  const lang = getCurrentLanguage();
   const options = { day: 'numeric', month: 'long', year: 'numeric' };
   const todayStr = new Date().toLocaleDateString(lang, options);
   const headerDateEl = document.getElementById('current-header-date');
@@ -1557,7 +1638,7 @@ function quickLogShift(period) {
     status: existing.amountPaid >= rate ? 'paid' : (existing.amountPaid > 0 ? 'partial' : 'unpaid'),
     amountPaid: existing.amountPaid || 0,
     pendingAmount: Math.max(0, rate - (existing.amountPaid || 0)),
-    notes: existing.notes || 'Registrado via ação Rápida',
+    notes: existing.notes || texts['msg-quick-log-note'],
     paymentsApplied: existing.paymentsApplied || {}
   };
 
@@ -1904,7 +1985,7 @@ function createOrUpdateAutomaticWorkedDay(dateStr) {
     status: originalStatus || (amountPaid >= rate ? 'paid' : (amountPaid > 0 ? 'partial' : 'unpaid')),
     amountPaid: amountPaid,
     pendingAmount: pendingAmount,
-    notes: existing?.notes || 'Automático',
+    notes: existing?.notes || getText('msg-auto-note'),
     paymentsApplied: existing?.paymentsApplied || {},
     autoGenerated: true
   };
@@ -2430,7 +2511,7 @@ function renderPaymentHistory() {
     }
 
     const hasAdvance = pay.advanceRemaining > 0;
-    const advanceBadge = hasAdvance ? `<div style="font-size:0.75rem; color: var(--accent-purple); font-weight:600; margin-top: 2px;"><i data-lucide="coins" style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-right: 2px;"></i>Crédito: ${formatCurrency(pay.advanceRemaining)}</div>` : '';
+    const advanceBadge = hasAdvance ? `<div style="font-size:0.75rem; color: var(--accent-purple); font-weight:600; margin-top: 2px;"><i data-lucide="coins" style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-right: 2px;"></i>${texts['label-credit']}: ${formatCurrency(pay.advanceRemaining)}</div>` : '';
 
     tr.innerHTML = `
       <td>${formatDateStringDisplay(pay.date)}</td>
@@ -2743,7 +2824,7 @@ function importDatabase(event) {
         alert(translations[db.settings.language]['msg-backup-success']);
         document.querySelector('[data-tab="dashboard"]').click();
       }
-    } catch (err) { alert("Error!"); }
+    } catch (err) { alert(getText('msg-import-error')); }
   };
   reader.readAsText(file);
 }
@@ -2971,7 +3052,7 @@ function saveBatchRemoveShifts(event) {
 }
 
 async function handleLogout() {
-  if (confirm("Deseja realmente sair?")) {
+  if (confirm(getText('msg-logout-confirm'))) {
     try {
       await signOut(auth);
       window.location.reload();

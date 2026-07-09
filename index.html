@@ -35,14 +35,14 @@
         <div class="auth-logo">
           <i data-lucide="calendar-check"></i>
         </div>
-        <h1>Dias Trabalhados</h1>
-        <p>Gestão Profissional de Turnos</p>
-        <span class="app-version" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; display: block;">Versão <span id="val-app-version-login">1.0.0</span></span>
+        <h1 data-i18n="app-title">Dias Trabalhados</h1>
+        <p data-i18n="login-subtitle">Gestão Profissional de Turnos</p>
+        <span class="app-version" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; display: block;"><span data-i18n="sidebar-version">Versão:</span> <span id="val-app-version-login">1.0.0</span></span>
       </div>
       <div class="auth-body">
         <button id="btn-google-login" class="btn-google">
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-          <span>Entrar com Google</span>
+          <span data-i18n="btn-google-login">Entrar com Google</span>
         </button>
         <p id="login-error-msg" class="error-msg" style="display: none;"></p>
       </div>
@@ -59,7 +59,7 @@
             <i data-lucide="calendar-check"></i>
           </div>
           <div>
-            <span class="brand-name">Dias Trabalhados</span>
+            <span class="brand-name" data-i18n="app-title">Dias Trabalhados</span>
           </div>
         </div>
 
@@ -108,7 +108,7 @@
           <li class="nav-item" style="margin-top: auto; border-top: 1px solid var(--border-light);">
             <a onclick="handleLogout()" style="color: #ef4444;">
               <i data-lucide="log-out"></i>
-              <span>Sair</span>
+              <span data-i18n="btn-logout">Sair</span>
             </a>
           </li>
           </ul>
@@ -303,7 +303,7 @@
           <div class="calendar-header">
             <h2 class="calendar-nav-title" id="calendar-month-year">Maio de 2026</h2>
             <div class="calendar-actions-nav">
-              <button class="btn-icon" id="btn-toggle-calendar-zoom" title="Alternar Zoom">
+              <button class="btn-icon" id="btn-toggle-calendar-zoom" title="Alternar Zoom" data-i18n-title="tooltip-toggle-calendar-zoom">
                 <i data-lucide="zoom-out"></i>
               </button>
               <button class="btn-primary" style="padding: 0.5rem 1rem;" onclick="openBatchModal()">
@@ -470,7 +470,7 @@
 
               <div class="payment-form-group" id="custom-notes-group" style="display: none;">
                 <label for="input-payment-notes" data-i18n="label-notes">Especificação / Notas</label>
-                <input type="text" class="form-input" id="input-payment-notes" placeholder="Ex: Transferência Bancária, Cheque, etc.">
+                <input type="text" class="form-input" id="input-payment-notes" placeholder="Ex: Transferência Bancária, Cheque, etc." data-i18n-placeholder="placeholder-payment-notes">
               </div>
 
               <button type="submit" class="btn-primary" id="btn-submit-payment" disabled>
@@ -951,7 +951,7 @@
 
         <div class="form-group" id="custom-rate-group">
           <label for="modal-custom-rate" data-i18n="modal-custom-rate">Valor Customizado para este Dia (€)</label>
-          <input type="number" step="0.01" class="form-input" id="modal-custom-rate" placeholder="Usar valor padrão">
+          <input type="number" step="0.01" class="form-input" id="modal-custom-rate" placeholder="Usar valor padrão" data-i18n-placeholder="placeholder-custom-rate">
         </div>
 
         <div class="form-group">
