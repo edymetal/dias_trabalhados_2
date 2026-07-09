@@ -559,42 +559,12 @@ body {
   margin-top: -0.5rem;
 }
 
-.monthly-weeks-totals {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
-}
-
-.monthly-weeks-total-item {
-  padding: 0.85rem 1rem;
-  border-radius: var(--border-radius-sm);
-  border: 1px solid var(--border-light);
-  background: rgba(255, 255, 255, 0.035);
-}
-
-.monthly-weeks-total-item span,
 .monthly-week-metrics span,
 .monthly-week-kicker,
 .monthly-week-footer {
   color: var(--text-muted);
   font-size: 0.75rem;
   font-weight: 600;
-}
-
-.monthly-weeks-total-item strong {
-  display: block;
-  color: var(--text-primary);
-  font-size: 1.2rem;
-  font-weight: 800;
-  margin-top: 0.25rem;
-}
-
-.monthly-weeks-total-item.paid strong {
-  color: var(--status-paid);
-}
-
-.monthly-weeks-total-item.pending strong {
-  color: var(--status-unpaid);
 }
 
 .monthly-weeks-summary-list {

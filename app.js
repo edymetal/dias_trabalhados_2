@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.97';
-const APP_BUILD_DATE = '2026-07-09 07:51:10';
+const APP_VERSION = '1.0.98';
+const APP_BUILD_DATE = '2026-07-09 08:19:52';
 
 
 
@@ -1462,20 +1462,6 @@ function renderMonthlyWeeksSummary() {
     week.totalPaid += paid;
     week.totalPending += Math.max(0, rate - paid);
   });
-
-  const monthTotals = weeks.reduce((acc, week) => {
-    acc.due += week.totalDue;
-    acc.paid += week.totalPaid;
-    acc.pending += week.totalPending;
-    return acc;
-  }, { due: 0, paid: 0, pending: 0 });
-
-  const totalDueEl = document.getElementById('monthly-weeks-total-due');
-  const totalPaidEl = document.getElementById('monthly-weeks-total-paid');
-  const totalPendingEl = document.getElementById('monthly-weeks-total-pending');
-  if (totalDueEl) totalDueEl.innerText = formatCurrency(monthTotals.due);
-  if (totalPaidEl) totalPaidEl.innerText = formatCurrency(monthTotals.paid);
-  if (totalPendingEl) totalPendingEl.innerText = formatCurrency(monthTotals.pending);
 
   if (weeks.length === 0 || weeks.every(week => week.days === 0)) {
     listEl.innerHTML = `
