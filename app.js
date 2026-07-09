@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.90';
-const APP_BUILD_DATE = '2026-07-09 06:39:52';
+const APP_VERSION = '1.0.91';
+const APP_BUILD_DATE = '2026-07-09 06:55:05';
 
 
 
@@ -234,6 +234,9 @@ const translations = {
     'label-morning-rate': 'Valor Período da Manhã (€)',
     'label-night-rate': 'Valor Período da Noite (€)',
     'btn-save-rates': 'Salvar Tarifas',
+    'settings-weekly-schedule-title': 'Rotina semanal padrão',
+    'settings-weekly-schedule-desc': 'Defina o status padrão de cada dia da semana para lançamentos automáticos e em lote.',
+    'btn-save-weekly-schedule': 'Salvar rotina semanal',
     'settings-offdays-title': 'Folga Semanal Padrão',
     'settings-offdays-desc': 'Selecione os dias da semana que são suas folgas padrão. Eles serão sugeridos no Lançamento em lote e exibidos no Calendário.',
     'btn-save-offdays': 'Salvar Folgas',
@@ -443,6 +446,9 @@ const translations = {
     'label-morning-rate': 'Valore Periodo Mattina (€)',
     'label-night-rate': 'Valore Periodo Sera (€)',
     'btn-save-rates': 'Salva Tariffe',
+    'settings-weekly-schedule-title': 'Routine settimanale standard',
+    'settings-weekly-schedule-desc': 'Definisci lo stato standard di ogni giorno della settimana per inserimenti automatici e in blocco.',
+    'btn-save-weekly-schedule': 'Salva routine settimanale',
     'settings-offdays-title': 'Riposo Settimanale Standard',
     'settings-offdays-desc': 'Seleziona i giorni della settimana che sono i tuoi riposi standard.',
     'btn-save-offdays': 'Salva Riposi',
@@ -2503,6 +2509,7 @@ function loadSettingsFields() {
       }
     }
   }
+  loadWeeklyScheduleFields();
 
   // Carrega Ciclo de Pagamento
   const cycle = db.settings.paymentCycle || { type: 'weekly', day: 0 };
@@ -2513,6 +2520,24 @@ function loadSettingsFields() {
     document.getElementById('setting-payment-day-month').value = cycle.day;
   }
   togglePaymentCycleInputs();
+}
+
+function loadWeeklyScheduleFields() {
+  const offDays = db.settings.offDays || [4];
+  const halfDays = db.settings.halfDays || {};
+
+  for (let i = 0; i <= 6; i++) {
+    const select = document.getElementById(`weekly-status-${i}`);
+    if (!select) continue;
+
+    if (offDays.includes(i)) {
+      select.value = 'off';
+    } else if (halfDays[i]) {
+      select.value = halfDays[i];
+    } else {
+      select.value = 'both';
+    }
+  }
 }
 
 function updateAutoFillStatusText(enabled = db.settings.autoFillWorkedDays) {
@@ -2621,6 +2646,34 @@ function toggleHalfDaySelect(dayIndex) {
   if (chk && sel) {
     sel.disabled = !chk.checked;
   }
+}
+
+async function saveWeeklyScheduleSettings(event) {
+  event.preventDefault();
+
+  const offDays = [];
+  const halfDays = {};
+
+  for (let i = 0; i <= 6; i++) {
+    const select = document.getElementById(`weekly-status-${i}`);
+    const status = select ? select.value : 'both';
+
+    if (status === 'off') {
+      offDays.push(i);
+    } else if (status === 'morning' || status === 'night') {
+      halfDays[i] = status;
+    }
+  }
+
+  db.settings.offDays = offDays;
+  db.settings.halfDays = halfDays;
+  await saveToStorage();
+  await applyAutomaticWorkedDayFill();
+  loadSettingsFields();
+  renderCalendar();
+  renderWeeksList();
+  updateDashboardData();
+  alert(translations[db.settings.language]['msg-save-success']);
 }
 
 async function saveHalfDaysSettings(event) {
@@ -2943,6 +2996,7 @@ window.clearDatabase = clearDatabase;
 window.setLanguage = setLanguage;
 window.changeTheme = changeTheme;
 window.saveRatesSettings = saveRatesSettings;
+window.saveWeeklyScheduleSettings = saveWeeklyScheduleSettings;
 window.saveOffDaysSettings = saveOffDaysSettings;
 window.saveHalfDaysSettings = saveHalfDaysSettings;
 window.saveAutoFillSettings = saveAutoFillSettings;

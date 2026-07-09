@@ -544,15 +544,15 @@
           <!-- Folga Semanal Padrão Config -->
           <div class="glass-card settings-card">
             <h2 class="dashboard-card-title">
-              <i data-lucide="coffee"></i>
-              <span data-i18n="settings-offdays-title">Folga Semanal Padrão</span>
+              <i data-lucide="calendar-days"></i>
+              <span data-i18n="settings-weekly-schedule-title">Rotina semanal padrão</span>
             </h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;" data-i18n="settings-offdays-desc">
-              Selecione os dias da semana que são suas folgas padrão. Eles serão sugeridos no lançamento em lote e exibidos no calendário.
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;" data-i18n="settings-weekly-schedule-desc">
+              Defina o status padrão de cada dia da semana para lançamentos automáticos e em lote.
             </p>
 
-            <form id="settings-offdays-form" onsubmit="saveOffDaysSettings(event)">
-              <div class="offdays-checkbox-grid">
+            <form id="settings-weekly-schedule-form" onsubmit="saveWeeklyScheduleSettings(event)">
+              <div class="offdays-checkbox-grid legacy-weekly-settings">
                 <div class="checkbox-option">
                   <input type="checkbox" id="offday-0" value="0">
                   <label for="offday-0" data-i18n="day-0">Domingo</label>
@@ -583,15 +583,81 @@
                 </div>
               </div>
 
+              <div class="weekly-schedule-list">
+                <div class="weekly-schedule-row">
+                  <span class="weekly-schedule-day" data-i18n="day-0">Domingo</span>
+                  <select class="form-input weekly-schedule-select" id="weekly-status-0">
+                    <option value="morning" data-i18n="legend-morning">Manhã</option>
+                    <option value="night" data-i18n="legend-night">Noite</option>
+                    <option value="both" data-i18n="legend-both">Ambos</option>
+                    <option value="off" data-i18n="legend-off">Folga</option>
+                  </select>
+                </div>
+                <div class="weekly-schedule-row">
+                  <span class="weekly-schedule-day" data-i18n="day-1">Segunda-feira</span>
+                  <select class="form-input weekly-schedule-select" id="weekly-status-1">
+                    <option value="morning" data-i18n="legend-morning">Manhã</option>
+                    <option value="night" data-i18n="legend-night">Noite</option>
+                    <option value="both" data-i18n="legend-both">Ambos</option>
+                    <option value="off" data-i18n="legend-off">Folga</option>
+                  </select>
+                </div>
+                <div class="weekly-schedule-row">
+                  <span class="weekly-schedule-day" data-i18n="day-2">Terça-feira</span>
+                  <select class="form-input weekly-schedule-select" id="weekly-status-2">
+                    <option value="morning" data-i18n="legend-morning">Manhã</option>
+                    <option value="night" data-i18n="legend-night">Noite</option>
+                    <option value="both" data-i18n="legend-both">Ambos</option>
+                    <option value="off" data-i18n="legend-off">Folga</option>
+                  </select>
+                </div>
+                <div class="weekly-schedule-row">
+                  <span class="weekly-schedule-day" data-i18n="day-3">Quarta-feira</span>
+                  <select class="form-input weekly-schedule-select" id="weekly-status-3">
+                    <option value="morning" data-i18n="legend-morning">Manhã</option>
+                    <option value="night" data-i18n="legend-night">Noite</option>
+                    <option value="both" data-i18n="legend-both">Ambos</option>
+                    <option value="off" data-i18n="legend-off">Folga</option>
+                  </select>
+                </div>
+                <div class="weekly-schedule-row">
+                  <span class="weekly-schedule-day" data-i18n="day-4">Quinta-feira</span>
+                  <select class="form-input weekly-schedule-select" id="weekly-status-4">
+                    <option value="morning" data-i18n="legend-morning">Manhã</option>
+                    <option value="night" data-i18n="legend-night">Noite</option>
+                    <option value="both" data-i18n="legend-both">Ambos</option>
+                    <option value="off" data-i18n="legend-off">Folga</option>
+                  </select>
+                </div>
+                <div class="weekly-schedule-row">
+                  <span class="weekly-schedule-day" data-i18n="day-5">Sexta-feira</span>
+                  <select class="form-input weekly-schedule-select" id="weekly-status-5">
+                    <option value="morning" data-i18n="legend-morning">Manhã</option>
+                    <option value="night" data-i18n="legend-night">Noite</option>
+                    <option value="both" data-i18n="legend-both">Ambos</option>
+                    <option value="off" data-i18n="legend-off">Folga</option>
+                  </select>
+                </div>
+                <div class="weekly-schedule-row">
+                  <span class="weekly-schedule-day" data-i18n="day-6">Sábado</span>
+                  <select class="form-input weekly-schedule-select" id="weekly-status-6">
+                    <option value="morning" data-i18n="legend-morning">Manhã</option>
+                    <option value="night" data-i18n="legend-night">Noite</option>
+                    <option value="both" data-i18n="legend-both">Ambos</option>
+                    <option value="off" data-i18n="legend-off">Folga</option>
+                  </select>
+                </div>
+              </div>
+
               <button type="submit" class="btn-primary" style="margin-top: 1.5rem;">
                 <i data-lucide="save"></i>
-                <span data-i18n="btn-save-offdays">Salvar Folgas</span>
+                <span data-i18n="btn-save-weekly-schedule">Salvar rotina semanal</span>
               </button>
             </form>
           </div>
 
           <!-- Meio Período Padrão Config -->
-          <div class="glass-card settings-card">
+          <div class="glass-card settings-card legacy-halfdays-card">
             <h2 class="dashboard-card-title">
               <i data-lucide="clock"></i>
               <span data-i18n="settings-halfdays-title">Meio Período Padrão</span>
