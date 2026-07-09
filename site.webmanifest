@@ -1,6 +1,6 @@
 {
   "name": "Dias Trabalhados",
-  "short_name": "Dias",
+  "short_name": "Dias Trabalhados",
   "description": "Controle de dias trabalhados, folgas e pagamentos semanais.",
   "start_url": "./index.html",
   "scope": "./",
