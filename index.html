@@ -243,55 +243,33 @@
             </div>
           </div>
 
-          <!-- Quick Actions & Next Payment -->
+          <!-- Monthly Weekly Payments Summary -->
           <div class="glass-card dashboard-card">
             <h2 class="dashboard-card-title">
-              <i data-lucide="sparkles"></i>
-              <span data-i18n="quick-actions-title">Ações Rápidas</span>
+              <i data-lucide="calendar-check-2"></i>
+              <span data-i18n="dashboard-weekly-payments-title">Pagamentos por semana</span>
             </h2>
-            <div class="quick-log-container">
-              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">
-                <span data-i18n="quick-actions-desc">Registre rapidamente o seu turno para o dia de hoje</span> (<span id="quick-today-date">21/05</span>):
+            <div class="monthly-weeks-summary">
+              <p class="monthly-weeks-summary-desc" data-i18n="dashboard-weekly-payments-desc">
+                Semanas de segunda a domingo com dias dentro do mês atual.
               </p>
-              <button class="quick-log-btn" onclick="quickLogShift('morning')">
-                <div class="quick-log-info">
-                  <h4 data-i18n="btn-morning-shift">Turno da Manhã</h4>
-                  <p id="quick-rate-morning">Valor padrão: € 80,00</p>
+              <div class="monthly-weeks-totals">
+                <div class="monthly-weeks-total-item">
+                  <span data-i18n="dashboard-weekly-total-due">Previsto</span>
+                  <strong id="monthly-weeks-total-due">€ 0,00</strong>
                 </div>
-                <div class="quick-log-arrow">
-                  <i data-lucide="sun" style="width: 16px; height: 16px;"></i>
+                <div class="monthly-weeks-total-item paid">
+                  <span data-i18n="dashboard-weekly-total-paid">Recebido</span>
+                  <strong id="monthly-weeks-total-paid">€ 0,00</strong>
                 </div>
-              </button>
-              
-              <button class="quick-log-btn" onclick="quickLogShift('night')">
-                <div class="quick-log-info">
-                  <h4 data-i18n="btn-night-shift">Turno da Noite</h4>
-                  <p id="quick-rate-night">Valor padrão: € 100,00</p>
+                <div class="monthly-weeks-total-item pending">
+                  <span data-i18n="dashboard-weekly-total-pending">Pendente</span>
+                  <strong id="monthly-weeks-total-pending">€ 0,00</strong>
                 </div>
-                <div class="quick-log-arrow">
-                  <i data-lucide="moon" style="width: 16px; height: 16px;"></i>
-                </div>
-              </button>
-
-              <button class="quick-log-btn" onclick="quickLogShift('both')">
-                <div class="quick-log-info">
-                  <h4 data-i18n="btn-both-shifts">Ambos os Turnos</h4>
-                  <p id="quick-rate-both">Valor padrão: € 180,00</p>
-                </div>
-                <div class="quick-log-arrow">
-                  <i data-lucide="sunset" style="width: 16px; height: 16px;"></i>
-                </div>
-              </button>
-
-              <button class="quick-log-btn" onclick="quickLogShift('off')">
-                <div class="quick-log-info">
-                  <h4 data-i18n="btn-off-day">Dia de Folga</h4>
-                  <p data-i18n="log-rest">Registrar descanso</p>
-                </div>
-                <div class="quick-log-arrow">
-                  <i data-lucide="coffee" style="width: 16px; height: 16px;"></i>
-                </div>
-              </button>
+              </div>
+              <div class="monthly-weeks-summary-list" id="monthly-weeks-summary-list">
+                <!-- Dynamically populated monthly weeks -->
+              </div>
             </div>
           </div>
         </div>

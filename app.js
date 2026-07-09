@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.96';
-const APP_BUILD_DATE = '2026-07-09 07:38:45';
+const APP_VERSION = '1.0.97';
+const APP_BUILD_DATE = '2026-07-09 07:51:10';
 
 
 
@@ -183,6 +183,14 @@ const translations = {
     'annual-worked-days': 'Dias Trabalhados no Ano',
     'quick-actions-title': 'Ações Rápidas',
     'quick-actions-desc': 'Registre rapidamente o seu turno para o dia de hoje',
+    'dashboard-weekly-payments-title': 'Pagamentos por semana',
+    'dashboard-weekly-payments-desc': 'Semanas de segunda a domingo com dias dentro do mês atual.',
+    'dashboard-weekly-total-due': 'Previsto',
+    'dashboard-weekly-total-paid': 'Recebido',
+    'dashboard-weekly-total-pending': 'Pendente',
+    'dashboard-weekly-empty': 'Nenhum lançamento encontrado para as semanas do mês atual.',
+    'dashboard-weekly-period': 'Período',
+    'dashboard-weekly-days': 'Dias',
     'btn-morning-shift': 'Turno da Manhã',
     'btn-night-shift': 'Turno da Noite',
     'btn-both-shifts': 'Ambos os Turnos',
@@ -412,6 +420,14 @@ const translations = {
     'annual-worked-days': 'Giorni Lavorati nell\'Anno',
     'quick-actions-title': 'Azioni Rapide',
     'quick-actions-desc': 'Registra rapidamente il tuo turno per oggi',
+    'dashboard-weekly-payments-title': 'Pagamenti per settimana',
+    'dashboard-weekly-payments-desc': 'Settimane da lunedì a domenica con giorni nel mese corrente.',
+    'dashboard-weekly-total-due': 'Previsto',
+    'dashboard-weekly-total-paid': 'Ricevuto',
+    'dashboard-weekly-total-pending': 'Pendente',
+    'dashboard-weekly-empty': 'Nessun inserimento trovato per le settimane del mese corrente.',
+    'dashboard-weekly-period': 'Periodo',
+    'dashboard-weekly-days': 'Giorni',
     'btn-morning-shift': 'Turno Mattina',
     'btn-night-shift': 'Turno Sera',
     'btn-both-shifts': 'Entrambi i Turni',
@@ -828,6 +844,10 @@ function applyLanguage() {
   if (document.getElementById('section-calendar').classList.contains('active')) {
     renderCalendar();
   }
+
+  if (document.getElementById('section-dashboard').classList.contains('active')) {
+    updateDashboardData();
+  }
   
   // Atualiza labels de tarifas
   updateRateLabels();
@@ -1007,9 +1027,12 @@ function updateRateLabels() {
   const both = morning + night;
   const texts = translations[db.settings.language || 'pt-BR'];
 
-  document.getElementById('quick-rate-morning').innerText = `${texts['rate-default']} ${formatCurrency(morning)}`;
-  document.getElementById('quick-rate-night').innerText = `${texts['rate-default']} ${formatCurrency(night)}`;
-  document.getElementById('quick-rate-both').innerText = `${texts['rate-default']} ${formatCurrency(both)}`;
+  const quickRateMorning = document.getElementById('quick-rate-morning');
+  const quickRateNight = document.getElementById('quick-rate-night');
+  const quickRateBoth = document.getElementById('quick-rate-both');
+  if (quickRateMorning) quickRateMorning.innerText = `${texts['rate-default']} ${formatCurrency(morning)}`;
+  if (quickRateNight) quickRateNight.innerText = `${texts['rate-default']} ${formatCurrency(night)}`;
+  if (quickRateBoth) quickRateBoth.innerText = `${texts['rate-default']} ${formatCurrency(both)}`;
 
   document.getElementById('modal-price-morning').innerText = formatCurrency(morning);
   document.getElementById('modal-price-night').innerText = formatCurrency(night);
@@ -1386,6 +1409,7 @@ function updateDashboardData() {
   if (depositValEl) depositValEl.innerText = formatCurrency(annualReceivedDeposit);
   if (cashValEl) cashValEl.innerText = formatCurrency(annualReceivedCash);
   if (workedDaysEl) workedDaysEl.innerText = `${annualWorkedDays} ${annualWorkedDays === 1 ? texts['week-day'] : texts['week-days']}`;
+  renderMonthlyWeeksSummary();
 
   // Atualiza gráficos
   renderEarningsChart();
@@ -1393,6 +1417,128 @@ function updateDashboardData() {
 }
 
 // Cria/Atualiza o gráfico dinÃƒÂ¢mico
+// Renderiza o resumo de pagamentos semanais do mês atual
+function renderMonthlyWeeksSummary() {
+  const listEl = document.getElementById('monthly-weeks-summary-list');
+  if (!listEl) return;
+
+  const texts = translations[db.settings.language || 'pt-BR'];
+  const today = new Date();
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  const monthStartStr = formatDateISO(monthStart);
+  const monthEndStr = formatDateISO(monthEnd);
+  const weeks = [];
+  const seenWeeks = new Set();
+
+  let cursor = new Date(monthStart);
+  while (cursor <= monthEnd) {
+    const week = getWeekRange(formatDateISO(cursor));
+    if (!seenWeeks.has(week.key)) {
+      seenWeeks.add(week.key);
+      weeks.push({
+        ...week,
+        days: 0,
+        totalDue: 0,
+        totalPaid: 0,
+        totalPending: 0
+      });
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  Object.entries(db.workedDays || {}).forEach(([dateStr, dayData]) => {
+    if (dateStr < monthStartStr || dateStr > monthEndStr) return;
+    if (dayData.period === 'none' || dayData.period === 'off') return;
+
+    const weekKey = getWeekRange(dateStr).key;
+    const week = weeks.find(item => item.key === weekKey);
+    if (!week) return;
+
+    const rate = dayData.rate || 0;
+    const paid = dayData.amountPaid || 0;
+    week.days += 1;
+    week.totalDue += rate;
+    week.totalPaid += paid;
+    week.totalPending += Math.max(0, rate - paid);
+  });
+
+  const monthTotals = weeks.reduce((acc, week) => {
+    acc.due += week.totalDue;
+    acc.paid += week.totalPaid;
+    acc.pending += week.totalPending;
+    return acc;
+  }, { due: 0, paid: 0, pending: 0 });
+
+  const totalDueEl = document.getElementById('monthly-weeks-total-due');
+  const totalPaidEl = document.getElementById('monthly-weeks-total-paid');
+  const totalPendingEl = document.getElementById('monthly-weeks-total-pending');
+  if (totalDueEl) totalDueEl.innerText = formatCurrency(monthTotals.due);
+  if (totalPaidEl) totalPaidEl.innerText = formatCurrency(monthTotals.paid);
+  if (totalPendingEl) totalPendingEl.innerText = formatCurrency(monthTotals.pending);
+
+  if (weeks.length === 0 || weeks.every(week => week.days === 0)) {
+    listEl.innerHTML = `
+      <div class="monthly-weeks-empty">
+        <i data-lucide="calendar-x"></i>
+        <span>${texts['dashboard-weekly-empty']}</span>
+      </div>
+    `;
+    lucide.createIcons();
+    return;
+  }
+
+  listEl.innerHTML = weeks.map(week => {
+    const statusKey = week.totalPending <= 0 && week.totalDue > 0
+      ? 'legend-paid'
+      : week.totalPaid > 0
+        ? 'legend-partial'
+        : 'legend-pending';
+    const statusClass = week.totalPending <= 0 && week.totalDue > 0
+      ? 'is-paid'
+      : week.totalPaid > 0
+        ? 'is-partial'
+        : 'is-pending';
+    const progress = week.totalDue > 0 ? Math.min(100, Math.round((week.totalPaid / week.totalDue) * 100)) : 0;
+    const period = `${formatDateStringDisplay(week.mondayStr)} ${texts['week-to']} ${formatDateStringDisplay(week.sundayStr)}`;
+    const daysLabel = `${week.days} ${week.days === 1 ? texts['week-day'] : texts['week-days']}`;
+
+    return `
+      <article class="monthly-week-card ${statusClass}">
+        <div class="monthly-week-card-header">
+          <div>
+            <span class="monthly-week-kicker">${texts['dashboard-weekly-period']}</span>
+            <strong>${period}</strong>
+          </div>
+          <span class="monthly-week-badge">${texts[statusKey]}</span>
+        </div>
+        <div class="monthly-week-metrics">
+          <div>
+            <span>${texts['dashboard-weekly-total-due']}</span>
+            <strong>${formatCurrency(week.totalDue)}</strong>
+          </div>
+          <div>
+            <span>${texts['dashboard-weekly-total-paid']}</span>
+            <strong>${formatCurrency(week.totalPaid)}</strong>
+          </div>
+          <div>
+            <span>${texts['dashboard-weekly-total-pending']}</span>
+            <strong>${formatCurrency(week.totalPending)}</strong>
+          </div>
+        </div>
+        <div class="monthly-week-footer">
+          <span>${texts['dashboard-weekly-days']}: ${daysLabel}</span>
+          <span>${progress}%</span>
+        </div>
+        <div class="monthly-week-progress" aria-hidden="true">
+          <span style="width: ${progress}%"></span>
+        </div>
+      </article>
+    `;
+  }).join('');
+}
+
+// Cria/Atualiza o gráfico dinâmico
 function renderEarningsChart() {
   if (!db) return; // Segurança contra carga incompleta
   const ctx = document.getElementById('earningsChart').getContext('2d');

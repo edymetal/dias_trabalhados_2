@@ -517,6 +517,14 @@ body {
     grid-template-columns: 1fr;
     gap: 1.5rem;
   }
+
+  .monthly-week-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .monthly-weeks-summary-list {
+    max-height: none;
+  }
 }
 
 .dashboard-card-title {
@@ -536,6 +544,166 @@ body {
   position: relative;
   height: 280px;
   width: 100%;
+}
+
+.monthly-weeks-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.monthly-weeks-summary-desc {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  margin-top: -0.5rem;
+}
+
+.monthly-weeks-totals {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+.monthly-weeks-total-item {
+  padding: 0.85rem 1rem;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-light);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.monthly-weeks-total-item span,
+.monthly-week-metrics span,
+.monthly-week-kicker,
+.monthly-week-footer {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.monthly-weeks-total-item strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin-top: 0.25rem;
+}
+
+.monthly-weeks-total-item.paid strong {
+  color: var(--status-paid);
+}
+
+.monthly-weeks-total-item.pending strong {
+  color: var(--status-unpaid);
+}
+
+.monthly-weeks-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 0.2rem;
+}
+
+.monthly-week-card {
+  padding: 1rem;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-light);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.monthly-week-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.monthly-week-card-header strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  margin-top: 0.2rem;
+}
+
+.monthly-week-badge {
+  flex: 0 0 auto;
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--status-unpaid);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.monthly-week-card.is-paid .monthly-week-badge {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--status-paid);
+}
+
+.monthly-week-card.is-partial .monthly-week-badge {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--status-partial);
+}
+
+.monthly-week-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+}
+
+.monthly-week-metrics div {
+  min-width: 0;
+}
+
+.monthly-week-metrics strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 0.86rem;
+  margin-top: 0.2rem;
+  white-space: nowrap;
+}
+
+.monthly-week-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.55rem;
+}
+
+.monthly-week-progress {
+  height: 7px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(148, 163, 184, 0.18);
+}
+
+.monthly-week-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent-purple), var(--status-paid));
+}
+
+.monthly-weeks-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1rem;
+  border: 1px dashed var(--border-light);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.monthly-weeks-empty i,
+.monthly-weeks-empty svg {
+  width: 18px;
+  height: 18px;
 }
 
 /* Quick Shift Logger */
