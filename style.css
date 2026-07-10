@@ -1605,10 +1605,16 @@ body {
   z-index: 4000;
   display: none;
   padding: 0.85rem;
-  border: 1px solid var(--border-light);
+  border: 1px solid #334155;
   border-radius: var(--border-radius-sm);
-  background: var(--bg-secondary);
+  background: #111927;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="light"] .date-picker-popover {
+  border-color: #cbd5e1;
+  background: #ffffff;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.2);
 }
 
 .date-picker-popover.active {

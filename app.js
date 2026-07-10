@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.103';
-const APP_BUILD_DATE = '2026-07-10 11:15:48';
+const APP_VERSION = '1.0.104';
+const APP_BUILD_DATE = '2026-07-10 11:22:12';
 
 
 
@@ -937,12 +937,15 @@ function initMondayFirstDateInputs() {
     input.type = 'text';
     input.inputMode = 'none';
     input.autocomplete = 'off';
+    input.readOnly = true;
     input.placeholder = 'aaaa-mm-dd';
     input.classList.add('date-input-custom');
     input.setAttribute('aria-haspopup', 'dialog');
 
-    input.addEventListener('pointerdown', () => openMondayFirstDatePicker(input));
-    input.addEventListener('click', () => openMondayFirstDatePicker(input));
+    input.addEventListener('click', event => {
+      event.stopPropagation();
+      openMondayFirstDatePicker(input);
+    });
     input.addEventListener('focus', () => openMondayFirstDatePicker(input));
     input.addEventListener('keydown', event => {
       if (event.key === 'Enter' || event.key === ' ') {
@@ -956,7 +959,7 @@ function initMondayFirstDateInputs() {
     });
   });
 
-  document.addEventListener('click', event => {
+  document.addEventListener('pointerdown', event => {
     const picker = document.getElementById('monday-first-date-picker');
     if (!picker || !picker.classList.contains('active')) return;
     if (picker.contains(event.target) || event.target === activeDateInput) return;
