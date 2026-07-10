@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.108';
-const APP_BUILD_DATE = '2026-07-10 14:27:59';
+const APP_VERSION = '1.0.109';
+const APP_BUILD_DATE = '2026-07-10 14:38:08';
 
 
 
@@ -2594,11 +2594,22 @@ function updatePaymentSummary() {
     lucide.createIcons();
   }
 
-  let dbTotalDays = 0, dbTotalPending = 0;
+  let dbTotalDays = 0, dbTotalDue = 0, dbTotalPaid = 0, dbTotalPending = 0;
+  const pendingWeekKeys = new Set();
   Object.keys(db.workedDays).forEach(dateStr => {
     const dayData = db.workedDays[dateStr];
     if (dayData.period !== 'none' && dayData.period !== 'off' && (dayData.pendingAmount || 0) > 0) {
       dbTotalDays++;
+      const weekInfo = getWeekRange(dateStr);
+      pendingWeekKeys.add(weekInfo.key);
+    }
+  });
+
+  Object.keys(db.workedDays).forEach(dateStr => {
+    const dayData = db.workedDays[dateStr];
+    if (dayData.period !== 'none' && dayData.period !== 'off' && pendingWeekKeys.has(getWeekRange(dateStr).key)) {
+      dbTotalDue += dayData.rate || 0;
+      dbTotalPaid += dayData.amountPaid || 0;
       dbTotalPending += dayData.pendingAmount || 0;
     }
   });
@@ -2607,8 +2618,8 @@ function updatePaymentSummary() {
     if (dbTotalPending > 0) {
       summaryWeeksCount.innerHTML = `<span style="color: var(--accent-purple); font-weight: 600;">${texts['msg-all-pending']}</span>`;
       summaryDaysCount.innerText = `${dbTotalDays} ${dbTotalDays === 1 ? texts['week-day'] : texts['week-days']}`;
-      summaryTotalDue.innerText = formatCurrency(dbTotalPending);
-      summaryAlreadyPaid.innerText = formatCurrency(dbTotalPending);
+      summaryTotalDue.innerText = formatCurrency(dbTotalDue);
+      summaryAlreadyPaid.innerText = formatCurrency(dbTotalPaid);
       summaryRemainingDue.innerText = formatCurrency(dbTotalPending);
       paymentAmountInput.disabled = false;
       paymentAmountInput.value = dbTotalPending.toFixed(2);
@@ -2627,22 +2638,33 @@ function updatePaymentSummary() {
     return;
   }
 
-  let totalDays = 0, totalPending = 0;
+  let totalDays = 0, totalDue = 0, totalPaid = 0, totalPending = 0;
+  const selectedPendingWeekKeys = new Set();
   Object.keys(db.workedDays).forEach(dateStr => {
     const dayData = db.workedDays[dateStr];
     if (dayData.period !== 'none' && dayData.period !== 'off' && (dayData.pendingAmount || 0) > 0) {
       const weekInfo = getWeekRange(dateStr);
       if (selectedWeeks.includes(weekInfo.key)) {
         totalDays++;
-        totalPending += dayData.pendingAmount || 0;
+        selectedPendingWeekKeys.add(weekInfo.key);
       }
+    }
+  });
+
+  Object.keys(db.workedDays).forEach(dateStr => {
+    const dayData = db.workedDays[dateStr];
+    const weekKey = getWeekRange(dateStr).key;
+    if (dayData.period !== 'none' && dayData.period !== 'off' && selectedPendingWeekKeys.has(weekKey)) {
+      totalDue += dayData.rate || 0;
+      totalPaid += dayData.amountPaid || 0;
+      totalPending += dayData.pendingAmount || 0;
     }
   });
 
   summaryWeeksCount.innerText = selectedWeeks.length;
   summaryDaysCount.innerText = `${totalDays} ${totalDays === 1 ? texts['week-day'] : texts['week-days']}`;
-  summaryTotalDue.innerText = formatCurrency(totalPending);
-  summaryAlreadyPaid.innerText = formatCurrency(totalPending);
+  summaryTotalDue.innerText = formatCurrency(totalDue);
+  summaryAlreadyPaid.innerText = formatCurrency(totalPaid);
   summaryRemainingDue.innerText = formatCurrency(totalPending);
   paymentAmountInput.disabled = false;
   paymentAmountInput.value = totalPending.toFixed(2);
