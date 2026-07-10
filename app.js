@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.102';
-const APP_BUILD_DATE = '2026-07-09 12:35:13';
+const APP_VERSION = '1.0.103';
+const APP_BUILD_DATE = '2026-07-10 11:15:48';
 
 
 
@@ -224,6 +224,8 @@ const translations = {
     'label-received-amount': 'Valor Recebido (€)',
     'label-payment-date': 'Data do Recebimento',
     'label-payment-method': 'Método de Pagamento',
+    'label-payment-observation': 'Observação',
+    'placeholder-payment-observation': 'Ex: referência, recibo, detalhe do pagamento',
     'label-notes': 'Especificação / Notas',
     'placeholder-payment-notes': 'Ex: Transferência Bancária, Cheque, etc.',
     'btn-confirm-receipt': 'Confirmar Recebimento',
@@ -461,6 +463,8 @@ const translations = {
     'label-received-amount': 'Importo Ricevuto (€)',
     'label-payment-date': 'Data di Incasso',
     'label-payment-method': 'Metodo di Pagamento',
+    'label-payment-observation': 'Osservazione',
+    'placeholder-payment-observation': 'Es: riferimento, ricevuta, dettaglio del pagamento',
     'label-notes': 'Specifiche / Note',
     'placeholder-payment-notes': 'Es: Bonifico bancario, assegno, ecc.',
     'btn-confirm-receipt': 'Conferma Incasso',
@@ -1222,6 +1226,15 @@ function updateRateLabels() {
 function formatCurrency(value) {
   const lang = db.settings.language === 'it-IT' ? 'it-IT' : 'pt-BR';
   return new Intl.NumberFormat(lang, { style: 'currency', currency: 'EUR' }).format(value);
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
 
 function formatDateISO(date) {
@@ -2657,6 +2670,7 @@ function processPayment(event) {
   const paymentAmount = parseFloat(document.getElementById('input-payment-amount').value);
   const paymentDate = document.getElementById('input-payment-date').value;
   const paymentMethod = document.getElementById('input-payment-method').value;
+  const paymentObservation = document.getElementById('input-payment-observation')?.value.trim() || '';
   
   if (isNaN(paymentAmount) || paymentAmount <= 0) return;
 
@@ -2728,14 +2742,17 @@ function processPayment(event) {
     depositAmount: paymentMethod === 'Depósito' ? paymentAmount : (paymentMethod === 'Misto' ? depositAmount : 0),
     coveredDays: covered,
     notes: paymentNotes,
+    observation: paymentObservation,
     advanceRemaining: remaining
   });
 
   saveToStorage();
   
-  // Limpa campos adicionais de Misto
+  // Limpa campos adicionais
+  const inputObservation = document.getElementById('input-payment-observation');
   const inputCash = document.getElementById('input-payment-cash-amount');
   const inputDeposit = document.getElementById('input-payment-deposit-amount');
+  if (inputObservation) inputObservation.value = '';
   if (inputCash) inputCash.value = '';
   if (inputDeposit) inputDeposit.value = '';
   
@@ -2822,6 +2839,7 @@ function renderPaymentHistory() {
 
     const hasAdvance = pay.advanceRemaining > 0;
     const advanceBadge = hasAdvance ? `<div style="font-size:0.75rem; color: var(--accent-purple); font-weight:600; margin-top: 2px;"><i data-lucide="coins" style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-right: 2px;"></i>${texts['label-credit']}: ${formatCurrency(pay.advanceRemaining)}</div>` : '';
+    const paymentNotes = [pay.notes, pay.observation].filter(Boolean).map(escapeHtml).join('<br>');
 
     tr.innerHTML = `
       <td>${formatDateStringDisplay(pay.date)}</td>
@@ -2831,7 +2849,7 @@ function renderPaymentHistory() {
       </td>
       <td>${periodText}</td>
       <td><span class="history-pending-tag"><i data-lucide="check"></i> ${texts['status-processed']}</span></td>
-      <td>${pay.notes || '-'}</td>
+      <td>${paymentNotes || '-'}</td>
       <td><button class="btn-danger" onclick="deletePayment('${pay.id}')">${texts['btn-refund']}</button></td>
     `;
     tableBody.appendChild(tr);
