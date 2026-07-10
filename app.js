@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.109';
-const APP_BUILD_DATE = '2026-07-10 14:38:08';
+const APP_VERSION = '1.0.110';
+const APP_BUILD_DATE = '2026-07-10 14:44:11';
 
 
 
@@ -217,10 +217,10 @@ const translations = {
     'work-cycles-desc': 'Selecione as semanas que deseja incluir no recebimento do pagamento.',
     'register-receipt-title': 'Registrar Recebimento',
     'summary-selected-weeks': 'Semanas Selecionadas:',
-    'summary-selected-days': 'Total de Dias Selecionados:',
-    'summary-total-due': 'Valor Total Devido:',
-    'summary-already-paid': 'Saldo Pendente nas Selecionadas:',
-    'summary-to-pay': 'Falta Pagar:',
+    'summary-selected-days': 'Total de Dias:',
+    'summary-total-due': 'Valor Devido:',
+    'summary-already-paid': 'Valor Recebido:',
+    'summary-to-pay': 'Receber:',
     'label-received-amount': 'Valor Recebido (€)',
     'label-payment-date': 'Data do Recebimento',
     'label-payment-method': 'Método de Pagamento',
@@ -457,10 +457,10 @@ const translations = {
     'work-cycles-desc': 'Seleziona le settimane che desideri includere nel pagamento.',
     'register-receipt-title': 'Registra Incasso',
     'summary-selected-weeks': 'Settimane Selezionate:',
-    'summary-selected-days': 'Totale Giorni Selezionati:',
-    'summary-total-due': 'Totale Dovuto:',
-    'summary-already-paid': 'Saldo Pendente nelle Selezionate:',
-    'summary-to-pay': 'Da Pagare:',
+    'summary-selected-days': 'Totale Giorni:',
+    'summary-total-due': 'Valore Dovuto:',
+    'summary-already-paid': 'Valore Ricevuto:',
+    'summary-to-pay': 'Da Ricevere:',
     'label-received-amount': 'Importo Ricevuto (€)',
     'label-payment-date': 'Data di Incasso',
     'label-payment-method': 'Metodo di Pagamento',
