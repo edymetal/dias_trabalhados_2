@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.105';
-const APP_BUILD_DATE = '2026-07-10 11:33:01';
+const APP_VERSION = '1.0.106';
+const APP_BUILD_DATE = '2026-07-10 14:10:15';
 
 
 
@@ -631,6 +631,7 @@ let currentMonth = new Date().getMonth(); // 0-indexed (0 = Jan, 11 = Dez)
 let earningsChart = null;
 let annualMethodChart = null;
 let selectedWeeks = []; // Lista de chaves de semana selecionadas ('YYYY-MM-DD_YYYY-MM-DD')
+const MAX_WORK_CYCLE_WEEKS = 10;
 const MONTH_NAMES = [];
 const WEEKDAY_NAMES = [];
 
@@ -2484,7 +2485,11 @@ function renderWeeksList() {
     return;
   }
 
-  sortedWeeks.forEach(week => {
+  const visibleWeeks = sortedWeeks.slice(0, MAX_WORK_CYCLE_WEEKS);
+  const visibleWeekKeys = new Set(visibleWeeks.map(week => week.key));
+  selectedWeeks = selectedWeeks.filter(weekKey => visibleWeekKeys.has(weekKey));
+
+  visibleWeeks.forEach(week => {
     const card = document.createElement('div');
     card.className = 'week-card';
     if (selectedWeeks.includes(week.key)) card.classList.add('selected');
