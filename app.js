@@ -7,8 +7,8 @@ import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/1
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.104';
-const APP_BUILD_DATE = '2026-07-10 11:22:12';
+const APP_VERSION = '1.0.105';
+const APP_BUILD_DATE = '2026-07-10 11:33:01';
 
 
 
@@ -242,6 +242,7 @@ const translations = {
     'th-amount': 'Valor Pago',
     'th-period': 'Período Coberto',
     'th-status': 'Status / pendência',
+    'th-payment-method': 'Método de Pagamento',
     'th-notes': 'Observações',
     'th-actions': 'Ações',
     'btn-refund': 'Estornar',
@@ -481,6 +482,7 @@ const translations = {
     'th-amount': 'Importo Pagato',
     'th-period': 'Periodo Coperto',
     'th-status': 'Stato / Pendenza',
+    'th-payment-method': 'Metodo di Pagamento',
     'th-notes': 'Note',
     'th-actions': 'Azioni',
     'btn-refund': 'Storna',
@@ -2778,7 +2780,7 @@ function renderPaymentHistory() {
   const sorted = [...db.payments].sort((a, b) => b.date.localeCompare(a.date));
 
   if (sorted.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 3rem;">${texts['msg-no-history']}</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 3rem;">${texts['msg-no-history']}</td></tr>`;
     return;
   }
 
@@ -2795,7 +2797,7 @@ function renderPaymentHistory() {
       const monthHeader = document.createElement('tr');
       monthHeader.className = 'history-month-header';
       monthHeader.innerHTML = `
-        <td colspan="6" style="background: rgba(139, 92, 246, 0.05); padding: 1rem; border-left: 4px solid var(--accent-purple);">
+        <td colspan="7" style="background: rgba(139, 92, 246, 0.05); padding: 1rem; border-left: 4px solid var(--accent-purple);">
           <div style="display: flex; align-items: center; gap: 0.75rem;">
             <i data-lucide="calendar" style="width: 18px; height: 18px; color: var(--accent-purple);"></i>
             <span style="font-weight: 700; color: var(--text-primary); text-transform: capitalize;">${monthLabel}</span>
@@ -2842,7 +2844,16 @@ function renderPaymentHistory() {
 
     const hasAdvance = pay.advanceRemaining > 0;
     const advanceBadge = hasAdvance ? `<div style="font-size:0.75rem; color: var(--accent-purple); font-weight:600; margin-top: 2px;"><i data-lucide="coins" style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-right: 2px;"></i>${texts['label-credit']}: ${formatCurrency(pay.advanceRemaining)}</div>` : '';
-    const paymentNotes = [pay.notes, pay.observation].filter(Boolean).map(escapeHtml).join('<br>');
+    const methodLabels = {
+      'Dinheiro': texts['opt-cash'],
+      'Depósito': texts['opt-deposit'],
+      'Misto': texts['opt-mixed'],
+      'Outros': texts['opt-others']
+    };
+    const methodLabel = methodLabels[pay.method] || pay.method || pay.notes || '-';
+    const methodDetail = pay.method && pay.notes && pay.notes !== pay.method && pay.notes !== methodLabels[pay.method] ? pay.notes : '';
+    const paymentMethod = [methodLabel, methodDetail].filter(Boolean).map(escapeHtml).join('<br>');
+    const paymentObservation = pay.observation ? escapeHtml(pay.observation) : '-';
 
     tr.innerHTML = `
       <td>${formatDateStringDisplay(pay.date)}</td>
@@ -2852,7 +2863,8 @@ function renderPaymentHistory() {
       </td>
       <td>${periodText}</td>
       <td><span class="history-pending-tag"><i data-lucide="check"></i> ${texts['status-processed']}</span></td>
-      <td>${paymentNotes || '-'}</td>
+      <td>${paymentMethod}</td>
+      <td>${paymentObservation}</td>
       <td><button class="btn-danger" onclick="deletePayment('${pay.id}')">${texts['btn-refund']}</button></td>
     `;
     tableBody.appendChild(tr);
