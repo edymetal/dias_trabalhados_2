@@ -534,6 +534,33 @@ body {
   }
 }
 
+.app-status {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 3000;
+  max-width: min(28rem, calc(100vw - 2rem));
+  padding: 0.9rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+  box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.3);
+  color: #f8fafc;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(0.75rem);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.app-status.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.app-status-error {
+  border-color: rgba(248, 113, 113, 0.5);
+  background: rgba(127, 29, 29, 0.96);
+}
+
 .dashboard-card-title {
   font-size: 1.1rem;
   font-weight: 700;

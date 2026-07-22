@@ -96,5 +96,18 @@ describe('livro financeiro', () => {
     expect(state.payments.map(payment => payment.id)).toEqual(['pay_b']);
   });
 
-  it.todo('restringe o excedente às semanas selecionadas antes de criar crédito');
+  it('mantém dias de semanas não selecionadas sem pagamento', () => {
+    const selectedDay = workedDay('2026-05-18', 80);
+    const unselectedDay = workedDay('2026-05-25', 100);
+
+    const allocation = allocatePaymentAcrossDays({
+      amount: 120,
+      paymentId: 'pay_selected_week',
+      primaryDays: [selectedDay]
+    });
+
+    expect(selectedDay).toMatchObject({ amountPaid: 80, pendingAmount: 0, status: 'paid' });
+    expect(unselectedDay).toMatchObject({ amountPaid: 0, pendingAmount: 100, status: 'unpaid' });
+    expect(allocation).toEqual({ advanceRemaining: 40, coveredDays: ['2026-05-18'] });
+  });
 });

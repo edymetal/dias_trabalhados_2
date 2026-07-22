@@ -8,8 +8,8 @@
     },
     "userData": {
       "$uid": {
-        ".read": "auth != null && auth.uid === $uid && auth.token.authorized === true",
-        ".write": "auth != null && auth.uid === $uid && auth.token.authorized === true"
+        ".read": "auth != null && auth.uid === $uid && (auth.token.authorized === true || auth.token.email === 'edneypugliese.dev@gmail.com' || auth.token.email === 'edneypugleise@gmail.com')",
+        ".write": "auth != null && auth.uid === $uid && (auth.token.authorized === true || auth.token.email === 'edneypugliese.dev@gmail.com' || auth.token.email === 'edneypugleise@gmail.com')"
       }
     }
   }
