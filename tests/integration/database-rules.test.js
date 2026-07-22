@@ -52,6 +52,16 @@ describe('regras propostas para o emulador', () => {
     await assertFails(set(ref(user, 'userData/alice/db'), { workedDays: {} }));
   });
 
+  it('preserva o acesso legado dos administradores mestres à própria base', async () => {
+    const master = testEnvironment.authenticatedContext('master-user', {
+      email: 'edneypugliese.dev@gmail.com'
+    }).database();
+
+    await assertSucceeds(set(ref(master, 'userData/master-user/db'), { workedDays: {} }));
+    await assertSucceeds(get(ref(master, 'userData/master-user/db')));
+    await assertFails(get(ref(master, 'userData/alice/db')));
+  });
+
   it('não expõe a lista de e-mails autorizados ao cliente', async () => {
     const authorized = testEnvironment.authenticatedContext('alice', { authorized: true }).database();
 

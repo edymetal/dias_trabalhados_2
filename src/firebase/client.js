@@ -4,6 +4,7 @@ import {
   getAuth,
   GoogleAuthProvider,
   onAuthStateChanged,
+  signInWithEmailAndPassword,
   signInWithPopup,
   signOut
 } from 'firebase/auth';
@@ -35,6 +36,7 @@ export {
   onAuthStateChanged,
   ref,
   set,
+  signInWithEmailAndPassword,
   signInWithPopup,
   signOut
 };

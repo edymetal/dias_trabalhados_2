@@ -331,6 +331,8 @@ Critério de saída: backup íntegro e restauração validada em ambiente descar
 
 Objetivo: poder mudar sem tocar a produção durante testes.
 
+Status em 22/07/2026: **concluída**. Build Vite, módulos de domínio/persistência/Firebase/UI, bloqueio de produção, 23 testes unitários, 5 testes de regras e 2 fluxos Playwright em Auth/Database Emulators foram validados. Os gráficos passaram a carregamento sob demanda e o chunk inicial caiu de aproximadamente 539 KB para 328 KB. Consulte `plans/etapa-1-base-engenharia.md` e `docs/arquitetura.md`.
+
 - adicionar `package.json`, lockfile e Vite;
 - separar `domain/`, `persistence/`, `firebase/` e `ui/`;
 - adicionar `firebase.json`, regras e emuladores;

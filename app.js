@@ -2,8 +2,6 @@
    APP CONTROLLER & LOGIC - CONTROLE DE DIAS TRABALHADOS
    ========================================================================== */
 
-import Chart from 'chart.js/auto';
-import ChartDataLabels from 'chartjs-plugin-datalabels';
 import {
   AlertCircle,
   BarChart3,
@@ -64,16 +62,26 @@ import {
   reversePayment
 } from './src/domain/ledger.js';
 import {
+  calculateReceivedForWorkedDaysInMonth,
+  splitPaymentMethod
+} from './src/domain/dashboard.js';
+import {
   auth,
-  database,
-  get,
   onAuthStateChanged,
   provider,
-  ref,
-  set,
   signInWithPopup,
   signOut
 } from './src/firebase/client.js';
+import { getAuthorizedEmails } from './src/firebase/access-control.js';
+import { userDatabase } from './src/firebase/user-database.js';
+import {
+  createDatabaseRepository,
+  createDefaultDatabase,
+  DATABASE_STORAGE_KEY
+} from './src/persistence/database.js';
+import { loadChartRuntime } from './src/ui/chart-runtime.js';
+import { reportError } from './src/ui/feedback.js';
+import { translations } from './src/ui/translations.js';
 
 const lucideIcons = {
   AlertCircle,
@@ -127,8 +135,8 @@ const lucide = {
 };
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.115';
-const APP_BUILD_DATE = '2026-07-22 19:15:21';
+const APP_VERSION = '1.0.116';
+const APP_BUILD_DATE = '2026-07-22 19:42:25';
 
 
 
@@ -148,9 +156,7 @@ onAuthStateChanged(auth, async (user) => {
 
     // 2. Verificação via Whitelist no Banco de Dados para outros usuários
     try {
-      const authRef = ref(database, 'authorized_emails');
-      const snapshot = await get(authRef);
-      const allowedEmails = snapshot.val() || [];
+      const allowedEmails = await getAuthorizedEmails();
 
       if (allowedEmails.includes(user.email)) {
         console.log("Usuário autorizado via whitelist:", user.email);
@@ -212,513 +218,7 @@ async function handleLogin() {
   }
 }
 
-// Configurações do Banco de Dados Local (LocalStorage)
-const DB_STORAGE_KEY = 'fluxoturno_db';
-
-// Estado Inicial do Banco de Dados
-const DEFAULT_DB = {
-  settings: {
-    morningRate: 35.00,
-    nightRate: 25.00,
-    currency: 'EUR',
-    offDays: [4], // Quinta-feira (4) por padrão
-    halfDays: {
-      0: 'morning' // Domingo (0) como Meio Período (Manhã) padrão
-    },
-    autoFillWorkedDays: false,
-    autoFillStartedAt: null,
-    autoFillLastDate: null,
-    language: 'pt-BR',
-    theme: 'dark'
-  },
-  workedDays: {}, // Formato: { 'YYYY-MM-DD': { date, period, rate, status, amountPaid, pendingAmount, notes, paymentsApplied: { paymentId: amount } } }
-  payments: []    // Formato: [{ id, date, amount, coveredDays: [], notes }]
-};
-
 // Traduções para Português e Italiano
-const translations = {
-  'pt-BR': {
-    'app-title': 'Dias Trabalhados',
-    'login-subtitle': 'Gestão Profissional de Turnos',
-    'btn-google-login': 'Entrar com Google',
-    'btn-logout': 'Sair',
-    'user-default-name': 'Usuário',
-    // Sidebar
-    'nav-dashboard': 'Dashboard',
-    'nav-calendar': 'Calendário',
-    'nav-payments': 'Pagamentos',
-    'nav-history': 'Histórico',
-    'nav-settings': 'Configurações',
-    'sidebar-version': 'Versão:',
-    'sidebar-updated': 'Atualizado:',
-    
-    // Header
-    'header-dashboard-title': 'Dashboard',
-    'header-dashboard-subtitle': 'Visão geral do seu trabalho e finanças.',
-    'header-calendar-title': 'Calendário',
-    'header-calendar-subtitle': 'Visualize o mês de trabalho e configure seus turnos clicando nos dias.',
-    'header-payments-title': 'Pagamentos',
-    'header-payments-subtitle': 'Selecione os ciclos semanais para registrar recebimentos totais ou parciais.',
-    'header-history-title': 'Histórico',
-    'header-history-subtitle': 'Registro completo de pagamentos e pendências finalizadas.',
-    'header-settings-title': 'Configurações',
-    'header-settings-subtitle': 'Ajustes finos do sistema, exportação de dados e tarifas padrão.',
-
-    // Dashboard
-    'stat-total-accumulated': 'Total Acumulado',
-    'stat-total-received': 'Recebido no Mês',
-    'stat-total-pending': 'Total Pendente',
-    'stat-this-week': 'Esta Semana',
-    'chart-title': 'Total Recebido por Mês',
-    'chart-annual-summary-title': 'Resumo Financeiro Anual',
-    'annual-total-received': 'Total Recebido no Ano',
-    'annual-received-deposit': 'Recebido por Depósito',
-    'annual-received-cash': 'Recebido em Dinheiro',
-    'annual-worked-days': 'Dias Trabalhados no Ano',
-    'quick-actions-title': 'Ações Rápidas',
-    'quick-actions-desc': 'Registre rapidamente o seu turno para o dia de hoje',
-    'dashboard-weekly-payments-title': 'Pagamentos por semana',
-    'dashboard-weekly-payments-desc': 'Semanas de segunda a domingo com dias dentro do mês atual.',
-    'dashboard-weekly-total-due': 'Previsto',
-    'dashboard-weekly-total-paid': 'Recebido',
-    'dashboard-weekly-total-pending': 'Pendente',
-    'dashboard-weekly-empty': 'Nenhum lançamento encontrado para as semanas do mês atual.',
-    'dashboard-weekly-period': 'Período',
-    'dashboard-weekly-days': 'Dias',
-    'btn-morning-shift': 'Turno da Manhã',
-    'btn-night-shift': 'Turno da Noite',
-    'btn-both-shifts': 'Ambos os Turnos',
-    'btn-off-day': 'Dia de Folga',
-    'rate-default': 'Valor padrão:',
-    'log-rest': 'Registrar descanso',
-
-    // Calendar
-    'btn-batch-launch': 'Lançar Vários Dias',
-    'btn-batch-remove': 'Remover Vários Dias',
-    'btn-today': 'Hoje',
-    'tooltip-toggle-calendar-zoom': 'Alternar zoom',
-    'legend-paid': 'Pago',
-    'legend-partial': 'Parcialmente Pago',
-    'legend-pending': 'Pendente',
-    'legend-off': 'Folga',
-    'legend-vacation': 'Férias',
-    'legend-morning': 'Manhã',
-    'legend-night': 'Noite',
-    'legend-both': 'Ambos',
-
-    // Payments
-    'work-cycles-title': 'Ciclos de Trabalho Semanais',
-    'work-cycles-desc': 'Selecione as semanas que deseja incluir no recebimento do pagamento.',
-    'register-receipt-title': 'Registrar Recebimento',
-    'summary-selected-weeks': 'Semanas Selecionadas:',
-    'summary-selected-days': 'Total de Dias:',
-    'summary-total-due': 'Valor Devido:',
-    'summary-already-paid': 'Valor Recebido:',
-    'summary-to-pay': 'Receber:',
-    'label-received-amount': 'Valor Recebido (€)',
-    'label-payment-date': 'Data do Recebimento',
-    'label-payment-method': 'Método de Pagamento',
-    'label-payment-observation': 'Observação',
-    'placeholder-payment-observation': 'Ex: referência, recibo, detalhe do pagamento',
-    'label-notes': 'Especificação / Notas',
-    'placeholder-payment-notes': 'Ex: Transferência Bancária, Cheque, etc.',
-    'btn-confirm-receipt': 'Confirmar Recebimento',
-    'opt-cash': 'Dinheiro',
-    'opt-deposit': 'Depósito',
-    'opt-others': 'Outros (Especificar)',
-    'week-to': 'a',
-    'week-days': 'dias',
-    'week-day': 'dia',
-
-    // History
-    'payment-history-title': 'Histórico de Pagamentos Efetuados',
-    'th-date': 'Data Recebimento',
-    'th-amount': 'Valor Pago',
-    'th-period': 'Período Coberto',
-    'th-status': 'Status / pendência',
-    'th-payment-method': 'Método de Pagamento',
-    'th-notes': 'Observações',
-    'th-actions': 'Ações',
-    'btn-refund': 'Estornar',
-    'status-processed': 'Processado',
-
-    // Settings
-    'settings-rates-title': 'Configuração de Tarifas',
-    'settings-rates-desc': 'Defina os valores padrão para cada Período trabalhado. Novos dias utilizarão essas taxas.',
-    'label-morning-rate': 'Valor Período da Manhã (€)',
-    'label-night-rate': 'Valor Período da Noite (€)',
-    'btn-save-rates': 'Salvar Tarifas',
-    'settings-weekly-schedule-title': 'Rotina semanal padrão',
-    'settings-weekly-schedule-desc': 'Defina o status padrão de cada dia da semana para lançamentos automáticos e em lote.',
-    'btn-save-weekly-schedule': 'Salvar rotina semanal',
-    'settings-offdays-title': 'Folga Semanal Padrão',
-    'settings-offdays-desc': 'Selecione os dias da semana que são suas folgas padrão. Eles serão sugeridos no Lançamento em lote e exibidos no Calendário.',
-    'btn-save-offdays': 'Salvar Folgas',
-    'settings-backup-title': 'Backup e Restauração',
-    'settings-backup-desc': 'Exporte seus dados para segurança ou importe o arquivo JSON em outro dispositivo.',
-    'btn-export': 'Exportar Dados (JSON)',
-    'btn-import': 'Importar Dados (JSON)',
-    'danger-zone': 'Zona de Perigo',
-    'danger-zone-desc': 'Esta ação excluirá permanentemente todos os registros de dias trabalhados e pagamentos.',
-    'btn-clear-all': 'Apagar Todo o Histórico',
-    'label-language': 'Idioma do Sistema',
-    'label-theme': 'Tema do Sistema',
-    'settings-theme-desc': 'Escolha entre o tema claro ou escuro.',
-    'theme-dark': 'Escuro',
-    'theme-light': 'Claro',
-
-    // Modals
-    'modal-period-label': 'Selecione o Período Trabalhado',
-    'modal-custom-rate': 'Valor Customizado para este Dia (€)',
-    'placeholder-custom-rate': 'Usar valor padrão',
-    'modal-notes-label': 'Observações',
-    'modal-fin-info': 'Informações Financeiras do Dia',
-    'modal-status': 'Status:',
-    'modal-received': 'Valor Já Recebido:',
-    'modal-pending': 'Saldo Devedor:',
-    'btn-delete': 'Excluir',
-    'btn-save-record': 'Salvar Registro',
-    'batch-title': 'Lançamento em Lote',
-    'batch-start': 'Data Inicial',
-    'batch-end': 'Data Final',
-    'batch-default-period': 'Período padrão para Dias Úteis',
-    'batch-offday-note': 'Obs: Os dias de folga semanal configurados serão pré-marcados como "Folga" automaticamente.',
-    'batch-customize-title': 'Personalizar Dias do Intervalo',
-    'btn-cancel': 'Cancelar',
-    'btn-save-batch': 'Salvar Lote de Dias',
-    'batch-remove-title': 'Remover Dias em Lote',
-    'batch-remove-select': 'Selecionar Dias para Remoção',
-    'btn-confirm-remove': 'Confirmar Remoção',
-
-    // Days & Months
-    'day-0': 'Domingo',
-    'day-1': 'Segunda-feira',
-    'day-2': 'Terça-feira',
-    'day-3': 'Quarta-feira',
-    'day-4': 'Quinta-feira',
-    'day-5': 'Sexta-feira',
-    'day-6': 'Sábado',
-    'short-day-0': 'Dom',
-    'short-day-1': 'Seg',
-    'short-day-2': 'Ter',
-    'short-day-3': 'Qua',
-    'short-day-4': 'Qui',
-    'short-day-5': 'Sex',
-    'short-day-6': 'Sáb',
-    'month-0': 'Janeiro',
-    'month-1': 'Fevereiro',
-    'month-2': 'Março',
-    'month-3': 'Abril',
-    'month-4': 'Maio',
-    'month-5': 'Junho',
-    'month-6': 'Julho',
-    'month-7': 'Agosto',
-    'month-8': 'Setembro',
-    'month-9': 'Outubro',
-    'month-10': 'Novembro',
-    'month-11': 'Dezembro',
-
-    // Alerts & Messages
-    'msg-permission-connection-error': 'Erro de conexão ao verificar permissões.',
-    'msg-access-denied': 'Acesso negado! O e-mail {email} não tem permissão para acessar este sistema.',
-    'msg-access-restricted': 'Acesso restrito. Seu e-mail não está na lista de permissões.',
-    'msg-google-auth-failed': 'Falha na autenticação com o Google. Tente novamente.',
-    'msg-import-error': 'Erro ao importar o arquivo!',
-    'msg-logout-confirm': 'Deseja realmente sair?',
-    'msg-quick-log-note': 'Registrado via ação rápida',
-    'msg-auto-note': 'Automático',
-    'msg-save-success': 'Salvo com sucesso!',
-    'msg-delete-confirm': 'Tem certeza que deseja excluir?',
-    'msg-backup-success': 'Backup importado com sucesso!',
-    'msg-invalid-file': 'Arquivo inválido!',
-    'msg-select-period': 'Por favor, selecione um Período.',
-    'msg-payment-success': 'Pagamento registrado com sucesso!',
-    'msg-undo-confirm': 'Tem certeza que deseja estornar este pagamento?',
-    'msg-undo-success': 'Pagamento estornado com sucesso!',
-    'msg-clear-confirm': 'ATENÇÃO: Você perderá definitivamente todos os registros. Deseja prosseguir?',
-    'msg-batch-save-success': 'registros de dia salvos/atualizados com sucesso!',
-    'msg-batch-remove-success': 'registros de dia removidos com sucesso!',
-    'msg-all-pending': 'Todas com pendência',
-    'msg-no-days': 'Nenhum dia de trabalho registrado para processar pagamentos.',
-    'msg-no-history': 'Nenhum registro de pagamento recebido no Histórico.',
-    'msg-no-batch-days': 'Selecione as datas inicial e final para visualizar e personalizar os dias.',
-    'msg-no-remove-days': 'Selecione as datas inicial e final para visualizar os dias com registros.',
-    'opt-mixed': 'Misto (Dinheiro + depósito)',
-    'label-cash-amount': 'Valor em Dinheiro (€)',
-    'label-deposit-amount': 'Valor em depósito (€)',
-    'msg-invalid-mixed-sum': 'A soma dos valores em dinheiro e depósito deve ser igual ao valor total recebido!',
-    'stat-total-credit': 'Crédito Antecipado',
-    'general-balance-title': 'Saldo Geral Consolidado',
-    'general-balance-credit': 'Crédito Disponível (Adiantado)',
-    'general-balance-pending': 'Total Geral a Receber',
-    'general-balance-zero': 'Tudo Pago / Zerado',
-    'settings-halfdays-title': 'Meio Período padrão',
-    'settings-halfdays-desc': 'Defina os dias da semana em que você trabalha meio período fixo e qual o período padrão (Manhã ou Noite).',
-    'btn-save-halfdays': 'Salvar Meio Período',
-    'settings-autofill-title': 'Preenchimento automático',
-    'settings-autofill-desc': 'Quando ativado, o sistema cria automaticamente os dias pendentes desde a ativação até hoje usando as folgas, meio período e valores configurados.',
-    'status-enabled': 'Ativo',
-    'status-disabled': 'Desativado',
-    'calendar-autofill-enabled-title': 'Auto-Preencher Ativo',
-    'calendar-autofill-disabled-title': 'Auto-Preencher Desativado',
-    'legend-projected': 'Crédito Antecipado',
-    'badge-projected': 'Crédito',
-    'label-credit': 'Crédito',
-    'settings-payment-cycle-title': 'Ciclo de Pagamento',
-    'settings-payment-cycle-desc': 'Defina quando você costuma receber seus pagamentos para acompanhar o prazo no Dashboard.',
-    'label-payment-type': 'Tipo de Ciclo',
-    'opt-weekly': 'Semanal (Dia da Semana)',
-    'opt-monthly': 'Mensal (Dia do Mês)',
-    'label-payment-day-week': 'Dia da Semana de Recebimento',
-    'label-payment-day-month': 'Dia do Mês de Recebimento',
-    'btn-save-payment-cycle': 'Salvar Ciclo de Pagamento',
-    'stat-next-payment': 'Próximo Pagamento',
-    'msg-payment-today': 'HOJE!',
-    'msg-days-left': '{n} dias',
-    'msg-day-left': '1 dia'
-  },
-  'it-IT': {
-    'app-title': 'Giorni Lavorati',
-    'login-subtitle': 'Gestione professionale dei turni',
-    'btn-google-login': 'Accedi con Google',
-    'btn-logout': 'Esci',
-    'user-default-name': 'Utente',
-    // Sidebar
-    'nav-dashboard': 'Dashboard',
-    'nav-calendar': 'Calendario',
-    'nav-payments': 'Pagamenti',
-    'nav-history': 'Cronologia',
-    'nav-settings': 'Impostazioni',
-    'sidebar-version': 'Versione:',
-    'sidebar-updated': 'Aggiornato:',
-    
-    // Header
-    'header-dashboard-title': 'Dashboard',
-    'header-dashboard-subtitle': 'Panoramica del tuo lavoro e delle tue finanze.',
-    'header-calendar-title': 'Calendario',
-    'header-calendar-subtitle': 'Visualizza il mese di lavoro e configura i turni cliccando sui giorni.',
-    'header-payments-title': 'Pagamenti',
-    'header-payments-subtitle': 'Seleziona i cicli settimanali per registrare incassi totali o parziali.',
-    'header-history-title': 'Cronologia',
-    'header-history-subtitle': 'Registro completo dei pagamenti e delle pendenze completate.',
-    'header-settings-title': 'Impostazioni',
-    'header-settings-subtitle': 'Regolazioni del sistema, esportazione dati e tariffe standard.',
-
-    // Dashboard
-    'stat-total-accumulated': 'Totale Accumulato',
-    'stat-total-received': 'Ricevuto nel Mese',
-    'stat-total-pending': 'Totale Pendente',
-    'stat-this-week': 'Questa Settimana',
-    'chart-title': 'Totale Ricevuto per Mese',
-    'chart-annual-summary-title': 'Riepilogo Finanziario Annuale',
-    'annual-total-received': 'Totale Ricevuto nell\'Anno',
-    'annual-received-deposit': 'Ricevuto tramite Deposito',
-    'annual-received-cash': 'Ricevuto in Contanti',
-    'annual-worked-days': 'Giorni Lavorati nell\'Anno',
-    'quick-actions-title': 'Azioni Rapide',
-    'quick-actions-desc': 'Registra rapidamente il tuo turno per oggi',
-    'dashboard-weekly-payments-title': 'Pagamenti per settimana',
-    'dashboard-weekly-payments-desc': 'Settimane da lunedì a domenica con giorni nel mese corrente.',
-    'dashboard-weekly-total-due': 'Previsto',
-    'dashboard-weekly-total-paid': 'Ricevuto',
-    'dashboard-weekly-total-pending': 'Pendente',
-    'dashboard-weekly-empty': 'Nessun inserimento trovato per le settimane del mese corrente.',
-    'dashboard-weekly-period': 'Periodo',
-    'dashboard-weekly-days': 'Giorni',
-    'btn-morning-shift': 'Turno Mattina',
-    'btn-night-shift': 'Turno Sera',
-    'btn-both-shifts': 'Entrambi i Turni',
-    'btn-off-day': 'Giorno di Riposo',
-    'rate-default': 'Valore standard:',
-    'log-rest': 'Registra riposo',
-
-    // Calendar
-    'btn-batch-launch': 'Inserimento Multiplo',
-    'btn-batch-remove': 'Rimozione Multipla',
-    'btn-today': 'Oggi',
-    'tooltip-toggle-calendar-zoom': 'Alterna zoom',
-    'legend-paid': 'Pagato',
-    'legend-partial': 'Parzialmente Pagato',
-    'legend-pending': 'Pendente',
-    'legend-off': 'Riposo',
-    'legend-vacation': 'Ferie',
-    'legend-morning': 'Mattina',
-    'legend-night': 'Sera',
-    'legend-both': 'Entrambi',
-
-    // Payments
-    'work-cycles-title': 'Cicli di Lavoro Settimanali',
-    'work-cycles-desc': 'Seleziona le settimane che desideri includere nel pagamento.',
-    'register-receipt-title': 'Registra Incasso',
-    'summary-selected-weeks': 'Settimane Selezionate:',
-    'summary-selected-days': 'Totale Giorni:',
-    'summary-total-due': 'Valore Dovuto:',
-    'summary-already-paid': 'Valore Ricevuto:',
-    'summary-to-pay': 'Da Ricevere:',
-    'label-received-amount': 'Importo Ricevuto (€)',
-    'label-payment-date': 'Data di Incasso',
-    'label-payment-method': 'Metodo di Pagamento',
-    'label-payment-observation': 'Osservazione',
-    'placeholder-payment-observation': 'Es: riferimento, ricevuta, dettaglio del pagamento',
-    'label-notes': 'Specifiche / Note',
-    'placeholder-payment-notes': 'Es: Bonifico bancario, assegno, ecc.',
-    'btn-confirm-receipt': 'Conferma Incasso',
-    'opt-cash': 'Contanti',
-    'opt-deposit': 'Deposito',
-    'opt-others': 'Altro (Specificare)',
-    'week-to': 'a',
-    'week-days': 'giorni',
-    'week-day': 'giorno',
-
-    // History
-    'payment-history-title': 'Cronologia dei Pagamenti Effettuati',
-    'th-date': 'Data Incasso',
-    'th-amount': 'Importo Pagato',
-    'th-period': 'Periodo Coperto',
-    'th-status': 'Stato / Pendenza',
-    'th-payment-method': 'Metodo di Pagamento',
-    'th-notes': 'Note',
-    'th-actions': 'Azioni',
-    'btn-refund': 'Storna',
-    'status-processed': 'Elaborato',
-
-    // Settings
-    'settings-rates-title': 'Configurazione Tariffe',
-    'settings-rates-desc': 'Definisci i valori standard per ogni periodo lavorato. I nuovi giorni useranno queste tariffe.',
-    'label-morning-rate': 'Valore Periodo Mattina (€)',
-    'label-night-rate': 'Valore Periodo Sera (€)',
-    'btn-save-rates': 'Salva Tariffe',
-    'settings-weekly-schedule-title': 'Routine settimanale standard',
-    'settings-weekly-schedule-desc': 'Definisci lo stato standard di ogni giorno della settimana per inserimenti automatici e in blocco.',
-    'btn-save-weekly-schedule': 'Salva routine settimanale',
-    'settings-offdays-title': 'Riposo Settimanale Standard',
-    'settings-offdays-desc': 'Seleziona i giorni della settimana che sono i tuoi riposi standard.',
-    'btn-save-offdays': 'Salva Riposi',
-    'settings-backup-title': 'Backup e Ripristino',
-    'settings-backup-desc': 'Esporta i tuoi dati per sicurezza o importa il file JSON su un altro dispositivo.',
-    'btn-export': 'Esporta Dati (JSON)',
-    'btn-import': 'Importa Dati (JSON)',
-    'danger-zone': 'Zona di Pericolo',
-    'danger-zone-desc': 'Questa azione eliminerà permanentemente tutti i record di giorni lavorati e pagamenti.',
-    'btn-clear-all': 'Cancella Tutta la Cronologia',
-    'label-language': 'Lingua del Sistema',
-    'label-theme': 'Tema del Sistema',
-    'settings-theme-desc': 'Scegli tra il tema chiaro o scuro.',
-    'theme-dark': 'Scuro',
-    'theme-light': 'Chiaro',
-
-    // Modals
-    'modal-period-label': 'Seleziona il Periodo Lavorato',
-    'modal-custom-rate': 'Valore Personalizzato per questo Giorno (€)',
-    'placeholder-custom-rate': 'Usa valore standard',
-    'modal-notes-label': 'Note',
-    'modal-fin-info': 'Informazioni Finanziarie del Giorno',
-    'modal-status': 'Stato:',
-    'modal-received': 'Importo Già Ricevuto:',
-    'modal-pending': 'Saldo Debitore:',
-    'btn-delete': 'Elimina',
-    'btn-save-record': 'Salva Record',
-    'batch-title': 'Inserimento Multiplo',
-    'batch-start': 'Data Iniziale',
-    'batch-end': 'Data Finale',
-    'batch-default-period': 'Periodo Standard per Giorni Lavorativi',
-    'batch-offday-note': 'Nota: I giorni di riposo settimanale configurati saranno pre-marcati come "Riposo" automaticamente.',
-    'batch-customize-title': 'Personalizza Giorni dell\'Intervallo',
-    'btn-cancel': 'Annulla',
-    'btn-save-batch': 'Salva Blocco Giorni',
-    'batch-remove-title': 'Rimozione Multipla',
-    'batch-remove-select': 'Seleziona Giorni da Rimuovere',
-    'btn-confirm-remove': 'Conferma Rimozione',
-
-    // Days & Months
-    'day-0': 'Domenica',
-    'day-1': 'Lunedì',
-    'day-2': 'Martedì',
-    'day-3': 'Mercoledì',
-    'day-4': 'Giovedì',
-    'day-5': 'Venerdì',
-    'day-6': 'Sabato',
-    'short-day-0': 'Dom',
-    'short-day-1': 'Lun',
-    'short-day-2': 'Mar',
-    'short-day-3': 'Mer',
-    'short-day-4': 'Gio',
-    'short-day-5': 'Ven',
-    'short-day-6': 'Sab',
-    'month-0': 'Gennaio',
-    'month-1': 'Febbraio',
-    'month-2': 'Marzo',
-    'month-3': 'Aprile',
-    'month-4': 'Maggio',
-    'month-5': 'Giugno',
-    'month-6': 'Luglio',
-    'month-7': 'Agosto',
-    'month-8': 'Settembre',
-    'month-9': 'Ottobre',
-    'month-10': 'Novembre',
-    'month-11': 'Dicembre',
-
-    // Alerts & Messages
-    'msg-permission-connection-error': 'Errore di connessione durante la verifica dei permessi.',
-    'msg-access-denied': 'Accesso negato! L’email {email} non ha il permesso di accedere a questo sistema.',
-    'msg-access-restricted': 'Accesso limitato. La tua email non è nella lista dei permessi.',
-    'msg-google-auth-failed': 'Autenticazione con Google non riuscita. Riprova.',
-    'msg-import-error': 'Errore durante l’importazione del file!',
-    'msg-logout-confirm': 'Vuoi davvero uscire?',
-    'msg-quick-log-note': 'Registrato tramite azione rapida',
-    'msg-auto-note': 'Automatico',
-    'msg-save-success': 'Salvato con successo!',
-    'msg-delete-confirm': 'Sei sicuro di voler eliminare?',
-    'msg-backup-success': 'Backup importato con successo!',
-    'msg-invalid-file': 'File non valido!',
-    'msg-select-period': 'Per favore, seleziona un periodo.',
-    'msg-payment-success': 'Pagamento registrato con successo!',
-    'msg-undo-confirm': 'Sei sicuro di voler stornare questo pagamento?',
-    'msg-undo-success': 'Pagamento stornato con successo!',
-    'msg-clear-confirm': 'ATTENZIONE: Perderai permanentemente tutti i record. Vuoi procedere?',
-    'msg-batch-save-success': 'record giornalieri salvati/aggiornati con successo!',
-    'msg-batch-remove-success': 'record giornalieri rimossi con successo!',
-    'msg-all-pending': 'Tutte con Pendenza',
-    'msg-no-days': 'Nessun giorno di lavoro registrato per elaborare i pagamenti.',
-    'msg-no-history': 'Nessun registro di pagamento ricevuto nella cronologia.',
-    'msg-no-batch-days': 'Seleziona le date di inizio e fine per visualizzare e personalizzare i giorni.',
-    'msg-no-remove-days': 'Seleziona le date di inizio e fine per visualizzare i giorni con i record.',
-    'opt-mixed': 'Misto (Contanti + Deposito)',
-    'label-cash-amount': 'Importo in Contanti (€)',
-    'label-deposit-amount': 'Importo in Deposito (€)',
-    'msg-invalid-mixed-sum': 'La somma degli importi in contanti e deposito deve essere uguale all\'importo totale ricevuto!',
-    'stat-total-credit': 'Credito Anticipato',
-    'general-balance-title': 'Saldo Generale Consolidato',
-    'general-balance-credit': 'Credito Disponibile (Anticipo)',
-    'general-balance-pending': 'Totale Generale da Ricevere',
-    'general-balance-zero': 'Tutto Pagato / Bilancio Zero',
-    'settings-halfdays-title': 'Mezza Giornata Standard',
-    'settings-halfdays-desc': 'Definisci i giorni della settimana in cui lavori mezza giornata fissa e il periodo standard (Mattina o Sera).',
-    'btn-save-halfdays': 'Salva Mezza Giornata',
-    'settings-autofill-title': 'Compilazione automatica',
-    'settings-autofill-desc': 'Quando attiva, il sistema crea automaticamente i giorni mancanti dall attivazione fino a oggi usando riposi, mezze giornate e valori configurati.',
-    'status-enabled': 'Attivo',
-    'status-disabled': 'Disattivato',
-    'calendar-autofill-enabled-title': 'Auto-compilazione attiva',
-    'calendar-autofill-disabled-title': 'Auto-compilazione disattivata',
-    'legend-projected': 'Credito Anticipato',
-    'badge-projected': 'Credito',
-    'label-credit': 'Credito',
-    'settings-payment-cycle-title': 'Ciclo di Pagamento',
-    'settings-payment-cycle-desc': 'Definisci quando ricevi solitamente i tuoi pagamenti per monitorare la scadenza nella Dashboard.',
-    'label-payment-type': 'Tipo di Ciclo',
-    'opt-weekly': 'Settimanale (Giorno della Settimana)',
-    'opt-monthly': 'Mensile (Giorno del Mese)',
-    'label-payment-day-week': 'Giorno della Settimana di Incasso',
-    'label-payment-day-month': 'Giorno del Mese di Incasso',
-    'btn-save-payment-cycle': 'Salva Ciclo di Pagamento',
-    'stat-next-payment': 'Prossimo Pagamento',
-    'msg-payment-today': 'OGGI!',
-    'msg-days-left': '{n} giorni',
-    'msg-day-left': '1 giorno'
-    }
-    };
-
 let db = null;
 let currentYear = new Date().getFullYear();
 let currentMonth = new Date().getMonth(); // 0-indexed (0 = Jan, 11 = Dez)
@@ -728,6 +228,20 @@ let selectedWeeks = []; // Lista de chaves de semana selecionadas ('YYYY-MM-DD_Y
 const MAX_WORK_CYCLE_WEEKS = 10;
 const MONTH_NAMES = [];
 const WEEKDAY_NAMES = [];
+
+const databaseRepository = createDatabaseRepository({
+  localStorage: window.localStorage,
+  remoteStore: userDatabase,
+  onError: ({ phase, error }) => {
+    const messages = {
+      'local-read': 'O armazenamento local estava inválido. Uma base vazia e segura foi carregada.',
+      'local-write': 'Não foi possível salvar os dados neste dispositivo.',
+      'remote-read': 'Não foi possível carregar a nuvem. Os dados locais foram usados.',
+      'remote-write': 'Os dados foram salvos neste dispositivo, mas a sincronização com a nuvem falhou.'
+    };
+    reportError(`database:${phase}`, error, messages[phase]);
+  }
+});
 
 /* ==========================================================================
    INICIALIZAÇÃO DA APLICAÇÃO
@@ -778,53 +292,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Inicializa o banco de dados carregando do Firebase ou localStorage
 async function initDatabase() {
-  // Tenta carregar do Firebase primeiro se estiver autenticado
-  if (database && auth.currentUser) {
-    try {
-      const dbRef = ref(database, `userData/${auth.currentUser.uid}/db`);
-      const snapshot = await get(dbRef);
-      const cloudData = snapshot.val();
-      if (cloudData) {
-        db = cloudData;
-        console.log("Dados carregados do Firebase com sucesso.");
-      } else {
-        loadFromLocalStorage();
-        await saveToStorage(); // Sincroniza o local inicial para o cloud novo
-      }
-    } catch (e) {
-      console.error("Erro ao carregar do Firebase, tentando local...", e);
-      loadFromLocalStorage();
-    }
-  } else {
-    loadFromLocalStorage();
-  }
-
-  // Garantir estruturas básicas e retrocompatibilidade
-  if (!db.settings) {
-    db.settings = { ...DEFAULT_DB.settings };
-  } else {
-    if (!db.settings.offDays) db.settings.offDays = [4];
-    if (!db.settings.halfDays) db.settings.halfDays = {};
-    if (db.settings.autoFillWorkedDays === undefined) db.settings.autoFillWorkedDays = false;
-    if (db.settings.autoFillStartedAt === undefined) db.settings.autoFillStartedAt = null;
-    if (db.settings.autoFillLastDate === undefined) db.settings.autoFillLastDate = null;
-    if (!db.settings.language) db.settings.language = 'pt-BR';
-    if (!db.settings.theme) db.settings.theme = 'dark';
-    if (db.settings.morningRate === 80) db.settings.morningRate = 35;
-    if (db.settings.nightRate === 100) db.settings.nightRate = 25;
-  }
+  const loaded = await databaseRepository.load(auth.currentUser?.uid);
+  db = loaded.data;
+  console.info(`Base carregada da origem: ${loaded.source}.`);
   
   // Aplicar tema carregado do banco de dados
   applyTheme(db.settings.theme);
-
-  if (!db.workedDays) db.workedDays = {};
-  if (!db.payments) db.payments = [];
-  
-  db.payments.forEach(pay => {
-    if (pay.advanceRemaining === undefined) {
-      pay.advanceRemaining = 0;
-    }
-  });
   
   // Após carregar, se estivermos na UI principal, renderizamos tudo
   await applyAutomaticWorkedDayFill();
@@ -834,33 +307,9 @@ async function initDatabase() {
   }
 }
 
-function loadFromLocalStorage() {
-  const stored = localStorage.getItem(DB_STORAGE_KEY);
-  if (stored) {
-    try {
-      db = JSON.parse(stored);
-    } catch (e) {
-      console.error("Erro ao ler banco de dados local.", e);
-      db = JSON.parse(JSON.stringify(DEFAULT_DB));
-    }
-  } else {
-    db = JSON.parse(JSON.stringify(DEFAULT_DB));
-  }
-}
-
 // Salva o estado atual no localStorage e no Firebase
 async function saveToStorage() {
-  // Salva Localmente
-  localStorage.setItem(DB_STORAGE_KEY, JSON.stringify(db));
-  
-  // Salva na Nuvem (Firebase) se estiver autenticado
-  if (database && auth.currentUser) {
-    try {
-      await set(ref(database, `userData/${auth.currentUser.uid}/db`), db);
-    } catch (e) {
-      console.error("Erro ao salvar no Firebase:", e);
-    }
-  }
+  return databaseRepository.save(db, auth.currentUser?.uid);
 }
 
 // Função auxiliar para renderizar toda a UI (chamada após carga inicial)
@@ -883,7 +332,7 @@ function getCurrentLanguage() {
   }
 
   try {
-    const stored = localStorage.getItem(DB_STORAGE_KEY);
+    const stored = localStorage.getItem(DATABASE_STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
       const lang = parsed?.settings?.language;
@@ -1337,25 +786,6 @@ function escapeHtml(value) {
     .replaceAll("'", '&#039;');
 }
 
-function getMonthDateRange(referenceDate = new Date()) {
-  const monthStart = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
-  const monthEnd = new Date(referenceDate.getFullYear(), referenceDate.getMonth() + 1, 0);
-
-  return {
-    startStr: formatDateISO(monthStart),
-    endStr: formatDateISO(monthEnd)
-  };
-}
-
-function calculateReceivedForWorkedDaysInMonth(workedDays, referenceDate = new Date()) {
-  const { startStr, endStr } = getMonthDateRange(referenceDate);
-
-  return Object.entries(workedDays || {}).reduce((total, [dateStr, dayData]) => {
-    if (dateStr < startStr || dateStr > endStr) return total;
-    return total + (dayData.amountPaid || 0);
-  }, 0);
-}
-
 // Calcula dias projetados no futuro que seriam cobertos pelo Crédito Antecipado disponível
 function calculateProjectedCreditDays() {
   const totalCredit = db.payments.reduce((acc, p) => acc + (p.advanceRemaining || 0), 0);
@@ -1689,9 +1119,13 @@ function renderMonthlyWeeksSummary() {
 }
 
 // Cria/Atualiza o gráfico dinâmico
-function renderEarningsChart() {
+async function renderEarningsChart() {
   if (!db) return; // Segurança contra carga incompleta
-  const ctx = document.getElementById('earningsChart').getContext('2d');
+  const canvas = document.getElementById('earningsChart');
+  if (!canvas) return;
+  const { Chart, ChartDataLabels } = await loadChartRuntime();
+  if (!canvas.isConnected || !db) return;
+  const ctx = canvas.getContext('2d');
   const lang = db.settings.language === 'it-IT' ? 'it-IT' : 'pt-BR';
   const texts = translations[db.settings.language || 'pt-BR'];
   
@@ -1721,31 +1155,7 @@ function renderEarningsChart() {
         const amt = dayData.paymentsApplied[payId];
         const pay = db.payments.find(p => p.id === payId);
         if (pay) {
-          // Calcula a proporção de dinheiro e depósito deste pagamento específico
-          let cashRatio = 0;
-          let depositRatio = 0;
-          
-          if (pay.cashAmount !== undefined && pay.depositAmount !== undefined) {
-            cashRatio = pay.cashAmount / pay.amount;
-            depositRatio = pay.depositAmount / pay.amount;
-          } else {
-            const notesLower = (pay.notes || '').toLowerCase();
-            const method = pay.method || '';
-            if (method === 'Dinheiro' || method === 'Contanti' || notesLower.includes('dinheiro') || notesLower.includes('contanti')) {
-              cashRatio = 1;
-            } else if (method === 'Depósito' || method === 'Deposito' || notesLower.includes('depósito') || notesLower.includes('deposito')) {
-              depositRatio = 1;
-            } else if (notesLower.includes('misto')) {
-              const cashMatch = notesLower.match(/(?:dinheiro|contanti):\s*[^0-9]*([0-9]+(?:[.,][0-9]{2})?)/);
-              const depositMatch = notesLower.match(/(?:depósito|deposito):\s*[^0-9]*([0-9]+(?:[.,][0-9]{2})?)/);
-              const cVal = cashMatch ? parseFloat(cashMatch[1].replace(',', '.')) : (pay.amount / 2);
-              const dVal = depositMatch ? parseFloat(depositMatch[1].replace(',', '.')) : (pay.amount / 2);
-              cashRatio = cVal / pay.amount;
-              depositRatio = dVal / pay.amount;
-            } else {
-              depositRatio = 1; // Padrão
-            }
-          }
+          const { cashRatio, depositRatio } = splitPaymentMethod(pay);
           
           monthlyData[monthKey].cash += amt * cashRatio;
           monthlyData[monthKey].deposit += amt * depositRatio;
@@ -1845,10 +1255,12 @@ function renderEarningsChart() {
 }
 
 // Cria/Atualiza o gráfico anual de métodos de pagamento (Dinheiro vs Depósito)
-function renderAnnualMethodChart(cash, deposit) {
+async function renderAnnualMethodChart(cash, deposit) {
   if (!db) return; // Segurança contra carga incompleta
   const canvas = document.getElementById('annualMethodChart');
   if (!canvas) return; // Se não estiver no dashboard (ex: executando testes), sai da função
+  const { Chart, ChartDataLabels } = await loadChartRuntime();
+  if (!canvas.isConnected || !db) return;
   const ctx = canvas.getContext('2d');
   const texts = translations[db.settings.language || 'pt-BR'];
   
@@ -2030,6 +1442,10 @@ function renderCalendar() {
 function createDayElement(dayNum, dateStr, isOtherMonth, container, projectedDays = {}) {
   const dayElement = document.createElement('div');
   dayElement.className = 'glass-card calendar-day';
+  dayElement.dataset.date = dateStr;
+  dayElement.setAttribute('role', 'button');
+  dayElement.setAttribute('tabindex', '0');
+  dayElement.setAttribute('aria-label', formatDateStringDisplay(dateStr));
   if (isOtherMonth) {
     dayElement.classList.add('other-month');
   }
@@ -2157,6 +1573,12 @@ function createDayElement(dayNum, dateStr, isOtherMonth, container, projectedDay
   }
 
   dayElement.addEventListener('click', () => openDayModal(dateStr));
+  dayElement.addEventListener('keydown', event => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      openDayModal(dateStr);
+    }
+  });
   container.appendChild(dayElement);
 }
 
@@ -2695,7 +2117,7 @@ function processPayment(event) {
     paymentNotes = texts['opt-' + paymentMethod.toLowerCase().replace('é', 'e')] || paymentMethod;
   }
 
-  const daysToPay = [], otherDaysToPay = [];
+  const daysToPay = [];
   Object.keys(db.workedDays).forEach(dateStr => {
     const dayData = db.workedDays[dateStr];
     if (dayData.period !== 'none' && dayData.period !== 'off' && dayData.pendingAmount > 0) {
@@ -2705,22 +2127,18 @@ function processPayment(event) {
         const weekInfo = getWeekRange(dateStr);
         if (selectedWeeks.includes(weekInfo.key)) {
           daysToPay.push(dayData);
-        } else {
-          otherDaysToPay.push(dayData);
         }
       }
     }
   });
 
   daysToPay.sort((a, b) => a.date.localeCompare(b.date));
-  otherDaysToPay.sort((a, b) => a.date.localeCompare(b.date));
 
   const paymentId = 'pay_' + Date.now();
   const { advanceRemaining, coveredDays } = allocatePaymentAcrossDays({
     amount: paymentAmount,
     paymentId,
-    primaryDays: daysToPay,
-    secondaryDays: otherDaysToPay
+    primaryDays: daysToPay
   });
 
   // O excedente é salvo no atributo advanceRemaining do pagamento
@@ -3148,7 +2566,7 @@ function importDatabase(event) {
 
 function clearDatabase() {
   if (confirm(translations[db.settings.language]['msg-clear-confirm'])) {
-    db = JSON.parse(JSON.stringify(DEFAULT_DB));
+    db = createDefaultDatabase();
     saveToStorage(); applyLanguage(); loadSettingsFields();
     document.querySelector('[data-tab="dashboard"]').click();
   }

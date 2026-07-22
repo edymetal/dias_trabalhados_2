@@ -6,7 +6,7 @@ Aplicação web para registrar dias trabalhados, folgas, pagamentos e créditos 
 
 - O ID de produção é rejeitado pelos scripts e pela configuração de teste.
 - O projeto padrão do Firebase CLI neste repositório é `demo-dias-trabalhados-2`, que existe apenas durante a execução dos emuladores.
-- Os testes de navegador usam o Auth Emulator; os testes de regras usam o Realtime Database Emulator.
+- Os testes de navegador usam Auth e Realtime Database Emulators; os testes de regras usam uma instância isolada do Database Emulator.
 - Nenhum teste deve ser executado alterando `.env.test` para apontar à produção.
 - As regras em `firebase/database.rules.emulator.json` são uma proposta para validação local. **Não executar `firebase deploy --only database` a partir desta branch.**
 - Backups JSON, hashes e exportações do emulador estão ignorados pelo Git.
@@ -60,7 +60,7 @@ npm run backup:install-task
 
 O primeiro comando cria um backup criptografado em `D:\Backups\dias_trabalhados_2`, testa a recuperação independente e remove os JSONs em texto claro. O segundo instala a tarefa diária **Dias Trabalhados - Backup Firebase**, programada para 03:00 com retenção de 30 dias. A chave é protegida pelo Windows DPAPI e não deve ser adicionada ao Git.
 
-`npm run test:rules` precisa de Java. `npm run test:e2e` inicia e encerra o Auth Emulator automaticamente. O fluxo de CI instala Java 21 e executa as duas suítes.
+`npm run test:rules` e `npm run test:e2e` precisam de Java. O E2E inicia e encerra Auth e Database Emulators automaticamente. O fluxo de CI instala Java 21 e executa as duas suítes.
 
 O Firebase Web permanece na série 10, atualmente em 10.14.1, compatível com `@firebase/rules-unit-testing` 3. A dependência transitiva `undici` é fixada em 6.27.0 para eliminar vulnerabilidades conhecidas; qualquer alteração desse `override` exige nova auditoria e todos os testes.
 
@@ -70,14 +70,16 @@ Em 22/07/2026, `npm audit --omit=dev` retorna 0 vulnerabilidades. A auditoria co
 
 O Vite gera o site em `dist/`. Pushes para branches `codex/**` apenas validam lint, testes, emuladores e build. A publicação no GitHub Pages ocorre somente após um push validado na branch `master`.
 
-## Estrutura iniciada na Etapa 1
+## Estrutura concluída na Etapa 1
 
-- `src/domain/`: regras determinísticas de datas e alocação financeira;
-- `src/firebase/`: configuração e cliente Firebase, incluindo bloqueio de produção nos testes;
-- `tests/unit/`: testes rápidos de domínio e segurança da configuração;
+- `src/domain/`: regras determinísticas de datas, dashboard e alocação financeira;
+- `src/persistence/`: schema, compatibilidade de dados legados e estratégia local/remota;
+- `src/firebase/`: configuração, autorização e adaptadores Firebase, incluindo bloqueio de produção nos testes;
+- `src/ui/`: traduções, feedback de falhas e carregamento tardio dos gráficos;
+- `tests/unit/`: testes rápidos de domínio, persistência, backup e segurança da configuração;
 - `tests/integration/`: testes de regras do Realtime Database Emulator;
-- `tests/e2e/`: smoke test da aplicação no Auth Emulator;
+- `tests/e2e/`: login, calendário e pagamento com dados sintéticos nos emuladores;
 - `firebase/`: regras exclusivas para validação no emulador;
 - `plans/`: auditoria e acompanhamento das etapas.
 
-O restante da separação de persistência e interface deve ocorrer de forma incremental, depois do backup validado, para evitar uma reescrita arriscada do arquivo principal.
+A visão dos módulos, fluxo de dados e dívida conhecida está em `docs/arquitetura.md`. A Etapa 1 foi concluída; gravações granulares e concorrência pertencem à Etapa 2.
