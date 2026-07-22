@@ -2,45 +2,139 @@
    APP CONTROLLER & LOGIC - CONTROLE DE DIAS TRABALHADOS
    ========================================================================== */
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import Chart from 'chart.js/auto';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
+import {
+  AlertCircle,
+  BarChart3,
+  Calculator,
+  Calendar,
+  CalendarCheck,
+  CalendarCheck2,
+  CalendarClock,
+  CalendarDays,
+  CalendarPlus,
+  CalendarRange,
+  CalendarX,
+  Check,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Coffee,
+  Coins,
+  createIcons,
+  Database,
+  Download,
+  HandCoins,
+  HelpCircle,
+  History,
+  Info,
+  Languages,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Moon,
+  Palette,
+  Palmtree,
+  PieChart,
+  Save,
+  Settings,
+  Sun,
+  Sunset,
+  ToggleLeft,
+  ToggleRight,
+  Trash2,
+  TrendingUp,
+  Upload,
+  Wallet,
+  ZoomIn,
+  ZoomOut
+} from 'lucide';
+import {
+  formatDateISO,
+  formatDateStringDisplay,
+  getWeekRange,
+  parseLocalDate
+} from './src/domain/dates.js';
+import {
+  allocatePaymentAcrossDays,
+  applyAdvanceCreditsToDay,
+  refundPaymentCreditsFromDay,
+  reversePayment
+} from './src/domain/ledger.js';
+import {
+  auth,
+  database,
+  get,
+  onAuthStateChanged,
+  provider,
+  ref,
+  set,
+  signInWithPopup,
+  signOut
+} from './src/firebase/client.js';
+
+const lucideIcons = {
+  AlertCircle,
+  BarChart3,
+  Calculator,
+  Calendar,
+  CalendarCheck,
+  CalendarCheck2,
+  CalendarClock,
+  CalendarDays,
+  CalendarPlus,
+  CalendarRange,
+  CalendarX,
+  Check,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Coffee,
+  Coins,
+  Database,
+  Download,
+  HandCoins,
+  HelpCircle,
+  History,
+  Info,
+  Languages,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Moon,
+  Palette,
+  Palmtree,
+  PieChart,
+  Save,
+  Settings,
+  Sun,
+  Sunset,
+  ToggleLeft,
+  ToggleRight,
+  Trash2,
+  TrendingUp,
+  Upload,
+  Wallet,
+  ZoomIn,
+  ZoomOut
+};
+
+const lucide = {
+  createIcons: () => createIcons({ icons: lucideIcons })
+};
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
 const APP_VERSION = '1.0.113';
-const APP_BUILD_DATE = '2026-07-22 04:22:12';
+const APP_BUILD_DATE = '2026-07-22 14:04:17';
 
 
 
-
-// CONFIGURAÇÃO DO FIREBASE
-let firebaseApiKey = "AIzaSyAlY3MVb-8jvvcwjOtd0VqRP427MISJDjg";
-
-// Fallback para desenvolvimento local: se a chave do GitHub não foi injetada,
-// tenta usar a chave definida no arquivo firebase-config.js (carregado no index.html)
-if (firebaseApiKey.includes("___") && typeof LOCAL_FIREBASE_API_KEY !== 'undefined') {
-  firebaseApiKey = LOCAL_FIREBASE_API_KEY;
-}
-
-const firebaseConfig = {
-  apiKey: firebaseApiKey,
-  authDomain: "dias-trabalhados-bf99a.firebaseapp.com",
-  databaseURL: "https://dias-trabalhados-bf99a-default-rtdb.firebaseio.com",
-  projectId: "dias-trabalhados-bf99a",
-  storageBucket: "dias-trabalhados-bf99a.firebasestorage.app",
-  messagingSenderId: "807305373436",
-  appId: "1:807305373436:web:5b12891242f350326e9979",
-  measurementId: "G-B2TPPJMH55"
-};
 
 // Configuração de Acesso (Whitelist)
 const MASTER_ADMINS = ['edneypugliese.dev@gmail.com', 'edneypugleise@gmail.com'];
-
-// Inicializa Firebase
-const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
-const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
 
 onAuthStateChanged(auth, async (user) => {
   if (user) {
@@ -1243,31 +1337,6 @@ function escapeHtml(value) {
     .replaceAll("'", '&#039;');
 }
 
-function formatDateISO(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function formatDateDisplay(date) {
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  return `${day}/${month}`;
-}
-
-function formatDateStringDisplay(dateISO) {
-  if (!dateISO) return '';
-  const [year, month, day] = dateISO.split('-');
-  return `${day}/${month}/${year}`;
-}
-
-function parseLocalDate(dateStr) {
-  if (!dateStr) return null;
-  const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(year, month - 1, day);
-}
-
 function getMonthDateRange(referenceDate = new Date()) {
   const monthStart = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
   const monthEnd = new Date(referenceDate.getFullYear(), referenceDate.getMonth() + 1, 0);
@@ -1285,33 +1354,6 @@ function calculateReceivedForWorkedDaysInMonth(workedDays, referenceDate = new D
     if (dateStr < startStr || dateStr > endStr) return total;
     return total + (dayData.amountPaid || 0);
   }, 0);
-}
-
-// Retorna o intervalo da semana de Segunda a Domingo de um determinado dia
-function getWeekRange(dateStr) {
-  const parts = dateStr.split('-');
-  const year = parseInt(parts[0], 10);
-  const month = parseInt(parts[1], 10) - 1;
-  const day = parseInt(parts[2], 10);
-  
-  const date = new Date(year, month, day);
-  const dayOfWeek = date.getDay(); // 0 (Dom) a 6 (Sáb)
-  
-  // Ajusta para segunda-feira ser o dia 1 e domingo o dia 7
-  const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-  
-  const monday = new Date(date);
-  monday.setDate(date.getDate() + diffToMonday);
-  
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  
-  return {
-    mondayStr: formatDateISO(monday),
-    sundayStr: formatDateISO(sunday),
-    key: `${formatDateISO(monday)}_${formatDateISO(sunday)}`,
-    label: `${formatDateDisplay(monday)} a ${formatDateDisplay(sunday)}`
-  };
 }
 
 // Calcula dias projetados no futuro que seriam cobertos pelo Crédito Antecipado disponível
@@ -1394,90 +1436,14 @@ function calculateProjectedCreditDays() {
   return projectedDays;
 }
 
-// Aplica Créditos de adiantamento disponíveis a um dia trabalhado que tenha saldo pendente
-function applyAdvanceCreditsToDay(day) {
-  if (day.period === 'none' || day.period === 'off') return;
-  
-  day.pendingAmount = Math.max(0, day.rate - (day.amountPaid || 0));
-  if (day.pendingAmount <= 0) return;
-  
-  // Encontra pagamentos com adiantamento Disponível, ordenados por data ascendente (mais antigos primeiro)
-  const paymentsWithAdvance = db.payments
-    .filter(p => (p.advanceRemaining || 0) > 0)
-    .sort((a, b) => a.date.localeCompare(b.date));
-    
-  for (const pay of paymentsWithAdvance) {
-    if (day.pendingAmount <= 0) break;
-    
-    const apply = Math.min(pay.advanceRemaining, day.pendingAmount);
-    
-    day.amountPaid = (day.amountPaid || 0) + apply;
-    day.pendingAmount -= apply;
-    day.status = day.pendingAmount <= 0 ? 'paid' : 'partial';
-    
-    if (!day.paymentsApplied) day.paymentsApplied = {};
-    day.paymentsApplied[pay.id] = (day.paymentsApplied[pay.id] || 0) + apply;
-    
-    if (!pay.coveredDays) pay.coveredDays = [];
-    if (!pay.coveredDays.includes(day.date)) {
-      pay.coveredDays.push(day.date);
-    }
-    
-    pay.advanceRemaining -= apply;
-  }
-}
-
-// Reembolsa valores pagos com adiantamento/Crédito de volta para os pagamentos de origem se a tarifa do dia for reduzida ou o dia for deletado
-function refundPaymentCreditsFromDay(day, newRate) {
-  if (!day.paymentsApplied || Object.keys(day.paymentsApplied).length === 0) return;
-  
-  let refundNeeded = day.amountPaid - newRate;
-  if (refundNeeded <= 0) return;
-  
-  const paymentIds = Object.keys(day.paymentsApplied);
-  
-  for (const payId of paymentIds) {
-    if (refundNeeded <= 0) break;
-    
-    const appliedAmount = day.paymentsApplied[payId];
-    if (appliedAmount <= 0) continue;
-    
-    const refund = Math.min(refundNeeded, appliedAmount);
-    
-    const pay = db.payments.find(p => p.id === payId);
-    if (pay) {
-      pay.advanceRemaining = (pay.advanceRemaining || 0) + refund;
-      
-      day.amountPaid -= refund;
-      day.paymentsApplied[payId] -= refund;
-      if (day.paymentsApplied[payId] <= 0) {
-        delete day.paymentsApplied[payId];
-        if (pay.coveredDays) {
-          pay.coveredDays = pay.coveredDays.filter(d => d !== day.date);
-        }
-      }
-      
-      refundNeeded -= refund;
-    }
-  }
-  
-  day.pendingAmount = Math.max(0, newRate - day.amountPaid);
-  day.status = day.amountPaid >= newRate ? 'paid' : (day.amountPaid > 0 ? 'partial' : 'unpaid');
-}
-
 /* ==========================================================================
    ABA 1: DASHBOARD DE ESTATÃƒÂSTICAS
    ========================================================================== */
-
-function initDashboard() {
-  updateDashboardData();
-}
 
 function updateDashboardData() {
   if (!db) return; // Segurança contra carga incompleta
   // Cálculos financeiros totais
   let totalEarnings = 0;
-  let totalReceived = 0;
   let totalPending = 0;
   let thisWeekEarnings = 0;
 
@@ -1505,12 +1471,13 @@ function updateDashboardData() {
   });
 
   // Total Recebido no Mes considera o valor pago nos dias trabalhados do mes atual.
-  totalReceived = calculateReceivedForWorkedDaysInMonth(db.workedDays);
+  const totalReceived = calculateReceivedForWorkedDaysInMonth(db.workedDays);
 
   // Total de adiantamento/Crédito ativo nos pagamentos
   const totalAdvance = db.payments.reduce((acc, pay) => acc + (pay.advanceRemaining || 0), 0);
 
   // Atualiza os elementos da tela
+  document.getElementById('stat-total-earnings').innerText = formatCurrency(totalEarnings);
   document.getElementById('stat-total-received').innerText = formatCurrency(totalReceived);
   document.getElementById('stat-this-week-earnings').innerText = formatCurrency(thisWeekEarnings);
 
@@ -1957,7 +1924,7 @@ function quickLogShift(period) {
 
   // Se o novo rate for menor que o amountPaid Já registrado, devolvemos
   if (existing.amountPaid > rate) {
-    refundPaymentCreditsFromDay(existing, rate);
+    refundPaymentCreditsFromDay(db, existing, rate);
   }
 
   const newDay = {
@@ -1972,7 +1939,7 @@ function quickLogShift(period) {
   };
 
   // Aplica Créditos de adiantamento, se houver
-  applyAdvanceCreditsToDay(newDay);
+  applyAdvanceCreditsToDay(db, newDay);
 
   db.workedDays[todayStr] = newDay;
   saveToStorage();
@@ -2319,7 +2286,7 @@ function createOrUpdateAutomaticWorkedDay(dateStr) {
     autoGenerated: true
   };
 
-  applyAdvanceCreditsToDay(newDay);
+  applyAdvanceCreditsToDay(db, newDay);
   if (originalStatus) {
     newDay.status = originalStatus;
   }
@@ -2410,7 +2377,7 @@ function saveDayDetails(event) {
 
   // Se o novo rate for menor que o amountPaid Já registrado (ou se mudou para off/none), devolvemos
   if (existing.amountPaid > rate) {
-    refundPaymentCreditsFromDay(existing, rate);
+    refundPaymentCreditsFromDay(db, existing, rate);
   }
 
   const amountPaid = existing.amountPaid || 0;
@@ -2424,7 +2391,7 @@ function saveDayDetails(event) {
   };
 
   // Aplica Créditos de adiantamento, se houver
-  applyAdvanceCreditsToDay(newDay);
+  applyAdvanceCreditsToDay(db, newDay);
 
   db.workedDays[dateStr] = newDay;
 
@@ -2442,7 +2409,7 @@ function deleteDayRecord() {
   if (data.amountPaid > 0) {
     if (!confirm(texts['msg-delete-confirm'])) return;
     // Devolve os Créditos aplicados a este dia para os pagamentos originais
-    refundPaymentCreditsFromDay(data, 0);
+    refundPaymentCreditsFromDay(db, data, 0);
   }
   delete db.workedDays[dateStr];
   saveToStorage();
@@ -2706,7 +2673,7 @@ function processPayment(event) {
   
   if (isNaN(paymentAmount) || paymentAmount <= 0) return;
 
-  let paymentNotes = '';
+  let paymentNotes;
   let cashAmount = 0;
   let depositAmount = 0;
 
@@ -2749,19 +2716,11 @@ function processPayment(event) {
   otherDaysToPay.sort((a, b) => a.date.localeCompare(b.date));
 
   const paymentId = 'pay_' + Date.now();
-  let remaining = paymentAmount;
-  const covered = [];
-
-  [...daysToPay, ...otherDaysToPay].forEach(day => {
-    if (remaining <= 0) return;
-    const apply = Math.min(remaining, day.pendingAmount);
-    day.amountPaid = (day.amountPaid || 0) + apply;
-    day.pendingAmount -= apply;
-    day.status = day.pendingAmount <= 0 ? 'paid' : 'partial';
-    if (!day.paymentsApplied) day.paymentsApplied = {};
-    day.paymentsApplied[paymentId] = (day.paymentsApplied[paymentId] || 0) + apply;
-    covered.push(day.date);
-    remaining -= apply;
+  const { advanceRemaining, coveredDays } = allocatePaymentAcrossDays({
+    amount: paymentAmount,
+    paymentId,
+    primaryDays: daysToPay,
+    secondaryDays: otherDaysToPay
   });
 
   // O excedente é salvo no atributo advanceRemaining do pagamento
@@ -2772,10 +2731,10 @@ function processPayment(event) {
     method: paymentMethod,
     cashAmount: paymentMethod === 'Dinheiro' ? paymentAmount : (paymentMethod === 'Misto' ? cashAmount : 0),
     depositAmount: paymentMethod === 'Depósito' ? paymentAmount : (paymentMethod === 'Misto' ? depositAmount : 0),
-    coveredDays: covered,
+    coveredDays,
     notes: paymentNotes,
     observation: paymentObservation,
-    advanceRemaining: remaining
+    advanceRemaining
   });
 
   saveToStorage();
@@ -2902,19 +2861,7 @@ function renderPaymentHistory() {
 function deletePayment(id) {
   const texts = translations[db.settings.language || 'pt-BR'];
   if (!confirm(texts['msg-undo-confirm'])) return;
-  const idx = db.payments.findIndex(p => p.id === id);
-  if (idx === -1) return;
-  const pay = db.payments[idx];
-  pay.coveredDays.forEach(date => {
-    const day = db.workedDays[date];
-    if (day && day.paymentsApplied && day.paymentsApplied[id]) {
-      const amt = day.paymentsApplied[id];
-      day.amountPaid -= amt; day.pendingAmount += amt;
-      delete day.paymentsApplied[id];
-      day.status = day.amountPaid === 0 ? 'unpaid' : 'partial';
-    }
-  });
-  db.payments.splice(idx, 1);
+  if (!reversePayment(db, id)) return;
   saveToStorage(); renderPaymentHistory(); updateDashboardData();
   alert(texts['msg-undo-success']);
 }
@@ -3012,7 +2959,7 @@ function togglePaymentCycleInputs() {
 function savePaymentCycleSettings(event) {
   event.preventDefault();
   const type = document.getElementById('setting-payment-type').value;
-  let day = 0;
+  let day;
   if (type === 'weekly') {
     day = parseInt(document.getElementById('setting-payment-day-week').value, 10);
   } else {
@@ -3194,7 +3141,7 @@ function importDatabase(event) {
         alert(translations[db.settings.language]['msg-backup-success']);
         document.querySelector('[data-tab="dashboard"]').click();
       }
-    } catch (err) { alert(getText('msg-import-error')); }
+    } catch { alert(getText('msg-import-error')); }
   };
   reader.readAsText(file);
 }
@@ -3330,7 +3277,7 @@ function saveBatchShifts(event) {
       
       // Se o novo rate for menor que o amountPaid Já registrado, devolvemos
       if (existing.amountPaid > rate) {
-        refundPaymentCreditsFromDay(existing, rate);
+        refundPaymentCreditsFromDay(db, existing, rate);
       }
       
       const amountPaid = existing.amountPaid || 0;
@@ -3349,7 +3296,7 @@ function saveBatchShifts(event) {
       };
       
       // Aplica Créditos de adiantamento, se houver
-      applyAdvanceCreditsToDay(newDay);
+      applyAdvanceCreditsToDay(db, newDay);
       
       db.workedDays[date] = newDay;
     }
@@ -3412,7 +3359,7 @@ function saveBatchRemoveShifts(event) {
     const day = db.workedDays[date];
     if (day) {
       if (day.amountPaid > 0) {
-        refundPaymentCreditsFromDay(day, 0);
+        refundPaymentCreditsFromDay(db, day, 0);
       }
       delete db.workedDays[date];
     }
@@ -3464,6 +3411,6 @@ window.closeBatchModal = closeBatchModal;
 window.generateBatchRemoveDaysList = generateBatchRemoveDaysList;
 window.saveBatchRemoveShifts = saveBatchRemoveShifts;
 window.closeBatchRemoveModal = closeBatchRemoveModal;
-window.refundPaymentCreditsFromDay = refundPaymentCreditsFromDay;
+window.refundPaymentCreditsFromDay = (day, newRate) => refundPaymentCreditsFromDay(db, day, newRate);
 window.deletePayment = deletePayment;
 window.openDayModal = openDayModal;
