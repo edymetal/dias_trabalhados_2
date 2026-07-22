@@ -1,0 +1,16 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "authorized_emails": {
+      ".read": false,
+      ".write": false
+    },
+    "userData": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid && auth.token.authorized === true",
+        ".write": "auth != null && auth.uid === $uid && auth.token.authorized === true"
+      }
+    }
+  }
+}

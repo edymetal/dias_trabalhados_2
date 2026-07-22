@@ -30,3 +30,15 @@ app.js_cleanup.txt
 dist/
 build/
 out/
+
+# Ferramentas de teste e Firebase local
+.firebase/
+coverage/
+firebase-debug.log
+playwright-report/
+test-results/
+
+# Backups de dados nunca devem ser versionados
+.backups/
+backup_*.json
+rtdb-*.json
