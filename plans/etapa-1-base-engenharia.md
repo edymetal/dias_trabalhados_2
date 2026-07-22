@@ -39,7 +39,7 @@ Permitir que o projeto seja modificado e validado sem acessar ou alterar o Fireb
 | `npm audit --omit=dev` | concluída | 0 vulnerabilidades nas dependências de produção |
 | `npm audit` completo | atenção | 7 alertas moderados somente na árvore dev do Firebase CLI; o npm sugere downgrade para 14.23.0 |
 
-O resultado final do CI da branch deve ser acrescentado a esta etapa após o push.
+O primeiro CI da branch foi concluído com sucesso no run `29940795793`: lint, 11 testes unitários, 4 testes de regras no Database Emulator, build Vite e smoke test Playwright. O job de deploy foi ignorado, como previsto para uma branch `codex/**`.
 
 ## Decisões de segurança
 
