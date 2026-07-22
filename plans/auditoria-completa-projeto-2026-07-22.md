@@ -303,6 +303,8 @@ Também faltam:
 
 Objetivo: garantir recuperação antes de qualquer alteração de persistência.
 
+Status em 22/07/2026: **concluída localmente**. Exportação administrativa, criptografia, hash canônico, restauração no emulador e tarefa diária com retenção de 30 dias foram validados. O backup nativo permanece indisponível no plano Spark, e uma cópia off-site ainda depende da escolha do destino e da estratégia de chave. Consulte `plans/etapa-0-backup-e-restauracao.md`.
+
 1. corrigir a cadeia de certificados do Node/Firebase CLI sem desabilitar TLS;
 2. executar `firebase login --reauth` de forma interativa;
 3. confirmar projeto e instância corretos;
