@@ -35,6 +35,7 @@ out/
 .firebase/
 coverage/
 firebase-debug.log
+database-debug.log
 playwright-report/
 test-results/
 
@@ -42,3 +43,9 @@ test-results/
 .backups/
 backup_*.json
 rtdb-*.json
+auth-users*.json
+source-summary.json
+restore-verification.json
+integrity.json
+*.dtbackup
+*.key.dpapi

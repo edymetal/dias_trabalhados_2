@@ -11,7 +11,7 @@ Aplicação web para registrar dias trabalhados, folgas, pagamentos e créditos 
 - As regras em `firebase/database.rules.emulator.json` são uma proposta para validação local. **Não executar `firebase deploy --only database` a partir desta branch.**
 - Backups JSON, hashes e exportações do emulador estão ignorados pelo Git.
 
-Antes de qualquer futura mudança de persistência, importação, limpeza ou regras remotas, conclua a Etapa 0 descrita em `plans/auditoria-completa-projeto-2026-07-22.md`: backup administrativo, SHA-256 e restauração comprovada fora da produção.
+A Etapa 0 foi concluída localmente em 22/07/2026: exportação administrativa, SHA-256, criptografia e restauração comprovada no emulador. Consulte `plans/etapa-0-backup-e-restauracao.md` antes de qualquer mudança de persistência, importação, limpeza ou regras remotas.
 
 ## Requisitos
 
@@ -50,6 +50,15 @@ npm run test:e2e
 npm run build
 npm run check
 ```
+
+Operação de backup no Windows:
+
+```powershell
+npm run backup:production
+npm run backup:install-task
+```
+
+O primeiro comando cria um backup criptografado em `D:\Backups\dias_trabalhados_2`, testa a recuperação independente e remove os JSONs em texto claro. O segundo instala a tarefa diária **Dias Trabalhados - Backup Firebase**, programada para 03:00 com retenção de 30 dias. A chave é protegida pelo Windows DPAPI e não deve ser adicionada ao Git.
 
 `npm run test:rules` precisa de Java. `npm run test:e2e` inicia e encerra o Auth Emulator automaticamente. O fluxo de CI instala Java 21 e executa as duas suítes.
 

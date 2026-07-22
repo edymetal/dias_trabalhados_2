@@ -127,8 +127,8 @@ const lucide = {
 };
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.114';
-const APP_BUILD_DATE = '2026-07-22 14:06:37';
+const APP_VERSION = '1.0.115';
+const APP_BUILD_DATE = '2026-07-22 19:15:21';
 
 
 
