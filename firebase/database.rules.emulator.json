@@ -13,7 +13,7 @@
         "db": {
           ".validate": "newData.hasChildren(['schemaVersion', 'settings'])",
           "schemaVersion": {
-            ".validate": "newData.isNumber() && newData.val() === 2"
+            ".validate": "newData.isNumber() && newData.val() === 3"
           },
           "settings": {
             ".validate": "newData.hasChildren(['morningRate', 'nightRate', 'currency', 'language', 'theme'])",
@@ -38,12 +38,12 @@
           },
           "workedDays": {
             "$date": {
-              ".validate": "!newData.exists() || ($date.matches(/^\\d{4}-\\d{2}-\\d{2}$/) && newData.hasChild('rate') && newData.child('rate').isNumber() && newData.child('rate').val() >= 0 && (!newData.hasChild('amountPaid') || (newData.child('amountPaid').isNumber() && newData.child('amountPaid').val() >= 0)) && (!newData.hasChild('pendingAmount') || (newData.child('pendingAmount').isNumber() && newData.child('pendingAmount').val() >= 0)))"
+              ".validate": "!newData.exists() || ($date.matches(/^\\d{4}-\\d{2}-\\d{2}$/) && newData.hasChildren(['date', 'period', 'rate', 'amountPaid', 'pendingAmount', 'status']) && newData.child('date').val() === $date && (newData.child('period').val() === 'morning' || newData.child('period').val() === 'night' || newData.child('period').val() === 'both' || newData.child('period').val() === 'none' || newData.child('period').val() === 'off' || newData.child('period').val() === 'vacation') && newData.child('rate').isNumber() && newData.child('rate').val() >= 0 && newData.child('rate').val() <= 100000 && newData.child('amountPaid').isNumber() && newData.child('amountPaid').val() >= 0 && newData.child('amountPaid').val() <= newData.child('rate').val() && newData.child('pendingAmount').isNumber() && newData.child('pendingAmount').val() >= 0 && newData.child('pendingAmount').val() === newData.child('rate').val() - newData.child('amountPaid').val() && (((newData.child('period').val() === 'none' || newData.child('period').val() === 'off' || newData.child('period').val() === 'vacation') && newData.child('rate').val() === 0 && newData.child('amountPaid').val() === 0 && newData.child('status').val() === 'not-applicable') || ((newData.child('period').val() === 'morning' || newData.child('period').val() === 'night' || newData.child('period').val() === 'both') && ((newData.child('pendingAmount').val() === 0 && newData.child('status').val() === 'paid') || (newData.child('amountPaid').val() > 0 && newData.child('pendingAmount').val() > 0 && newData.child('status').val() === 'partial') || (newData.child('amountPaid').val() === 0 && newData.child('pendingAmount').val() > 0 && newData.child('status').val() === 'unpaid')))))"
             }
           },
           "payments": {
             "$index": {
-              ".validate": "!newData.exists() || ($index.matches(/^[0-9]+$/) && newData.hasChildren(['id', 'date', 'amount']) && newData.child('id').isString() && newData.child('date').isString() && newData.child('date').val().matches(/^\\d{4}-\\d{2}-\\d{2}$/) && newData.child('amount').isNumber() && newData.child('amount').val() > 0 && (!newData.hasChild('advanceRemaining') || (newData.child('advanceRemaining').isNumber() && newData.child('advanceRemaining').val() >= 0)))"
+              ".validate": "!newData.exists() || ($index.matches(/^[0-9]+$/) && newData.hasChildren(['id', 'date', 'amount', 'cashAmount', 'depositAmount', 'advanceRemaining']) && newData.child('id').isString() && newData.child('date').isString() && newData.child('date').val().matches(/^\\d{4}-\\d{2}-\\d{2}$/) && newData.child('amount').isNumber() && newData.child('amount').val() > 0 && newData.child('amount').val() <= 10000000 && newData.child('cashAmount').isNumber() && newData.child('cashAmount').val() >= 0 && newData.child('depositAmount').isNumber() && newData.child('depositAmount').val() >= 0 && newData.child('cashAmount').val() + newData.child('depositAmount').val() === newData.child('amount').val() && newData.child('advanceRemaining').isNumber() && newData.child('advanceRemaining').val() >= 0 && newData.child('advanceRemaining').val() <= newData.child('amount').val())"
             }
           },
           "$other": {

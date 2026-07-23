@@ -6,6 +6,8 @@ Status: **concluída no código e nos emuladores; rollout de produção delibera
 
 Branch: `codex/etapa-2-persistencia-seguranca`
 
+Nota posterior: a Etapa 3 evoluiu o schema 2 para o schema 3. O rollout ainda não executado deve seguir `plans/etapa-3-dominio-financeiro.md`.
+
 ## Objetivo alcançado
 
 A aplicação deixou de substituir `userData/{uid}/db` inteiro a cada alteração. O estado agora é salvo localmente por UID, convertido em patches granulares, mantido em uma fila durável e enviado com `update()` atômico. Alterações feitas por duas sessões em caminhos diferentes foram preservadas nos testes unitários e no Realtime Database Emulator.
@@ -92,7 +94,7 @@ Executar em janela controlada, nesta ordem:
 3. atribuir `authorized: true` a todos os usuários válidos que não sejam mestres;
 4. confirmar renovação dos ID tokens e testar esses usuários em staging;
 5. publicar primeiro a aplicação compatível, sem mudar as regras;
-6. confirmar migração para schema 2 e fila vazia em todas as contas;
+6. confirmar migração para o schema vigente e fila vazia em todas as contas;
 7. publicar as regras somente após teste de leitura/escrita por cada perfil;
 8. restringir a chave Web por domínios e APIs necessárias no Google Cloud;
 9. registrar o app Web no App Check sem billing, mantendo o nível reCAPTCHA Essentials, e configurar `VITE_FIREBASE_APP_CHECK_SITE_KEY`;

@@ -365,6 +365,8 @@ Critério de saída: testes concorrentes em duas sessões não perdem alteraçõ
 
 Objetivo: garantir que os números exibidos representam uma regra explícita.
 
+Status em 23/07/2026: **critério técnico local concluído**. Aritmética centesimal, caixa/competência, férias não financeiras, seleção restritiva, reconciliação, crédito/estorno, datas mensais e preenchimento paginado foram implementados no schema 3. A migração preservou todos os totais do backup real mais recente. Produção não foi alterada; consulte `plans/etapa-3-dominio-financeiro.md`.
+
 - centavos inteiros;
 - seleção de semanas realmente restritiva;
 - reconciliação pagamento/dia;

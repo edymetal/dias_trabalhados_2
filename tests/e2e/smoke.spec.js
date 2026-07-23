@@ -57,6 +57,9 @@ test('carrega a tela de login sem erros JavaScript', async ({ page }) => {
 test('autentica e conclui os fluxos de calendário e pagamento com dados sintéticos', async ({ page }) => {
   page.on('dialog', dialog => dialog.accept());
   const workedDate = localDateISO();
+  const previousWeek = new Date();
+  previousWeek.setDate(previousWeek.getDate() - 7);
+  const previousWorkedDate = localDateISO(previousWeek);
   const syntheticDatabase = {
     settings: {
       morningRate: 35,
@@ -78,6 +81,16 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
         pendingAmount: 35,
         notes: 'Dado sintético E2E',
         paymentsApplied: {}
+      },
+      [previousWorkedDate]: {
+        date: previousWorkedDate,
+        period: 'morning',
+        rate: 35,
+        status: 'unpaid',
+        amountPaid: 0,
+        pendingAmount: 35,
+        notes: 'Semana não selecionada',
+        paymentsApplied: {}
       }
     },
     payments: []
@@ -90,7 +103,7 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
   await signInWithEmulator(page);
 
   await expect(page.locator('#user-email')).toHaveText(masterEmail);
-  await expect(page.locator('#stat-total-earnings')).toContainText('35');
+  await expect(page.locator('#stat-total-earnings')).toContainText('70');
   const cacheState = await page.evaluate(async () => {
     const { auth } = await import('/src/firebase/client.js');
     const userId = auth.currentUser.uid;
@@ -101,7 +114,7 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
     };
   });
   expect(cacheState.owner).toBeTruthy();
-  expect(cacheState.cached.schemaVersion).toBe(2);
+  expect(cacheState.cached.schemaVersion).toBe(3);
   expect(cacheState.queue).toEqual([]);
 
   await page.locator('[data-tab="calendar"]').click();
@@ -113,13 +126,23 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
   await expect(page.locator('#day-modal')).not.toHaveClass(/active/);
 
   await page.locator('[data-tab="payments"]').click();
-  await expect(page.locator('.week-card')).toHaveCount(1);
-  await page.locator('.week-card').click();
+  await expect(page.locator('.week-card')).toHaveCount(2);
+  await page.locator('.week-card').first().click();
   await expect(page.locator('#input-payment-amount')).toHaveValue('35.00');
   await page.locator('#input-payment-date').click();
   await page.locator('[data-action="today-date"]').click();
   await expect(page.locator('#input-payment-date')).toHaveValue(workedDate);
   await page.getByRole('button', { name: 'Confirmar Recebimento' }).click();
+
+  await page.locator('[data-tab="dashboard"]').click();
+  await expect(page.locator('#stat-total-received')).toContainText('35');
+  const paymentState = await page.evaluate(async () => {
+    const { auth } = await import('/src/firebase/client.js');
+    const userId = auth.currentUser.uid;
+    return JSON.parse(localStorage.getItem(`fluxoturno_db:user:${userId}`));
+  });
+  expect(paymentState.workedDays[workedDate]).toMatchObject({ amountPaid: 35, pendingAmount: 0 });
+  expect(paymentState.workedDays[previousWorkedDate]).toMatchObject({ amountPaid: 0, pendingAmount: 35 });
 
   await page.locator('[data-tab="history"]').click();
   await expect(page.locator('#payment-history-table-body tr:not(.history-month-header)')).toHaveCount(1);

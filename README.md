@@ -87,4 +87,4 @@ O Vite gera o site em `dist/`. Pushes para branches `codex/**` apenas validam li
 - `firebase/`: regras exclusivas para validação no emulador;
 - `plans/`: auditoria e acompanhamento das etapas.
 
-A visão dos módulos e do fluxo de dados está em `docs/arquitetura.md`. As Etapas 0, 1 e o critério técnico local da Etapa 2 estão concluídos. O rollout de regras, claims, restrições de chave e App Check em produção permanece condicionado ao checklist em `plans/etapa-2-persistencia-seguranca.md`.
+A visão dos módulos e do fluxo de dados está em `docs/arquitetura.md`. As Etapas 0, 1, 2 e o critério técnico local da Etapa 3 estão concluídos. O domínio financeiro e o schema 3 estão documentados em `plans/etapa-3-dominio-financeiro.md`. Rollouts de produção permanecem condicionados a backup novo e autorização explícita.

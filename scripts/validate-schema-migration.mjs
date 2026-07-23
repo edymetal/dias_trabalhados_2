@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { sumMoney } from '../src/domain/money.js';
 import { normalizeDatabase } from '../src/persistence/schema.js';
 
 const inputPath = process.argv[2];
@@ -14,10 +15,10 @@ function totals(database) {
   return {
     workedDays: workedDays.length,
     payments: payments.length,
-    rate: workedDays.reduce((sum, day) => sum + (day.rate || 0), 0),
-    paid: workedDays.reduce((sum, day) => sum + (day.amountPaid || 0), 0),
-    pending: workedDays.reduce((sum, day) => sum + (day.pendingAmount || 0), 0),
-    paymentAmount: payments.reduce((sum, payment) => sum + (payment.amount || 0), 0)
+    rate: sumMoney(workedDays.map(day => day.rate || 0)),
+    paid: sumMoney(workedDays.map(day => day.amountPaid || 0)),
+    pending: sumMoney(workedDays.map(day => day.pendingAmount || 0)),
+    paymentAmount: sumMoney(payments.map(payment => payment.amount || 0))
   };
 }
 
@@ -33,7 +34,7 @@ const summaries = users.map(([userId, userNode]) => {
   if (JSON.stringify(before) !== JSON.stringify(after)) {
     throw new Error(`Invariantes alterados durante a migração do usuário ${userId}.`);
   }
-  if (migrated.schemaVersion !== 2) throw new Error(`Schema final inválido para ${userId}.`);
+  if (migrated.schemaVersion !== 3) throw new Error(`Schema final inválido para ${userId}.`);
   return { userId: '<redacted>', ...after, schemaVersion: migrated.schemaVersion };
 });
 

@@ -17,7 +17,7 @@ let testEnvironment;
 
 function validDatabase() {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     settings: {
       morningRate: 35,
       nightRate: 25,
@@ -54,7 +54,12 @@ describe('regras candidatas da etapa 2', () => {
 
     await assertSucceeds(update(ref(alice, 'userData/alice/db'), {
       'workedDays/2026-07-23': {
-        date: '2026-07-23', rate: 35, amountPaid: 0, pendingAmount: 35
+        date: '2026-07-23', period: 'morning', rate: 35,
+        amountPaid: 0, pendingAmount: 35, status: 'unpaid'
+      },
+      'payments/0': {
+        id: 'pay_1', date: '2026-07-23', amount: 35,
+        cashAmount: 10, depositAmount: 25, advanceRemaining: 0
       },
       'settings/theme': 'light'
     }));
@@ -66,13 +71,25 @@ describe('regras candidatas da etapa 2', () => {
   it('rejeita schema futuro e valores financeiros inválidos', async () => {
     const alice = testEnvironment.authenticatedContext('alice', { authorized: true }).database();
     await assertSucceeds(set(ref(alice, 'userData/alice/db'), validDatabase()));
-    await assertFails(update(ref(alice, 'userData/alice/db'), { schemaVersion: 3 }));
+    await assertFails(update(ref(alice, 'userData/alice/db'), { schemaVersion: 4 }));
     await assertFails(update(ref(alice, 'userData/alice/db'), { 'settings/morningRate': -1 }));
     await assertFails(update(ref(alice, 'userData/alice/db'), {
       'workedDays/data-invalida': { rate: 35 }
     }));
     await assertFails(update(ref(alice, 'userData/alice/db'), {
       'payments/chave-invalida': { id: 'pay_1', date: '2026-07-23', amount: 10 }
+    }));
+    await assertFails(update(ref(alice, 'userData/alice/db'), {
+      'workedDays/2026-07-24': {
+        date: '2026-07-24', period: 'vacation', rate: 35,
+        amountPaid: 0, pendingAmount: 35, status: 'unpaid'
+      }
+    }));
+    await assertFails(update(ref(alice, 'userData/alice/db'), {
+      'payments/0': {
+        id: 'pay_bad_split', date: '2026-07-23', amount: 35,
+        cashAmount: 10, depositAmount: 10, advanceRemaining: 0
+      }
     }));
   });
 
@@ -90,10 +107,16 @@ describe('regras candidatas da etapa 2', () => {
 
     await Promise.all([
       assertSucceeds(update(ref(first, 'userData/alice/db'), {
-        'workedDays/2026-07-22': { date: '2026-07-22', rate: 35 }
+        'workedDays/2026-07-22': {
+          date: '2026-07-22', period: 'morning', rate: 35,
+          amountPaid: 0, pendingAmount: 35, status: 'unpaid'
+        }
       })),
       assertSucceeds(update(ref(second, 'userData/alice/db'), {
-        'workedDays/2026-07-23': { date: '2026-07-23', rate: 25 }
+        'workedDays/2026-07-23': {
+          date: '2026-07-23', period: 'night', rate: 25,
+          amountPaid: 0, pendingAmount: 25, status: 'unpaid'
+        }
       }))
     ]);
 

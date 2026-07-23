@@ -52,19 +52,26 @@ import {
 import {
   formatDateISO,
   formatDateStringDisplay,
+  getNextPaymentDate,
   getWeekRange,
   parseLocalDate
 } from './src/domain/dates.js';
 import {
   allocatePaymentAcrossDays,
   applyAdvanceCreditsToDay,
+  isFinancialDay,
+  normalizePayment,
+  reconcileLedger,
+  refreshDayFinancials,
   refundPaymentCreditsFromDay,
   reversePayment
 } from './src/domain/ledger.js';
 import {
-  calculateReceivedForWorkedDaysInMonth,
+  calculateFinancialSummary,
   splitPaymentMethod
 } from './src/domain/dashboard.js';
+import { getAutoFillBatch } from './src/domain/autofill.js';
+import { addMoney, fromCents, moneyEquals, normalizeMoney, toCents } from './src/domain/money.js';
 import {
   auth,
   onAuthStateChanged,
@@ -144,8 +151,8 @@ const applicationProtectionReady = initializeApplicationProtection().catch(error
 });
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.118';
-const APP_BUILD_DATE = '2026-07-23 04:52:14';
+const APP_VERSION = '1.0.119';
+const APP_BUILD_DATE = '2026-07-23 08:23:21';
 
 
 
@@ -270,9 +277,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     paymentAmountInput.addEventListener('input', () => {
       const methodSelect = document.getElementById('input-payment-method');
       if (methodSelect && methodSelect.value === 'Misto') {
-        const totalAmount = parseFloat(paymentAmountInput.value) || 0;
-        document.getElementById('input-payment-cash-amount').value = (totalAmount / 2).toFixed(2);
-        document.getElementById('input-payment-deposit-amount').value = (totalAmount - (totalAmount / 2)).toFixed(2);
+        const totalCents = toCents(Number.parseFloat(paymentAmountInput.value) || 0);
+        const cashCents = Math.floor(totalCents / 2);
+        document.getElementById('input-payment-cash-amount').value = fromCents(cashCents).toFixed(2);
+        document.getElementById('input-payment-deposit-amount').value = fromCents(totalCents - cashCents).toFixed(2);
       }
     });
   }
@@ -280,14 +288,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Permite valores assimétricos calculando a contrapartida dinamicamente
   if (inputCash && inputDeposit && paymentAmountInput) {
     inputCash.addEventListener('input', () => {
-      const total = parseFloat(paymentAmountInput.value) || 0;
-      const cash = parseFloat(inputCash.value) || 0;
-      inputDeposit.value = Math.max(0, total - cash).toFixed(2);
+      const totalCents = toCents(Number.parseFloat(paymentAmountInput.value) || 0);
+      const cashCents = toCents(Number.parseFloat(inputCash.value) || 0);
+      inputDeposit.value = fromCents(Math.max(0, totalCents - cashCents)).toFixed(2);
     });
     inputDeposit.addEventListener('input', () => {
-      const total = parseFloat(paymentAmountInput.value) || 0;
-      const deposit = parseFloat(inputDeposit.value) || 0;
-      inputCash.value = Math.max(0, total - deposit).toFixed(2);
+      const totalCents = toCents(Number.parseFloat(paymentAmountInput.value) || 0);
+      const depositCents = toCents(Number.parseFloat(inputDeposit.value) || 0);
+      inputCash.value = fromCents(Math.max(0, totalCents - depositCents)).toFixed(2);
     });
   }
 });
@@ -796,7 +804,7 @@ function updateRateLabels() {
 
 function formatCurrency(value) {
   const lang = db.settings.language === 'it-IT' ? 'it-IT' : 'pt-BR';
-  return new Intl.NumberFormat(lang, { style: 'currency', currency: 'EUR' }).format(value);
+  return new Intl.NumberFormat(lang, { style: 'currency', currency: 'EUR' }).format(normalizeMoney(value || 0));
 }
 
 function escapeHtml(value) {
@@ -810,11 +818,14 @@ function escapeHtml(value) {
 
 // Calcula dias projetados no futuro que seriam cobertos pelo Crédito Antecipado disponível
 function calculateProjectedCreditDays() {
-  const totalCredit = db.payments.reduce((acc, p) => acc + (p.advanceRemaining || 0), 0);
-  if (totalCredit <= 0) return {};
+  const totalCreditCents = db.payments.reduce(
+    (total, payment) => total + toCents(payment.advanceRemaining || 0),
+    0
+  );
+  if (totalCreditCents <= 0) return {};
 
   const projectedDays = {};
-  let remainingCredit = totalCredit;
+  let remainingCreditCents = totalCreditCents;
   
   // Encontrar a última data registrada no banco para começar a projeção a partir dela
   const workedDates = Object.keys(db.workedDays).sort();
@@ -838,12 +849,12 @@ function calculateProjectedCreditDays() {
   const halfDays = db.settings.halfDays || {};
   const morningRate = db.settings.morningRate;
   const nightRate = db.settings.nightRate;
-  const bothRate = morningRate + nightRate;
+  const bothRate = addMoney(morningRate, nightRate);
 
   let iterations = 0;
   const MAX_ITERATIONS = 90; // Projetar no máximo 3 meses para performance e segurança
 
-  while (remainingCredit > 0.01 && iterations < MAX_ITERATIONS) {
+  while (remainingCreditCents > 0 && iterations < MAX_ITERATIONS) {
     iterations++;
     const dateStr = formatDateISO(current);
     const dayOfWeek = current.getDay();
@@ -869,19 +880,20 @@ function calculateProjectedCreditDays() {
       rate = (period === 'morning') ? morningRate : nightRate;
     }
 
-    const apply = Math.min(remainingCredit, rate);
+    const rateCents = toCents(rate);
+    const appliedCents = Math.min(remainingCreditCents, rateCents);
     
     projectedDays[dateStr] = {
       date: dateStr,
       period: period,
       rate: rate,
-      amountPaid: apply,
-      pendingAmount: Math.max(0, rate - apply),
-      status: apply >= (rate - 0.01) ? 'paid' : 'partial',
+      amountPaid: fromCents(appliedCents),
+      pendingAmount: fromCents(rateCents - appliedCents),
+      status: appliedCents === rateCents ? 'paid' : 'partial',
       isProjected: true
     };
 
-    remainingCredit -= apply;
+    remainingCreditCents -= appliedCents;
     current.setDate(current.getDate() + 1);
   }
 
@@ -894,39 +906,12 @@ function calculateProjectedCreditDays() {
 
 function updateDashboardData() {
   if (!db) return; // Segurança contra carga incompleta
-  // Cálculos financeiros totais
-  let totalEarnings = 0;
-  let totalPending = 0;
-  let thisWeekEarnings = 0;
-
-  // Obter intervalo da semana atual
-  const todayISO = formatDateISO(new Date());
-  const currentWeek = getWeekRange(todayISO);
-
-  // Calcula valores de dias trabalhados
-  Object.keys(db.workedDays).forEach(dateStr => {
-    const dayData = db.workedDays[dateStr];
-    
-    // Desconsidera dias sem Período ou folga do cálculo financeiro
-    if (dayData.period !== 'none' && dayData.period !== 'off') {
-      const rate = dayData.rate || 0;
-      totalEarnings += rate;
-      
-      const paid = dayData.amountPaid || 0;
-      totalPending += (rate - paid);
-
-      // Soma para os ganhos da semana atual
-      if (dateStr >= currentWeek.mondayStr && dateStr <= currentWeek.sundayStr) {
-        thisWeekEarnings += rate;
-      }
-    }
-  });
-
-  // Total Recebido no Mes considera o valor pago nos dias trabalhados do mes atual.
-  const totalReceived = calculateReceivedForWorkedDaysInMonth(db.workedDays);
-
-  // Total de adiantamento/Crédito ativo nos pagamentos
-  const totalAdvance = db.payments.reduce((acc, pay) => acc + (pay.advanceRemaining || 0), 0);
+  const {
+    totalEarnings,
+    netBalance,
+    thisWeekEarnings,
+    receivedThisMonthCash: totalReceived
+  } = calculateFinancialSummary(db);
 
   // Atualiza os elementos da tela
   document.getElementById('stat-total-earnings').innerText = formatCurrency(totalEarnings);
@@ -944,13 +929,13 @@ function updateDashboardData() {
     const pendingIcon = pendingCard.querySelector('.stat-icon');
     const texts = translations[db.settings.language || 'pt-BR'];
 
-    if (totalAdvance > 0) {
+    if (toCents(netBalance) < 0) {
       // Transforma em card de Crédito
       pendingCard.style.borderLeft = ''; // Deixa o CSS tratar via classe
       pendingCard.classList.add('stat-credit-active');
       if (pendingTitle) pendingTitle.innerText = texts['stat-total-credit'] || 'Crédito Antecipado';
       if (pendingValue) {
-        pendingValue.innerText = formatCurrency(totalAdvance);
+        pendingValue.innerText = formatCurrency(Math.abs(netBalance));
         pendingValue.style.color = 'var(--accent-purple)';
       }
       if (pendingIcon) pendingIcon.innerHTML = `<i data-lucide="hand-coins"></i>`;
@@ -960,7 +945,7 @@ function updateDashboardData() {
       pendingCard.classList.remove('stat-credit-active');
       if (pendingTitle) pendingTitle.innerText = texts['stat-total-pending'] || 'Total Pendente';
       if (pendingValue) {
-        pendingValue.innerText = formatCurrency(totalPending);
+        pendingValue.innerText = formatCurrency(Math.max(0, netBalance));
         pendingValue.style.color = '';
       }
       if (pendingIcon) pendingIcon.innerHTML = `<i data-lucide="alert-circle"></i>`;
@@ -972,43 +957,31 @@ function updateDashboardData() {
 
   // Calcular totais do ano atual
   const year = new Date().getFullYear();
-  let annualReceivedCash = 0;
-  let annualReceivedDeposit = 0;
+  let annualReceivedCashCents = 0;
+  let annualReceivedDepositCents = 0;
   let annualWorkedDays = 0;
 
   // Acumular pagamentos do ano atual
   db.payments.forEach(pay => {
     const payYear = parseLocalDate(pay.date)?.getFullYear() || new Date(pay.date).getFullYear();
     if (payYear === year) {
-      if (pay.cashAmount !== undefined && pay.depositAmount !== undefined) {
-        annualReceivedCash += pay.cashAmount;
-        annualReceivedDeposit += pay.depositAmount;
-      } else {
-        // Fallback robusto para registros antigos (parsing de notes)
-        const notesLower = (pay.notes || '').toLowerCase();
-        if (notesLower.includes('misto') || (notesLower.includes('dinheiro') && notesLower.includes('depósito')) || (notesLower.includes('contanti') && notesLower.includes('deposito'))) {
-          const cashMatch = notesLower.match(/(?:dinheiro|contanti):\s*[^0-9]*([0-9]+(?:[.,][0-9]{2})?)/);
-          const depositMatch = notesLower.match(/(?:depósito|deposito):\s*[^0-9]*([0-9]+(?:[.,][0-9]{2})?)/);
-          annualReceivedCash += cashMatch ? parseFloat(cashMatch[1].replace(',', '.')) : (pay.amount / 2);
-          annualReceivedDeposit += depositMatch ? parseFloat(depositMatch[1].replace(',', '.')) : (pay.amount / 2);
-        } else if (notesLower.includes('dinheiro') || notesLower.includes('contanti') || notesLower === 'dinheiro' || notesLower === 'contanti') {
-          annualReceivedCash += pay.amount;
-        } else if (notesLower.includes('depósito') || notesLower.includes('deposito') || notesLower === 'depósito' || notesLower === 'deposito') {
-          annualReceivedDeposit += pay.amount;
-        } else {
-          annualReceivedDeposit += pay.amount; // Assume depósito como padrão se não for identificado
-        }
-      }
+      const ratios = splitPaymentMethod(pay);
+      const amountCents = toCents(pay.amount || 0);
+      const cashCents = Math.round(amountCents * ratios.cashRatio);
+      annualReceivedCashCents += cashCents;
+      annualReceivedDepositCents += amountCents - cashCents;
     }
   });
-  const annualTotalReceived = annualReceivedCash + annualReceivedDeposit;
+  const annualReceivedCash = fromCents(annualReceivedCashCents);
+  const annualReceivedDeposit = fromCents(annualReceivedDepositCents);
+  const annualTotalReceived = fromCents(annualReceivedCashCents + annualReceivedDepositCents);
 
   // Contar dias trabalhados no ano atual
   Object.keys(db.workedDays).forEach(dateStr => {
     const dayData = db.workedDays[dateStr];
     const dayYear = parseInt(dateStr.substring(0, 4), 10);
     if (dayYear === year) {
-      if (dayData.period !== 'none' && dayData.period !== 'off') {
+      if (isFinancialDay(dayData)) {
         annualWorkedDays++;
       }
     }
@@ -1074,9 +1047,9 @@ function renderMonthlyWeeksSummary() {
     const rate = dayData.rate || 0;
     const paid = dayData.amountPaid || 0;
     week.days += 1;
-    week.totalDue += rate;
-    week.totalPaid += paid;
-    week.totalPending += Math.max(0, rate - paid);
+    week.totalDue = addMoney(week.totalDue, rate);
+    week.totalPaid = addMoney(week.totalPaid, paid);
+    week.totalPending = addMoney(week.totalPending, dayData.pendingAmount || 0);
   });
 
   if (weeks.length === 0 || weeks.every(week => week.days === 0)) {
@@ -1348,7 +1321,7 @@ function quickLogShift(period) {
   
   if (period === 'morning') rate = db.settings.morningRate;
   else if (period === 'night') rate = db.settings.nightRate;
-  else if (period === 'both') rate = db.settings.morningRate + db.settings.nightRate;
+  else if (period === 'both') rate = addMoney(db.settings.morningRate, db.settings.nightRate);
   
   // Se o dia Já tiver registro financeiro de pagamento, mantém o valor pago e atualiza
   const existing = db.workedDays[todayStr] || {
@@ -1357,21 +1330,24 @@ function quickLogShift(period) {
   };
 
   // Se o novo rate for menor que o amountPaid Já registrado, devolvemos
-  if (existing.amountPaid > rate) {
-    refundPaymentCreditsFromDay(db, existing, rate);
+  if (toCents(existing.amountPaid || 0) > toCents(rate)) {
+    if (!refundPaymentCreditsFromDay(db, existing, rate)) {
+      alert(getText('msg-unlinked-payment-blocked'));
+      return;
+    }
   }
 
   const newDay = {
     date: todayStr,
     period: period,
     rate: rate,
-    status: existing.amountPaid >= rate ? 'paid' : (existing.amountPaid > 0 ? 'partial' : 'unpaid'),
     amountPaid: existing.amountPaid || 0,
-    pendingAmount: Math.max(0, rate - (existing.amountPaid || 0)),
+    pendingAmount: 0,
     notes: existing.notes || texts['msg-quick-log-note'],
     paymentsApplied: existing.paymentsApplied || {}
   };
 
+  refreshDayFinancials(newDay);
   // Aplica Créditos de adiantamento, se houver
   applyAdvanceCreditsToDay(db, newDay);
 
@@ -1688,7 +1664,7 @@ function closeDayModal() {
 function getStandardRateForPeriod(period) {
   if (period === 'morning') return db.settings.morningRate;
   if (period === 'night') return db.settings.nightRate;
-  if (period === 'both') return db.settings.morningRate + db.settings.nightRate;
+  if (period === 'both') return addMoney(db.settings.morningRate, db.settings.nightRate);
   return 0;
 }
 
@@ -1704,49 +1680,28 @@ function getConfiguredPeriodForDate(date) {
 
 function createOrUpdateAutomaticWorkedDay(dateStr) {
   const existing = db.workedDays[dateStr];
-  const hasManualRecord = existing && !existing.autoGenerated;
-  const hasPaymentApplied = existing && (
-    (existing.amountPaid || 0) > 0 ||
-    (existing.paymentsApplied && Object.keys(existing.paymentsApplied).length > 0)
-  );
-
-  if (hasManualRecord || hasPaymentApplied) return false;
+  // Registros anteriores, inclusive automáticos, são imutáveis para evitar
+  // recálculo retroativo ao mudar tarifa ou rotina.
+  if (existing) return false;
 
   const date = parseLocalDate(dateStr);
+  if (!date) return false;
   const period = getConfiguredPeriodForDate(date);
   const rate = getStandardRateForPeriod(period);
-  const amountPaid = existing?.amountPaid || 0;
-  const pendingAmount = Math.max(0, rate - amountPaid);
-  const originalStatus = existing?.status;
   const newDay = {
     date: dateStr,
     period: period,
     rate: rate,
-    status: originalStatus || (amountPaid >= rate ? 'paid' : (amountPaid > 0 ? 'partial' : 'unpaid')),
-    amountPaid: amountPaid,
-    pendingAmount: pendingAmount,
-    notes: existing?.notes || getText('msg-auto-note'),
-    paymentsApplied: existing?.paymentsApplied || {},
+    status: 'unpaid',
+    amountPaid: 0,
+    pendingAmount: rate,
+    notes: getText('msg-auto-note'),
+    paymentsApplied: {},
     autoGenerated: true
   };
 
+  refreshDayFinancials(newDay);
   applyAdvanceCreditsToDay(db, newDay);
-  if (originalStatus) {
-    newDay.status = originalStatus;
-  }
-
-  if (
-    existing?.autoGenerated &&
-    existing.period === newDay.period &&
-    existing.rate === newDay.rate &&
-    existing.status === newDay.status &&
-    (existing.amountPaid || 0) === newDay.amountPaid &&
-    (existing.pendingAmount || 0) === newDay.pendingAmount &&
-    (existing.notes || '') === newDay.notes
-  ) {
-    return false;
-  }
-
   db.workedDays[dateStr] = newDay;
   return true;
 }
@@ -1754,49 +1709,34 @@ function createOrUpdateAutomaticWorkedDay(dateStr) {
 async function applyAutomaticWorkedDayFill() {
   if (!db?.settings?.autoFillWorkedDays) return 0;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayStr = formatDateISO(today);
+  const todayStr = formatDateISO(new Date());
+  let totalCreated = 0;
+  let pagesProcessed = 0;
+  let complete = false;
 
-  let start = parseLocalDate(db.settings.autoFillLastDate);
-  if (start) {
-    start.setDate(start.getDate() + 1);
-  } else {
-    start = parseLocalDate(db.settings.autoFillStartedAt) || new Date(today);
-  }
-  start.setHours(0, 0, 0, 0);
-
-  let changed = false;
-  let createdOrUpdated = 0;
-  let current = new Date(start);
-  let iterations = 0;
-  const MAX_AUTOFILL_DAYS = 370;
-
-  while (current <= today && iterations < MAX_AUTOFILL_DAYS) {
-    const dateStr = formatDateISO(current);
-    if (createOrUpdateAutomaticWorkedDay(dateStr)) {
-      createdOrUpdated++;
-      changed = true;
+  while (!complete && pagesProcessed < 12) {
+    const batch = getAutoFillBatch({
+      settings: db.settings,
+      workedDays: db.workedDays,
+      todayISO: todayStr,
+      pageSize: db.settings.autoFillPageSize || 31
+    });
+    let pageCreated = 0;
+    for (const dateStr of batch.dates) {
+      if (createOrUpdateAutomaticWorkedDay(dateStr)) pageCreated++;
     }
-    current.setDate(current.getDate() + 1);
-    iterations++;
+
+    const cursorChanged = db.settings.autoFillLastDate !== batch.cursor;
+    if (cursorChanged) db.settings.autoFillLastDate = batch.cursor;
+    if (pageCreated > 0 || cursorChanged) await saveToStorage();
+
+    totalCreated += pageCreated;
+    complete = batch.complete || !cursorChanged;
+    pagesProcessed++;
+    await Promise.resolve();
   }
 
-  if (createOrUpdateAutomaticWorkedDay(todayStr)) {
-    createdOrUpdated++;
-    changed = true;
-  }
-
-  if (db.settings.autoFillLastDate !== todayStr) {
-    db.settings.autoFillLastDate = todayStr;
-    changed = true;
-  }
-
-  if (changed) {
-    await saveToStorage();
-  }
-
-  return createdOrUpdated;
+  return totalCreated;
 }
 
 function saveDayDetails(event) {
@@ -1812,28 +1752,31 @@ function saveDayDetails(event) {
     return;
   }
 
-  const customRateVal = parseFloat(document.getElementById('modal-custom-rate').value);
+  const customRateVal = Number.parseFloat(document.getElementById('modal-custom-rate').value);
   const notesVal = document.getElementById('modal-notes').value;
   let rate = getStandardRateForPeriod(selectedPeriod);
-  if (!isNaN(customRateVal) && selectedPeriod !== 'off' && selectedPeriod !== 'none') rate = customRateVal;
+  if (!Number.isNaN(customRateVal) && selectedPeriod !== 'off' && selectedPeriod !== 'none') {
+    if (customRateVal < 0) return;
+    rate = normalizeMoney(customRateVal);
+  }
 
   const existing = db.workedDays[dateStr] || { amountPaid: 0, paymentsApplied: {} };
 
   // Se o novo rate for menor que o amountPaid Já registrado (ou se mudou para off/none), devolvemos
-  if (existing.amountPaid > rate) {
-    refundPaymentCreditsFromDay(db, existing, rate);
+  if (toCents(existing.amountPaid || 0) > toCents(rate)) {
+    if (!refundPaymentCreditsFromDay(db, existing, rate)) {
+      alert(getText('msg-unlinked-payment-blocked'));
+      return;
+    }
   }
 
-  const amountPaid = existing.amountPaid || 0;
-  const pendingAmount = Math.max(0, rate - amountPaid);
-  let status = amountPaid >= rate ? 'paid' : (amountPaid > 0 ? 'partial' : 'unpaid');
-
   const newDay = {
-    date: dateStr, period: selectedPeriod, rate: rate, status: status,
-    amountPaid: amountPaid, pendingAmount: pendingAmount, notes: notesVal,
+    date: dateStr, period: selectedPeriod, rate: rate,
+    amountPaid: existing.amountPaid || 0, pendingAmount: 0, notes: notesVal,
     paymentsApplied: existing.paymentsApplied || {}
   };
 
+  refreshDayFinancials(newDay);
   // Aplica Créditos de adiantamento, se houver
   applyAdvanceCreditsToDay(db, newDay);
 
@@ -1853,7 +1796,10 @@ function deleteDayRecord() {
   if (data.amountPaid > 0) {
     if (!confirm(texts['msg-delete-confirm'])) return;
     // Devolve os Créditos aplicados a este dia para os pagamentos originais
-    refundPaymentCreditsFromDay(db, data, 0);
+    if (!refundPaymentCreditsFromDay(db, data, 0)) {
+      alert(getText('msg-unlinked-payment-blocked'));
+      return;
+    }
   }
   delete db.workedDays[dateStr];
   saveToStorage();
@@ -1874,7 +1820,7 @@ function renderWeeksList() {
 
   Object.keys(db.workedDays).forEach(dateStr => {
     const dayData = db.workedDays[dateStr];
-    if (dayData.period !== 'none' && dayData.period !== 'off') {
+    if (isFinancialDay(dayData)) {
       const weekInfo = getWeekRange(dateStr);
       const weekKey = weekInfo.key;
       if (!weeksMap[weekKey]) {
@@ -1884,9 +1830,9 @@ function renderWeeksList() {
         };
       }
       weeksMap[weekKey].days.push(dayData);
-      weeksMap[weekKey].totalDue += dayData.rate;
-      weeksMap[weekKey].totalPaid += dayData.amountPaid || 0;
-      weeksMap[weekKey].totalPending += dayData.pendingAmount || 0;
+      weeksMap[weekKey].totalDue = addMoney(weeksMap[weekKey].totalDue, dayData.rate);
+      weeksMap[weekKey].totalPaid = addMoney(weeksMap[weekKey].totalPaid, dayData.amountPaid || 0);
+      weeksMap[weekKey].totalPending = addMoney(weeksMap[weekKey].totalPending, dayData.pendingAmount || 0);
     }
   });
 
@@ -1966,28 +1912,32 @@ function updatePaymentSummary() {
     let generalPending = 0;
     Object.keys(db.workedDays).forEach(dateStr => {
       const dayData = db.workedDays[dateStr];
-      if (dayData.period !== 'none' && dayData.period !== 'off') {
-        generalPending += (dayData.pendingAmount || 0);
+      if (isFinancialDay(dayData)) {
+        generalPending = addMoney(generalPending, dayData.pendingAmount || 0);
       }
     });
     
-    const generalAdvance = db.payments.reduce((acc, pay) => acc + (pay.advanceRemaining || 0), 0);
+    const generalAdvance = db.payments.reduce(
+      (total, payment) => addMoney(total, payment.advanceRemaining || 0),
+      0
+    );
+    const generalNetBalance = fromCents(toCents(generalPending) - toCents(generalAdvance));
     
-    if (generalAdvance > 0) {
+    if (toCents(generalNetBalance) < 0) {
       balanceBox.style.border = '1px solid var(--accent-purple)';
       balanceBox.style.background = 'var(--accent-purple-glow)';
       if (balanceLabel) balanceLabel.innerText = texts['general-balance-credit'] || 'Crédito Disponível (Adiantado)';
       if (balanceValue) {
-        balanceValue.innerText = formatCurrency(generalAdvance);
+        balanceValue.innerText = formatCurrency(Math.abs(generalNetBalance));
         balanceValue.style.color = 'var(--accent-purple)';
       }
       if (balanceIcon) balanceIcon.outerHTML = `<i id="general-balance-icon" data-lucide="coins" style="width: 16px; height: 16px; color: var(--accent-purple);"></i>`;
-    } else if (generalPending > 0) {
+    } else if (toCents(generalNetBalance) > 0) {
       balanceBox.style.border = '1px solid var(--status-unpaid)';
       balanceBox.style.background = 'var(--status-unpaid-glow)';
       if (balanceLabel) balanceLabel.innerText = texts['general-balance-pending'] || 'Total Geral a Receber';
       if (balanceValue) {
-        balanceValue.innerText = formatCurrency(generalPending);
+        balanceValue.innerText = formatCurrency(generalNetBalance);
         balanceValue.style.color = 'var(--status-unpaid)';
       }
       if (balanceIcon) balanceIcon.outerHTML = `<i id="general-balance-icon" data-lucide="alert-circle" style="width: 16px; height: 16px; color: var(--status-unpaid);"></i>`;
@@ -2009,7 +1959,7 @@ function updatePaymentSummary() {
   const pendingWeekKeys = new Set();
   Object.keys(db.workedDays).forEach(dateStr => {
     const dayData = db.workedDays[dateStr];
-    if (dayData.period !== 'none' && dayData.period !== 'off' && (dayData.pendingAmount || 0) > 0) {
+    if (isFinancialDay(dayData) && toCents(dayData.pendingAmount || 0) > 0) {
       dbTotalDays++;
       const weekInfo = getWeekRange(dateStr);
       pendingWeekKeys.add(weekInfo.key);
@@ -2018,10 +1968,10 @@ function updatePaymentSummary() {
 
   Object.keys(db.workedDays).forEach(dateStr => {
     const dayData = db.workedDays[dateStr];
-    if (dayData.period !== 'none' && dayData.period !== 'off' && pendingWeekKeys.has(getWeekRange(dateStr).key)) {
-      dbTotalDue += dayData.rate || 0;
-      dbTotalPaid += dayData.amountPaid || 0;
-      dbTotalPending += dayData.pendingAmount || 0;
+    if (isFinancialDay(dayData) && pendingWeekKeys.has(getWeekRange(dateStr).key)) {
+      dbTotalDue = addMoney(dbTotalDue, dayData.rate || 0);
+      dbTotalPaid = addMoney(dbTotalPaid, dayData.amountPaid || 0);
+      dbTotalPending = addMoney(dbTotalPending, dayData.pendingAmount || 0);
     }
   });
 
@@ -2053,7 +2003,7 @@ function updatePaymentSummary() {
   const selectedPendingWeekKeys = new Set();
   Object.keys(db.workedDays).forEach(dateStr => {
     const dayData = db.workedDays[dateStr];
-    if (dayData.period !== 'none' && dayData.period !== 'off' && (dayData.pendingAmount || 0) > 0) {
+    if (isFinancialDay(dayData) && toCents(dayData.pendingAmount || 0) > 0) {
       const weekInfo = getWeekRange(dateStr);
       if (selectedWeeks.includes(weekInfo.key)) {
         totalDays++;
@@ -2065,10 +2015,10 @@ function updatePaymentSummary() {
   Object.keys(db.workedDays).forEach(dateStr => {
     const dayData = db.workedDays[dateStr];
     const weekKey = getWeekRange(dateStr).key;
-    if (dayData.period !== 'none' && dayData.period !== 'off' && selectedPendingWeekKeys.has(weekKey)) {
-      totalDue += dayData.rate || 0;
-      totalPaid += dayData.amountPaid || 0;
-      totalPending += dayData.pendingAmount || 0;
+    if (isFinancialDay(dayData) && selectedPendingWeekKeys.has(weekKey)) {
+      totalDue = addMoney(totalDue, dayData.rate || 0);
+      totalPaid = addMoney(totalPaid, dayData.amountPaid || 0);
+      totalPending = addMoney(totalPending, dayData.pendingAmount || 0);
     }
   });
 
@@ -2095,9 +2045,10 @@ function toggleCustomNotesInput() {
     mixedAmountsGroup.style.display = 'block';
     
     // Divide o valor total entre os dois campos (50/50 por padrão)
-    const totalAmount = parseFloat(document.getElementById('input-payment-amount').value) || 0;
-    document.getElementById('input-payment-cash-amount').value = (totalAmount / 2).toFixed(2);
-    document.getElementById('input-payment-deposit-amount').value = (totalAmount - (totalAmount / 2)).toFixed(2);
+    const totalCents = toCents(Number.parseFloat(document.getElementById('input-payment-amount').value) || 0);
+    const cashCents = Math.floor(totalCents / 2);
+    document.getElementById('input-payment-cash-amount').value = fromCents(cashCents).toFixed(2);
+    document.getElementById('input-payment-deposit-amount').value = fromCents(totalCents - cashCents).toFixed(2);
   } else {
     customNotesGroup.style.display = 'none';
     mixedAmountsGroup.style.display = 'none';
@@ -2107,15 +2058,19 @@ function toggleCustomNotesInput() {
   }
 }
 
-function processPayment(event) {
+async function processPayment(event) {
   event.preventDefault();
   const texts = translations[db.settings.language || 'pt-BR'];
-  const paymentAmount = parseFloat(document.getElementById('input-payment-amount').value);
+  const rawPaymentAmount = Number.parseFloat(document.getElementById('input-payment-amount').value);
   const paymentDate = document.getElementById('input-payment-date').value;
   const paymentMethod = document.getElementById('input-payment-method').value;
   const paymentObservation = document.getElementById('input-payment-observation')?.value.trim() || '';
   
-  if (isNaN(paymentAmount) || paymentAmount <= 0) return;
+  if (!Number.isFinite(rawPaymentAmount) || rawPaymentAmount <= 0 || !parseLocalDate(paymentDate)) {
+    alert(texts['msg-invalid-payment'] || 'Informe um valor positivo e uma data válida.');
+    return;
+  }
+  const paymentAmount = normalizeMoney(rawPaymentAmount);
 
   let paymentNotes;
   let cashAmount = 0;
@@ -2124,11 +2079,10 @@ function processPayment(event) {
   if (paymentMethod === 'Outros') {
     paymentNotes = document.getElementById('input-payment-notes').value || texts['opt-others'];
   } else if (paymentMethod === 'Misto') {
-    cashAmount = parseFloat(document.getElementById('input-payment-cash-amount').value) || 0;
-    depositAmount = parseFloat(document.getElementById('input-payment-deposit-amount').value) || 0;
+    cashAmount = normalizeMoney(Number.parseFloat(document.getElementById('input-payment-cash-amount').value) || 0);
+    depositAmount = normalizeMoney(Number.parseFloat(document.getElementById('input-payment-deposit-amount').value) || 0);
     
-    // Validação da soma (tolerÃƒÂ¢ncia a ponto flutuante de 0.01)
-    if (Math.abs((cashAmount + depositAmount) - paymentAmount) > 0.01) {
+    if (!moneyEquals(addMoney(cashAmount, depositAmount), paymentAmount)) {
       alert(texts['msg-invalid-mixed-sum'] || 'A soma dos valores em dinheiro e depósito deve ser igual ao valor total recebido!');
       return;
     }
@@ -2142,7 +2096,7 @@ function processPayment(event) {
   const daysToPay = [];
   Object.keys(db.workedDays).forEach(dateStr => {
     const dayData = db.workedDays[dateStr];
-    if (dayData.period !== 'none' && dayData.period !== 'off' && dayData.pendingAmount > 0) {
+    if (isFinancialDay(dayData) && toCents(dayData.pendingAmount || 0) > 0) {
       if (selectedWeeks.length === 0) {
         daysToPay.push(dayData);
       } else {
@@ -2156,7 +2110,7 @@ function processPayment(event) {
 
   daysToPay.sort((a, b) => a.date.localeCompare(b.date));
 
-  const paymentId = 'pay_' + Date.now();
+  const paymentId = `pay_${globalThis.crypto.randomUUID()}`;
   const { advanceRemaining, coveredDays } = allocatePaymentAcrossDays({
     amount: paymentAmount,
     paymentId,
@@ -2164,20 +2118,23 @@ function processPayment(event) {
   });
 
   // O excedente é salvo no atributo advanceRemaining do pagamento
-  db.payments.push({
+  const payment = normalizePayment({
     id: paymentId,
     date: paymentDate,
     amount: paymentAmount,
     method: paymentMethod,
     cashAmount: paymentMethod === 'Dinheiro' ? paymentAmount : (paymentMethod === 'Misto' ? cashAmount : 0),
-    depositAmount: paymentMethod === 'Depósito' ? paymentAmount : (paymentMethod === 'Misto' ? depositAmount : 0),
+    depositAmount: paymentMethod === 'Dinheiro'
+      ? 0
+      : (paymentMethod === 'Misto' ? depositAmount : paymentAmount),
     coveredDays,
     notes: paymentNotes,
     observation: paymentObservation,
     advanceRemaining
   });
+  db.payments.push(payment);
 
-  saveToStorage();
+  await saveToStorage();
   
   // Limpa campos adicionais
   const inputObservation = document.getElementById('input-payment-observation');
@@ -2248,7 +2205,7 @@ function renderPaymentHistory() {
       while (rem > 0.01 && safety < 60) {
         const dayOfWeek = current.getDay();
         if (!(db.settings.offDays || []).includes(dayOfWeek)) {
-          let rate = db.settings.morningRate + db.settings.nightRate;
+          let rate = addMoney(db.settings.morningRate, db.settings.nightRate);
           if (db.settings.halfDays && db.settings.halfDays[dayOfWeek]) {
             rate = (db.settings.halfDays[dayOfWeek] === 'morning') ? db.settings.morningRate : db.settings.nightRate;
           }
@@ -2405,7 +2362,12 @@ function savePaymentCycleSettings(event) {
   } else {
     day = parseInt(document.getElementById('setting-payment-day-month').value, 10);
   }
-  db.settings.paymentCycle = { type, day };
+  const minimum = type === 'weekly' ? 0 : 1;
+  const maximum = type === 'weekly' ? 6 : 31;
+  db.settings.paymentCycle = {
+    type,
+    day: Math.max(minimum, Math.min(maximum, Number.isInteger(day) ? day : minimum))
+  };
   saveToStorage();
   updateDashboardData();
   alert(translations[db.settings.language]['msg-save-success']);
@@ -2444,27 +2406,9 @@ function updatePaymentCountdown() {
   const cycle = db.settings.paymentCycle || { type: 'weekly', day: 0 };
   const texts = translations[db.settings.language || 'pt-BR'];
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  let nextPayDate = new Date(today);
-  
-  if (cycle.type === 'weekly') {
-    const targetDay = cycle.day; // 0-6
-    const currentDay = today.getDay();
-    let diff = targetDay - currentDay;
-    if (diff < 0) diff += 7;
-    // Se diff é 0 mas Já passou do horário (ou queremos o próximo), diff poderia ser 7, mas aqui diff 0 significa hoje
-    nextPayDate.setDate(today.getDate() + diff);
-  } else {
-    const targetDay = cycle.day; // 1-31
-    nextPayDate.setDate(targetDay);
-    if (nextPayDate < today) {
-      nextPayDate.setMonth(today.getMonth() + 1);
-    }
-  }
-
-  const timeDiff = nextPayDate.getTime() - today.getTime();
-  const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+  const nextPayDate = getNextPaymentDate(cycle, today);
+  const toUtcDay = date => Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  const daysDiff = Math.round((toUtcDay(nextPayDate) - toUtcDay(today)) / 86_400_000);
 
   if (daysDiff === 0) {
     countdownEl.innerText = texts['msg-payment-today'];
@@ -2551,8 +2495,14 @@ async function saveOffDaysSettings(event) {
 
 async function saveRatesSettings(event) {
   event.preventDefault();
-  db.settings.morningRate = parseFloat(document.getElementById('setting-morning-rate').value);
-  db.settings.nightRate = parseFloat(document.getElementById('setting-night-rate').value);
+  const morningRate = Number.parseFloat(document.getElementById('setting-morning-rate').value);
+  const nightRate = Number.parseFloat(document.getElementById('setting-night-rate').value);
+  if (!Number.isFinite(morningRate) || !Number.isFinite(nightRate) || morningRate < 0 || nightRate < 0) {
+    alert(getText('msg-invalid-rates'));
+    return;
+  }
+  db.settings.morningRate = normalizeMoney(morningRate);
+  db.settings.nightRate = normalizeMoney(nightRate);
   await saveToStorage();
   await applyAutomaticWorkedDayFill();
   updateRateLabels();
@@ -2581,7 +2531,8 @@ function importDatabase(event) {
   reader.onload = async (e) => {
     try {
       const parsed = JSON.parse(e.target.result);
-      const validated = validateImportedDatabase(parsed, e.target.result);
+      const normalized = validateImportedDatabase(parsed, e.target.result);
+      const { state: validated, repairs } = reconcileLedger(normalized);
       if (!confirm(getText('msg-import-confirm'))) return;
 
       const recovery = databaseRepository.createRecoveryPoint(db, auth.currentUser.uid, 'before-import');
@@ -2592,6 +2543,9 @@ function importDatabase(event) {
       db = validated;
       await saveToStorage();
       applyLanguage();
+      if (repairs.length > 0) {
+        showStatus(getText('msg-ledger-reconciled').replace('{count}', repairs.length), { tone: 'success' });
+      }
       alert(translations[db.settings.language]['msg-backup-success']);
       document.querySelector('[data-tab="dashboard"]').click();
     } catch (error) {
@@ -2750,6 +2704,9 @@ function saveBatchShifts(event) {
   if (rows.length === 0) return;
 
   const texts = translations[db.settings.language || 'pt-BR'];
+  const stateBeforeBatch = structuredClone(db);
+  let blockedByLegacyPayment = false;
+  let invalidBatchRate = false;
   rows.forEach(row => {
     const date = row.getAttribute('data-date');
     const select = row.querySelector('.batch-day-period-select');
@@ -2757,36 +2714,44 @@ function saveBatchShifts(event) {
     
     if (select && input) {
       const period = select.value;
-      const rateVal = parseFloat(input.value);
-      const rate = isNaN(rateVal) ? getStandardRateForPeriod(period) : rateVal;
+      const rateVal = Number.parseFloat(input.value);
+      if (Number.isFinite(rateVal) && rateVal < 0) {
+        invalidBatchRate = true;
+        return;
+      }
+      const rate = Number.isNaN(rateVal) ? getStandardRateForPeriod(period) : normalizeMoney(rateVal);
       const existing = db.workedDays[date] || { amountPaid: 0, paymentsApplied: {} };
       
       // Se o novo rate for menor que o amountPaid Já registrado, devolvemos
-      if (existing.amountPaid > rate) {
-        refundPaymentCreditsFromDay(db, existing, rate);
+      if (toCents(existing.amountPaid || 0) > toCents(rate)) {
+        if (!refundPaymentCreditsFromDay(db, existing, rate)) {
+          blockedByLegacyPayment = true;
+          return;
+        }
       }
-      
-      const amountPaid = existing.amountPaid || 0;
-      const pendingAmount = Math.max(0, rate - amountPaid);
-      const status = amountPaid >= rate ? 'paid' : (amountPaid > 0 ? 'partial' : 'unpaid');
       
       const newDay = {
         date: date,
         period: period,
         rate: rate,
-        amountPaid: amountPaid,
-        pendingAmount: pendingAmount,
-        status: status,
+        amountPaid: existing.amountPaid || 0,
+        pendingAmount: 0,
         notes: 'Lote',
         paymentsApplied: existing.paymentsApplied || {}
       };
       
+      refreshDayFinancials(newDay);
       // Aplica Créditos de adiantamento, se houver
       applyAdvanceCreditsToDay(db, newDay);
       
       db.workedDays[date] = newDay;
     }
   });
+  if (blockedByLegacyPayment || invalidBatchRate) {
+    db = stateBeforeBatch;
+    alert(getText(invalidBatchRate ? 'msg-invalid-rates' : 'msg-unlinked-payment-blocked'));
+    return;
+  }
   saveToStorage(); closeBatchModal(); renderCalendar(); updateDashboardData();
   alert(texts['msg-batch-save-success']);
 }
