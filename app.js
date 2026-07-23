@@ -54,6 +54,7 @@ import {
   formatDateStringDisplay,
   getNextPaymentDate,
   getWeekRange,
+  listDateRange,
   parseLocalDate
 } from './src/domain/dates.js';
 import {
@@ -91,6 +92,12 @@ import {
   validateImportedDatabase
 } from './src/persistence/database.js';
 import { loadChartRuntime } from './src/ui/chart-runtime.js';
+import {
+  closeDialog,
+  confirmAction,
+  initAccessibleDialogs,
+  openDialog
+} from './src/ui/dialog.js';
 import { renderSyncState, reportError, showStatus } from './src/ui/feedback.js';
 import { translations } from './src/ui/translations.js';
 
@@ -151,8 +158,8 @@ const applicationProtectionReady = initializeApplicationProtection().catch(error
 });
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.119';
-const APP_BUILD_DATE = '2026-07-23 08:23:21';
+const APP_VERSION = '1.0.120';
+const APP_BUILD_DATE = '2026-07-23 12:23:44';
 
 
 
@@ -185,22 +192,22 @@ function setupUserProfile(user) {
   document.getElementById('user-photo').src = user.photoURL || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
   document.getElementById('user-name').innerText = user.displayName || texts['user-default-name'];
   document.getElementById('user-email').innerText = user.email;
-  document.getElementById('user-profile').style.display = 'flex';
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app-content').style.display = 'flex';
+  document.getElementById('user-profile').hidden = false;
+  document.getElementById('login-screen').hidden = true;
+  document.getElementById('app-content').hidden = false;
 }
 
 function handleAccessDenied(email) {
   console.warn("Acesso negado para:", email);
-  alert(getText('msg-access-denied').replace('{email}', email));
+  showStatus(getText('msg-access-denied').replace('{email}', email), { tone: 'error', timeout: 10000 });
   showLoginError(getText('msg-access-restricted'));
   signOut(auth);
 }
 
 function showLoginScreen() {
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('app-content').style.display = 'none';
-  document.getElementById('user-profile').style.display = 'none';
+  document.getElementById('login-screen').hidden = false;
+  document.getElementById('app-content').hidden = true;
+  document.getElementById('user-profile').hidden = true;
   applyStaticTranslations(getCurrentLanguage());
 }
 
@@ -208,7 +215,7 @@ function showLoginError(msg) {
   const errorEl = document.getElementById('login-error-msg');
   if (errorEl) {
     errorEl.innerText = msg;
-    errorEl.style.display = 'block';
+    errorEl.hidden = false;
   }
 }
 
@@ -230,6 +237,7 @@ let earningsChart = null;
 let annualMethodChart = null;
 let selectedWeeks = []; // Lista de chaves de semana selecionadas ('YYYY-MM-DD_YYYY-MM-DD')
 const MAX_WORK_CYCLE_WEEKS = 10;
+const MAX_BATCH_DAYS = 366;
 const MONTH_NAMES = [];
 const WEEKDAY_NAMES = [];
 let unsubscribeDatabase = null;
@@ -257,6 +265,8 @@ const databaseRepository = createDatabaseRepository({
    ========================================================================== */
 
 document.addEventListener('DOMContentLoaded', async () => {
+  initAccessibleDialogs();
+  initInterfaceEvents();
   renderAppVersion();
   initNavigation();
   initCurrentDate();
@@ -299,6 +309,53 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 });
+
+function bindElement(id, eventName, listener) {
+  document.getElementById(id)?.addEventListener(eventName, listener);
+}
+
+function initInterfaceEvents() {
+  bindElement('btn-logout', 'click', handleLogout);
+  bindElement('btn-open-batch', 'click', openBatchModal);
+  bindElement('btn-open-batch-remove', 'click', openBatchRemoveModal);
+  bindElement('btn-previous-month', 'click', () => changeMonth(-1));
+  bindElement('btn-current-month', 'click', goToCurrentMonth);
+  bindElement('btn-next-month', 'click', () => changeMonth(1));
+  bindElement('payment-form', 'submit', processPayment);
+  bindElement('input-payment-method', 'change', toggleCustomNotesInput);
+  bindElement('settings-rates-form', 'submit', saveRatesSettings);
+  bindElement('settings-weekly-schedule-form', 'submit', saveWeeklyScheduleSettings);
+  bindElement('settings-halfdays-form', 'submit', saveHalfDaysSettings);
+  bindElement('settings-payment-cycle-form', 'submit', savePaymentCycleSettings);
+  bindElement('setting-language', 'change', event => setLanguage(event.target.value));
+  bindElement('setting-theme', 'change', event => changeTheme(event.target.value));
+  bindElement('setting-autofill-enabled', 'change', saveAutoFillSettings);
+  bindElement('setting-payment-type', 'change', togglePaymentCycleInputs);
+  bindElement('btn-export-database', 'click', exportDatabase);
+  bindElement('import-db-file', 'change', importDatabase);
+  bindElement('btn-clear-database', 'click', clearDatabase);
+  bindElement('btn-restore-database', 'click', restoreLatestDatabase);
+  bindElement('day-form', 'submit', saveDayDetails);
+  bindElement('btn-delete-day', 'click', deleteDayRecord);
+  bindElement('batch-form', 'submit', saveBatchShifts);
+  bindElement('batch-start-date', 'change', generateBatchDaysList);
+  bindElement('batch-end-date', 'change', generateBatchDaysList);
+  bindElement('batch-default-period', 'change', applyDefaultPeriodToBatchDays);
+  bindElement('batch-remove-form', 'submit', saveBatchRemoveShifts);
+  bindElement('batch-remove-start-date', 'change', generateBatchRemoveDaysList);
+  bindElement('batch-remove-end-date', 'change', generateBatchRemoveDaysList);
+
+  document.querySelectorAll('[data-halfday-index]').forEach(input => {
+    input.addEventListener('change', () => toggleHalfDaySelect(Number(input.dataset.halfdayIndex)));
+  });
+  document.getElementById('batch-days-container')?.addEventListener('change', event => {
+    if (event.target.matches('.batch-day-period-select')) updateBatchRowRate(event.target);
+  });
+  document.getElementById('payment-history-table-body')?.addEventListener('click', event => {
+    const button = event.target.closest('[data-payment-id]');
+    if (button) deletePayment(button.dataset.paymentId);
+  });
+}
 
 // Inicializa o banco de dados carregando do Firebase ou localStorage
 async function initDatabase() {
@@ -403,6 +460,13 @@ function applyStaticTranslations(lang = getCurrentLanguage()) {
     const key = el.getAttribute('data-i18n-title');
     if (texts[key]) {
       el.setAttribute('title', texts[key]);
+    }
+  });
+
+  document.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
+    const key = el.getAttribute('data-i18n-aria-label');
+    if (texts[key]) {
+      el.setAttribute('aria-label', texts[key]);
     }
   });
 }
@@ -517,16 +581,17 @@ function initMondayFirstDateInputs() {
     input.placeholder = 'aaaa-mm-dd';
     input.classList.add('date-input-custom');
     input.setAttribute('aria-haspopup', 'dialog');
+    input.setAttribute('aria-controls', 'monday-first-date-picker');
+    input.setAttribute('aria-expanded', 'false');
 
     input.addEventListener('click', event => {
       event.stopPropagation();
       openMondayFirstDatePicker(input);
     });
-    input.addEventListener('focus', () => openMondayFirstDatePicker(input));
     input.addEventListener('keydown', event => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        openMondayFirstDatePicker(input);
+        openMondayFirstDatePicker(input, { moveFocus: true });
       }
 
       if (event.key === 'Escape') {
@@ -539,11 +604,11 @@ function initMondayFirstDateInputs() {
     const picker = document.getElementById('monday-first-date-picker');
     if (!picker || !picker.classList.contains('active')) return;
     if (picker.contains(event.target) || event.target === activeDateInput) return;
-    closeMondayFirstDatePicker();
+    closeMondayFirstDatePicker({ restoreFocus: false });
   });
 }
 
-function openMondayFirstDatePicker(input) {
+function openMondayFirstDatePicker(input, { moveFocus = false } = {}) {
   activeDateInput = input;
   const selectedDate = parseLocalDate(input.value) || new Date();
   datePickerYear = selectedDate.getFullYear();
@@ -553,12 +618,23 @@ function openMondayFirstDatePicker(input) {
   renderMondayFirstDatePicker();
   positionMondayFirstDatePicker(input, picker);
   picker.classList.add('active');
+  input.setAttribute('aria-expanded', 'true');
+  if (moveFocus) {
+    requestAnimationFrame(() => {
+      (picker.querySelector('.date-picker-day.is-selected')
+        || picker.querySelector('.date-picker-day.is-today')
+        || picker.querySelector('.date-picker-day'))?.focus();
+    });
+  }
 }
 
-function closeMondayFirstDatePicker() {
+function closeMondayFirstDatePicker({ restoreFocus = true } = {}) {
   const picker = document.getElementById('monday-first-date-picker');
   if (picker) picker.classList.remove('active');
+  const input = activeDateInput;
+  input?.setAttribute('aria-expanded', 'false');
   activeDateInput = null;
+  if (restoreFocus && input?.isConnected) input.focus();
 }
 
 function getMondayFirstDatePicker() {
@@ -569,7 +645,14 @@ function getMondayFirstDatePicker() {
   picker.id = 'monday-first-date-picker';
   picker.className = 'date-picker-popover';
   picker.setAttribute('role', 'dialog');
-  picker.setAttribute('aria-label', 'Selecionar data');
+  picker.setAttribute('aria-modal', 'false');
+  picker.setAttribute('aria-label', getText('aria-select-date'));
+  picker.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeMondayFirstDatePicker();
+    }
+  });
   document.body.appendChild(picker);
   return picker;
 }
@@ -588,6 +671,7 @@ function positionMondayFirstDatePicker(input, picker) {
 function renderMondayFirstDatePicker() {
   const picker = getMondayFirstDatePicker();
   const texts = translations[getCurrentLanguage()] || translations['pt-BR'];
+  picker.setAttribute('aria-label', texts['aria-select-date']);
   const monthLabel = texts[`month-${datePickerMonth}`] || new Date(datePickerYear, datePickerMonth, 1).toLocaleDateString(getCurrentLanguage(), { month: 'long' });
   const weekLabels = [
     texts['short-day-1'], texts['short-day-2'], texts['short-day-3'],
@@ -621,25 +705,25 @@ function renderMondayFirstDatePicker() {
 
   picker.innerHTML = `
     <div class="date-picker-header">
-      <button type="button" class="date-picker-nav" data-action="prev-month" aria-label="Mes anterior">
+      <button type="button" class="date-picker-nav" data-action="prev-month" aria-label="${texts['aria-previous-month']}">
         <i data-lucide="chevron-left"></i>
       </button>
       <strong>${monthLabel} ${datePickerYear}</strong>
-      <button type="button" class="date-picker-nav" data-action="next-month" aria-label="Proximo mes">
+      <button type="button" class="date-picker-nav" data-action="next-month" aria-label="${texts['aria-next-month']}">
         <i data-lucide="chevron-right"></i>
       </button>
     </div>
     <div class="date-picker-grid">
       ${weekLabels.map(label => `<span class="date-picker-weekday">${label}</span>`).join('')}
       ${cells.map(cell => `
-        <button type="button" class="date-picker-day${cell.otherMonth ? ' is-other-month' : ''}${cell.dateStr === selectedISO ? ' is-selected' : ''}${cell.dateStr === todayISO ? ' is-today' : ''}" data-date="${cell.dateStr}">
+        <button type="button" class="date-picker-day${cell.otherMonth ? ' is-other-month' : ''}${cell.dateStr === selectedISO ? ' is-selected' : ''}${cell.dateStr === todayISO ? ' is-today' : ''}" data-date="${cell.dateStr}" aria-label="${formatDateStringDisplay(cell.dateStr)}"${cell.dateStr === selectedISO ? ' aria-pressed="true"' : ''}>
           ${cell.day}
         </button>
       `).join('')}
     </div>
     <div class="date-picker-footer">
-      <button type="button" data-action="clear-date">Limpar</button>
-      <button type="button" data-action="today-date">Hoje</button>
+      <button type="button" data-action="clear-date">${texts['btn-clear-date']}</button>
+      <button type="button" data-action="today-date">${texts['btn-today']}</button>
     </div>
   `;
 
@@ -683,35 +767,55 @@ function initNavigation() {
     if (window.innerWidth <= 1024) {
       sidebar.classList.remove('active');
       sidebarOverlay.classList.remove('active');
+      btnToggleSidebar?.setAttribute('aria-expanded', 'false');
+      btnToggleSidebar?.setAttribute('data-i18n-aria-label', 'aria-open-menu');
+      btnToggleSidebar?.setAttribute('aria-label', getText('aria-open-menu'));
     }
   };
 
   if (btnToggleSidebar) {
     btnToggleSidebar.addEventListener('click', () => {
-      sidebar.classList.toggle('active');
-      sidebarOverlay.classList.toggle('active');
+      const expanded = sidebar.classList.toggle('active');
+      sidebarOverlay.classList.toggle('active', expanded);
+      btnToggleSidebar.setAttribute('aria-expanded', String(expanded));
+      btnToggleSidebar.setAttribute('data-i18n-aria-label', expanded ? 'aria-close-menu' : 'aria-open-menu');
+      btnToggleSidebar.setAttribute('aria-label', getText(expanded ? 'aria-close-menu' : 'aria-open-menu'));
     });
   }
 
   if (sidebarOverlay) {
     sidebarOverlay.addEventListener('click', closeSidebar);
   }
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && sidebar.classList.contains('active')) {
+      closeSidebar();
+      btnToggleSidebar?.focus();
+    }
+  });
 
   navItems.forEach(item => {
     item.addEventListener('click', () => {
       const tabName = item.getAttribute('data-tab');
-      const texts = translations[db.settings.language || 'pt-BR'];
+      const texts = translations[db?.settings?.language || getCurrentLanguage()];
       
       // Fecha a sidebar se estiver no mobile
       closeSidebar();
 
       // Atualizar classe ativa na navegação
-      navItems.forEach(i => i.classList.remove('active'));
+      navItems.forEach(i => {
+        i.classList.remove('active');
+        i.querySelector('.nav-link')?.removeAttribute('aria-current');
+      });
       item.classList.add('active');
+      item.querySelector('.nav-link')?.setAttribute('aria-current', 'page');
 
       // Se estiver em mobile, rola o item para o centro da Visão no menu scrollable
       if (window.innerWidth <= 768) {
-        item.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        item.scrollIntoView({
+          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+          block: 'nearest',
+          inline: 'center'
+        });
       }
 
       // Mostrar seção correspondente com animação
@@ -719,12 +823,14 @@ function initNavigation() {
         sec.classList.remove('active');
         if (sec.id === `section-${tabName}`) {
           sec.classList.add('active');
+          sec.tabIndex = -1;
         }
       });
 
       // Atualizar títulos
       pageTitle.innerText = texts[`nav-${tabName}`];
       pageSubtitle.innerText = texts[`header-${tabName}-subtitle`];
+      document.getElementById(`section-${tabName}`)?.focus({ preventScroll: true });
 
       // Ações específicas ao abrir cada tela
       if (tabName === 'dashboard') {
@@ -931,22 +1037,18 @@ function updateDashboardData() {
 
     if (toCents(netBalance) < 0) {
       // Transforma em card de Crédito
-      pendingCard.style.borderLeft = ''; // Deixa o CSS tratar via classe
       pendingCard.classList.add('stat-credit-active');
       if (pendingTitle) pendingTitle.innerText = texts['stat-total-credit'] || 'Crédito Antecipado';
       if (pendingValue) {
         pendingValue.innerText = formatCurrency(Math.abs(netBalance));
-        pendingValue.style.color = 'var(--accent-purple)';
       }
       if (pendingIcon) pendingIcon.innerHTML = `<i data-lucide="hand-coins"></i>`;
     } else {
       // Volta a ser card de Pendente
-      pendingCard.style.borderLeft = '';
       pendingCard.classList.remove('stat-credit-active');
       if (pendingTitle) pendingTitle.innerText = texts['stat-total-pending'] || 'Total Pendente';
       if (pendingValue) {
         pendingValue.innerText = formatCurrency(Math.max(0, netBalance));
-        pendingValue.style.color = '';
       }
       if (pendingIcon) pendingIcon.innerHTML = `<i data-lucide="alert-circle"></i>`;
     }
@@ -1105,9 +1207,7 @@ function renderMonthlyWeeksSummary() {
           <span>${texts['dashboard-weekly-days']}: ${daysLabel}</span>
           <span>${progress}%</span>
         </div>
-        <div class="monthly-week-progress" aria-hidden="true">
-          <span style="width: ${progress}%"></span>
-        </div>
+        <progress class="monthly-week-progress" value="${progress}" max="100" aria-label="${progress}%"></progress>
       </article>
     `;
   }).join('');
@@ -1314,51 +1414,6 @@ async function renderAnnualMethodChart(cash, deposit) {
 }
 
 // ação rápida para registrar turno no dia de hoje
-function quickLogShift(period) {
-  const todayStr = formatDateISO(new Date());
-  let rate = 0;
-  const texts = translations[db.settings.language || 'pt-BR'];
-  
-  if (period === 'morning') rate = db.settings.morningRate;
-  else if (period === 'night') rate = db.settings.nightRate;
-  else if (period === 'both') rate = addMoney(db.settings.morningRate, db.settings.nightRate);
-  
-  // Se o dia Já tiver registro financeiro de pagamento, mantém o valor pago e atualiza
-  const existing = db.workedDays[todayStr] || {
-    amountPaid: 0,
-    paymentsApplied: {}
-  };
-
-  // Se o novo rate for menor que o amountPaid Já registrado, devolvemos
-  if (toCents(existing.amountPaid || 0) > toCents(rate)) {
-    if (!refundPaymentCreditsFromDay(db, existing, rate)) {
-      alert(getText('msg-unlinked-payment-blocked'));
-      return;
-    }
-  }
-
-  const newDay = {
-    date: todayStr,
-    period: period,
-    rate: rate,
-    amountPaid: existing.amountPaid || 0,
-    pendingAmount: 0,
-    notes: existing.notes || texts['msg-quick-log-note'],
-    paymentsApplied: existing.paymentsApplied || {}
-  };
-
-  refreshDayFinancials(newDay);
-  // Aplica Créditos de adiantamento, se houver
-  applyAdvanceCreditsToDay(db, newDay);
-
-  db.workedDays[todayStr] = newDay;
-  saveToStorage();
-  updateDashboardData();
-  
-  const periodLabel = texts[`btn-${period === 'both' ? 'both-shifts' : period === 'off' ? 'off-day' : period + '-shift'}`];
-  alert(`${periodLabel} - ${texts['msg-save-success']}`);
-}
-
 function updateCalendarAutoFillStatus() {
   const statusEl = document.getElementById('calendar-autofill-status');
   if (!statusEl) return;
@@ -1438,11 +1493,10 @@ function renderCalendar() {
 }
 
 function createDayElement(dayNum, dateStr, isOtherMonth, container, projectedDays = {}) {
-  const dayElement = document.createElement('div');
+  const dayElement = document.createElement('button');
+  dayElement.type = 'button';
   dayElement.className = 'glass-card calendar-day';
   dayElement.dataset.date = dateStr;
-  dayElement.setAttribute('role', 'button');
-  dayElement.setAttribute('tabindex', '0');
   dayElement.setAttribute('aria-label', formatDateStringDisplay(dateStr));
   if (isOtherMonth) {
     dayElement.classList.add('other-month');
@@ -1465,8 +1519,7 @@ function createDayElement(dayNum, dateStr, isOtherMonth, container, projectedDay
 
   const todayStr = formatDateISO(new Date());
   if (dateStr === todayStr) {
-    dayElement.style.border = '2px solid var(--accent-purple)';
-    dayElement.style.boxShadow = '0 0 15px rgba(139, 92, 246, 0.4)';
+    dayElement.classList.add('is-today');
   }
 
   const dateParts = dateStr.split('-');
@@ -1490,47 +1543,39 @@ function createDayElement(dayNum, dateStr, isOtherMonth, container, projectedDay
       const statusIndicator = document.createElement('span');
       statusIndicator.className = 'day-status-indicator';
       if (data.status === 'paid') {
-        statusIndicator.innerHTML = `<i data-lucide="check-circle-2" style="width: 14px; height: 14px; color: var(--status-paid);"></i>`;
+        statusIndicator.innerHTML = '<i data-lucide="check-circle-2" class="icon-xs status-icon-paid"></i>';
         statusIndicator.title = texts['legend-paid'];
       } else if (data.status === 'partial') {
-        statusIndicator.innerHTML = `<i data-lucide="help-circle" style="width: 14px; height: 14px; color: var(--status-partial);"></i>`;
+        statusIndicator.innerHTML = '<i data-lucide="help-circle" class="icon-xs status-icon-partial"></i>';
         statusIndicator.title = texts['legend-partial'];
       } else if (data.status === 'unpaid') {
-        statusIndicator.innerHTML = `<i data-lucide="alert-circle" style="width: 14px; height: 14px; color: var(--status-unpaid);"></i>`;
+        statusIndicator.innerHTML = '<i data-lucide="alert-circle" class="icon-xs status-icon-unpaid"></i>';
         statusIndicator.title = texts['legend-pending'];
       }
       dayElement.appendChild(statusIndicator);
     }
 
     const detailsContainer = document.createElement('div');
-    detailsContainer.style.display = 'flex';
-    detailsContainer.style.flexDirection = 'column';
-    detailsContainer.style.gap = '6px';
-    detailsContainer.style.width = '100%';
+    detailsContainer.className = 'day-details';
 
     const badge = document.createElement('span');
     badge.className = 'day-badge';
     
     if (data.period === 'morning') {
-      badge.innerHTML = `<i data-lucide="sun" style="width: 10px; height: 10px; display: inline; vertical-align: middle; margin-right: 2px;"></i> ${texts['legend-morning']}`;
-      badge.style.background = 'rgba(245, 158, 11, 0.15)';
-      badge.style.color = '#f59e0b';
+      badge.innerHTML = `<i data-lucide="sun" class="calendar-badge-icon"></i> ${texts['legend-morning']}`;
+      badge.classList.add('badge-morning');
     } else if (data.period === 'night') {
-      badge.innerHTML = `<i data-lucide="moon" style="width: 10px; height: 10px; display: inline; vertical-align: middle; margin-right: 2px;"></i> ${texts['legend-night']}`;
-      badge.style.background = 'rgba(139, 92, 246, 0.15)';
-      badge.style.color = '#a78bfa';
+      badge.innerHTML = `<i data-lucide="moon" class="calendar-badge-icon"></i> ${texts['legend-night']}`;
+      badge.classList.add('badge-night');
     } else if (data.period === 'both') {
-      badge.innerHTML = `<i data-lucide="sunset" style="width: 10px; height: 10px; display: inline; vertical-align: middle; margin-right: 2px;"></i> ${texts['legend-both']}`;
-      badge.style.background = 'rgba(59, 130, 246, 0.15)';
-      badge.style.color = '#60a5fa';
+      badge.innerHTML = `<i data-lucide="sunset" class="calendar-badge-icon"></i> ${texts['legend-both']}`;
+      badge.classList.add('badge-both');
     } else if (data.period === 'off') {
-      badge.innerHTML = `<i data-lucide="coffee" style="width: 10px; height: 10px; display: inline; vertical-align: middle; margin-right: 2px;"></i> ${texts['legend-off']}`;
-      badge.style.background = 'rgba(100, 116, 139, 0.15)';
-      badge.style.color = '#94a3b8';
+      badge.innerHTML = `<i data-lucide="coffee" class="calendar-badge-icon"></i> ${texts['legend-off']}`;
+      badge.classList.add('badge-off');
     } else if (data.period === 'vacation') {
-      badge.innerHTML = `<i data-lucide="palmtree" style="width: 10px; height: 10px; display: inline; vertical-align: middle; margin-right: 2px;"></i> ${texts['legend-vacation']}`;
-      badge.style.background = 'rgba(6, 182, 212, 0.15)';
-      badge.style.color = '#06b6d4';
+      badge.innerHTML = `<i data-lucide="palmtree" class="calendar-badge-icon"></i> ${texts['legend-vacation']}`;
+      badge.classList.add('badge-vacation');
     }
     
     detailsContainer.appendChild(badge);
@@ -1554,29 +1599,29 @@ function createDayElement(dayNum, dateStr, isOtherMonth, container, projectedDay
     }
     dayElement.appendChild(detailsContainer);
   } else if (!data && isDefaultOffDay) {
-    dayElement.classList.add('day-off');
-    dayElement.style.opacity = '0.65';
+    dayElement.classList.add('day-off', 'is-default-off');
     const detailsContainer = document.createElement('div');
-    detailsContainer.style.display = 'flex';
-    detailsContainer.style.flexDirection = 'column';
-    detailsContainer.style.gap = '6px';
-    detailsContainer.style.width = '100%';
+    detailsContainer.className = 'day-details';
     const badge = document.createElement('span');
-    badge.className = 'day-badge';
-    badge.innerHTML = `<i data-lucide="coffee" style="width: 10px; height: 10px; display: inline; vertical-align: middle; margin-right: 2px;"></i> ${texts['legend-off']}`;
-    badge.style.background = 'rgba(100, 116, 139, 0.15)';
-    badge.style.color = '#94a3b8';
+    badge.className = 'day-badge badge-off';
+    badge.innerHTML = `<i data-lucide="coffee" class="calendar-badge-icon"></i> ${texts['legend-off']}`;
     detailsContainer.appendChild(badge);
     dayElement.appendChild(detailsContainer);
   }
 
+  const accessibleDescription = [formatDateStringDisplay(dateStr)];
+  if (data) {
+    accessibleDescription.push(texts[`legend-${data.period}`] || data.period);
+    if (isFinancialDay(data)) accessibleDescription.push(formatCurrency(data.rate));
+    if (data.status === 'paid') accessibleDescription.push(texts['legend-paid']);
+    else if (data.status === 'partial') accessibleDescription.push(texts['legend-partial']);
+    else if (data.status === 'unpaid') accessibleDescription.push(texts['legend-pending']);
+  } else if (isDefaultOffDay) {
+    accessibleDescription.push(texts['legend-off']);
+  }
+  dayElement.setAttribute('aria-label', accessibleDescription.join(', '));
+
   dayElement.addEventListener('click', () => openDayModal(dateStr));
-  dayElement.addEventListener('keydown', event => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      openDayModal(dateStr);
-    }
-  });
   container.appendChild(dayElement);
 }
 
@@ -1627,10 +1672,10 @@ function openDayModal(dateStr) {
       document.getElementById('modal-custom-rate').value = data.rate;
     }
     document.getElementById('modal-notes').value = data.notes || '';
-    deleteBtn.style.display = 'block';
+    deleteBtn.hidden = false;
 
     if (data.amountPaid > 0 || data.pendingAmount > 0) {
-      paymentInfoBox.style.display = 'block';
+      paymentInfoBox.hidden = false;
       const statusLabel = document.getElementById('modal-pay-status-label');
       statusLabel.className = 'day-badge';
       if (data.status === 'paid') {
@@ -1646,19 +1691,19 @@ function openDayModal(dateStr) {
       document.getElementById('modal-pay-received').innerText = formatCurrency(data.amountPaid);
       document.getElementById('modal-pay-pending').innerText = formatCurrency(data.pendingAmount);
     } else {
-      paymentInfoBox.style.display = 'none';
+      paymentInfoBox.hidden = true;
     }
   } else {
-    deleteBtn.style.display = 'none';
-    paymentInfoBox.style.display = 'none';
+    deleteBtn.hidden = true;
+    paymentInfoBox.hidden = true;
   }
 
-  modal.classList.add('active');
+  openDialog(modal, { initialFocus: 'input[name="modal-period"]:checked, input[name="modal-period"]' });
   lucide.createIcons();
 }
 
 function closeDayModal() {
-  document.getElementById('day-modal').classList.remove('active');
+  closeDialog('day-modal');
 }
 
 function getStandardRateForPeriod(period) {
@@ -1748,7 +1793,7 @@ function saveDayDetails(event) {
   for (const r of radios) if (r.checked) { selectedPeriod = r.value; break; }
 
   if (selectedPeriod === 'none') {
-    alert(texts['msg-select-period']);
+    showStatus(texts['msg-select-period'], { tone: 'warning' });
     return;
   }
 
@@ -1765,7 +1810,7 @@ function saveDayDetails(event) {
   // Se o novo rate for menor que o amountPaid Já registrado (ou se mudou para off/none), devolvemos
   if (toCents(existing.amountPaid || 0) > toCents(rate)) {
     if (!refundPaymentCreditsFromDay(db, existing, rate)) {
-      alert(getText('msg-unlinked-payment-blocked'));
+      showStatus(getText('msg-unlinked-payment-blocked'), { tone: 'error' });
       return;
     }
   }
@@ -1788,16 +1833,21 @@ function saveDayDetails(event) {
   updateDashboardData();
 }
 
-function deleteDayRecord() {
+async function deleteDayRecord() {
   const texts = translations[db.settings.language || 'pt-BR'];
   const dateStr = document.getElementById('modal-date-value').value;
   const data = db.workedDays[dateStr];
   if (!data) return;
+  if (!await confirmAction(texts['msg-delete-confirm'], {
+    title: getText('dialog-confirm-title'),
+    confirmLabel: getText('btn-delete'),
+    cancelLabel: getText('btn-cancel'),
+    danger: true
+  })) return;
   if (data.amountPaid > 0) {
-    if (!confirm(texts['msg-delete-confirm'])) return;
     // Devolve os Créditos aplicados a este dia para os pagamentos originais
     if (!refundPaymentCreditsFromDay(db, data, 0)) {
-      alert(getText('msg-unlinked-payment-blocked'));
+      showStatus(getText('msg-unlinked-payment-blocked'), { tone: 'error' });
       return;
     }
   }
@@ -1838,7 +1888,7 @@ function renderWeeksList() {
 
   const sortedWeeks = Object.values(weeksMap).sort((a, b) => b.mondayISO.localeCompare(a.mondayISO));
   if (sortedWeeks.length === 0) {
-    container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">${texts['msg-no-days']}</div>`;
+    container.innerHTML = `<div class="empty-state">${texts['msg-no-days']}</div>`;
     return;
   }
 
@@ -1847,9 +1897,12 @@ function renderWeeksList() {
   selectedWeeks = selectedWeeks.filter(weekKey => visibleWeekKeys.has(weekKey));
 
   visibleWeeks.forEach(week => {
-    const card = document.createElement('div');
+    const card = document.createElement('button');
+    card.type = 'button';
     card.className = 'week-card';
-    if (selectedWeeks.includes(week.key)) card.classList.add('selected');
+    const isSelected = selectedWeeks.includes(week.key);
+    if (isSelected) card.classList.add('selected');
+    card.setAttribute('aria-pressed', String(isSelected));
 
     let statusText = texts['legend-pending'];
     let badgeClass = 'badge-unpaid';
@@ -1857,34 +1910,41 @@ function renderWeeksList() {
     else if (week.totalPaid > 0) { statusText = texts['legend-partial']; badgeClass = 'badge-partial'; }
 
     card.innerHTML = `
-      <div class="week-header">
+      <span class="week-header">
         <span class="week-title">${week.label.replace(' a ', ' ' + texts['week-to'] + ' ')}</span>
         <span class="week-badge ${badgeClass}">${statusText}</span>
-      </div>
-      <div class="week-details">
-        <div class="week-detail-item">
+      </span>
+      <span class="week-details">
+        <span class="week-detail-item">
           <span data-i18n="nav-history">${texts['nav-history']}</span>
-          <p style="color: var(--text-primary);">${week.days.length} ${week.days.length === 1 ? texts['week-day'] : texts['week-days']}</p>
-        </div>
-        <div class="week-detail-item">
+          <strong class="week-detail-primary">${week.days.length} ${week.days.length === 1 ? texts['week-day'] : texts['week-days']}</strong>
+        </span>
+        <span class="week-detail-item">
           <span>Total</span>
-          <p>${formatCurrency(week.totalDue)}</p>
-        </div>
-        <div class="week-detail-item">
+          <strong>${formatCurrency(week.totalDue)}</strong>
+        </span>
+        <span class="week-detail-item">
           <span data-i18n="stat-total-received">${texts['stat-total-received']}</span>
-          <p style="color: var(--status-paid);">${formatCurrency(week.totalPaid)}</p>
-        </div>
-        <div class="week-detail-item">
+          <strong class="week-detail-paid">${formatCurrency(week.totalPaid)}</strong>
+        </span>
+        <span class="week-detail-item">
           <span data-i18n="legend-pending">${texts['legend-pending']}</span>
-          <p style="color: var(--status-unpaid);">${formatCurrency(week.totalPending)}</p>
-        </div>
-      </div>
+          <strong class="week-detail-unpaid">${formatCurrency(week.totalPending)}</strong>
+        </span>
+      </span>
     `;
 
     card.addEventListener('click', () => {
       const idx = selectedWeeks.indexOf(week.key);
-      if (idx > -1) { selectedWeeks.splice(idx, 1); card.classList.remove('selected'); }
-      else { selectedWeeks.push(week.key); card.classList.add('selected'); }
+      if (idx > -1) {
+        selectedWeeks.splice(idx, 1);
+        card.classList.remove('selected');
+        card.setAttribute('aria-pressed', 'false');
+      } else {
+        selectedWeeks.push(week.key);
+        card.classList.add('selected');
+        card.setAttribute('aria-pressed', 'true');
+      }
       updatePaymentSummary();
     });
     container.appendChild(card);
@@ -1902,59 +1962,6 @@ function updatePaymentSummary() {
   const submitBtn = document.getElementById('btn-submit-payment');
 
   // ATUALIZAÃƒâ€¡ÃƒÆ’O DO WIDGET DE SALDO GERAL CONSOLIDADO
-  const balanceBox = document.getElementById('general-balance-box');
-  if (balanceBox) {
-    const balanceLabel = document.getElementById('general-balance-label');
-    const balanceValue = document.getElementById('general-balance-value');
-    const balanceIcon = document.getElementById('general-balance-icon');
-    
-    // Calcula os valores gerais da base
-    let generalPending = 0;
-    Object.keys(db.workedDays).forEach(dateStr => {
-      const dayData = db.workedDays[dateStr];
-      if (isFinancialDay(dayData)) {
-        generalPending = addMoney(generalPending, dayData.pendingAmount || 0);
-      }
-    });
-    
-    const generalAdvance = db.payments.reduce(
-      (total, payment) => addMoney(total, payment.advanceRemaining || 0),
-      0
-    );
-    const generalNetBalance = fromCents(toCents(generalPending) - toCents(generalAdvance));
-    
-    if (toCents(generalNetBalance) < 0) {
-      balanceBox.style.border = '1px solid var(--accent-purple)';
-      balanceBox.style.background = 'var(--accent-purple-glow)';
-      if (balanceLabel) balanceLabel.innerText = texts['general-balance-credit'] || 'Crédito Disponível (Adiantado)';
-      if (balanceValue) {
-        balanceValue.innerText = formatCurrency(Math.abs(generalNetBalance));
-        balanceValue.style.color = 'var(--accent-purple)';
-      }
-      if (balanceIcon) balanceIcon.outerHTML = `<i id="general-balance-icon" data-lucide="coins" style="width: 16px; height: 16px; color: var(--accent-purple);"></i>`;
-    } else if (toCents(generalNetBalance) > 0) {
-      balanceBox.style.border = '1px solid var(--status-unpaid)';
-      balanceBox.style.background = 'var(--status-unpaid-glow)';
-      if (balanceLabel) balanceLabel.innerText = texts['general-balance-pending'] || 'Total Geral a Receber';
-      if (balanceValue) {
-        balanceValue.innerText = formatCurrency(generalNetBalance);
-        balanceValue.style.color = 'var(--status-unpaid)';
-      }
-      if (balanceIcon) balanceIcon.outerHTML = `<i id="general-balance-icon" data-lucide="alert-circle" style="width: 16px; height: 16px; color: var(--status-unpaid);"></i>`;
-    } else {
-      balanceBox.style.border = '1px solid var(--border-light)';
-      balanceBox.style.background = 'rgba(255, 255, 255, 0.02)';
-      if (balanceLabel) balanceLabel.innerText = texts['general-balance-zero'] || 'Tudo Pago / Zerado';
-      if (balanceValue) {
-        balanceValue.innerText = formatCurrency(0);
-        balanceValue.style.color = 'var(--text-muted)';
-      }
-      if (balanceIcon) balanceIcon.outerHTML = `<i id="general-balance-icon" data-lucide="check-circle-2" style="width: 16px; height: 16px; color: var(--status-paid);"></i>`;
-    }
-    
-    lucide.createIcons();
-  }
-
   let dbTotalDays = 0, dbTotalDue = 0, dbTotalPaid = 0, dbTotalPending = 0;
   const pendingWeekKeys = new Set();
   Object.keys(db.workedDays).forEach(dateStr => {
@@ -1977,7 +1984,7 @@ function updatePaymentSummary() {
 
   if (selectedWeeks.length === 0) {
     if (dbTotalPending > 0) {
-      summaryWeeksCount.innerHTML = `<span style="color: var(--accent-purple); font-weight: 600;">${texts['msg-all-pending']}</span>`;
+      summaryWeeksCount.innerHTML = `<span class="text-accent-strong">${texts['msg-all-pending']}</span>`;
       summaryDaysCount.innerText = `${dbTotalDays} ${dbTotalDays === 1 ? texts['week-day'] : texts['week-days']}`;
       summaryTotalDue.innerText = formatCurrency(dbTotalDue);
       summaryAlreadyPaid.innerText = formatCurrency(dbTotalPaid);
@@ -2038,11 +2045,11 @@ function toggleCustomNotesInput() {
   const mixedAmountsGroup = document.getElementById('mixed-amounts-group');
   
   if (methodSelect.value === 'Outros') {
-    customNotesGroup.style.display = 'block';
-    mixedAmountsGroup.style.display = 'none';
+    customNotesGroup.hidden = false;
+    mixedAmountsGroup.hidden = true;
   } else if (methodSelect.value === 'Misto') {
-    customNotesGroup.style.display = 'none';
-    mixedAmountsGroup.style.display = 'block';
+    customNotesGroup.hidden = true;
+    mixedAmountsGroup.hidden = false;
     
     // Divide o valor total entre os dois campos (50/50 por padrão)
     const totalCents = toCents(Number.parseFloat(document.getElementById('input-payment-amount').value) || 0);
@@ -2050,8 +2057,8 @@ function toggleCustomNotesInput() {
     document.getElementById('input-payment-cash-amount').value = fromCents(cashCents).toFixed(2);
     document.getElementById('input-payment-deposit-amount').value = fromCents(totalCents - cashCents).toFixed(2);
   } else {
-    customNotesGroup.style.display = 'none';
-    mixedAmountsGroup.style.display = 'none';
+    customNotesGroup.hidden = true;
+    mixedAmountsGroup.hidden = true;
     document.getElementById('input-payment-notes').value = '';
     document.getElementById('input-payment-cash-amount').value = '';
     document.getElementById('input-payment-deposit-amount').value = '';
@@ -2067,7 +2074,7 @@ async function processPayment(event) {
   const paymentObservation = document.getElementById('input-payment-observation')?.value.trim() || '';
   
   if (!Number.isFinite(rawPaymentAmount) || rawPaymentAmount <= 0 || !parseLocalDate(paymentDate)) {
-    alert(texts['msg-invalid-payment'] || 'Informe um valor positivo e uma data válida.');
+    showStatus(texts['msg-invalid-payment'] || 'Informe um valor positivo e uma data válida.', { tone: 'error' });
     return;
   }
   const paymentAmount = normalizeMoney(rawPaymentAmount);
@@ -2083,7 +2090,7 @@ async function processPayment(event) {
     depositAmount = normalizeMoney(Number.parseFloat(document.getElementById('input-payment-deposit-amount').value) || 0);
     
     if (!moneyEquals(addMoney(cashAmount, depositAmount), paymentAmount)) {
-      alert(texts['msg-invalid-mixed-sum'] || 'A soma dos valores em dinheiro e depósito deve ser igual ao valor total recebido!');
+      showStatus(texts['msg-invalid-mixed-sum'] || 'A soma dos valores em dinheiro e depósito deve ser igual ao valor total recebido!', { tone: 'error' });
       return;
     }
     
@@ -2148,7 +2155,7 @@ async function processPayment(event) {
   renderWeeksList();
   updatePaymentSummary();
   updateDashboardData();
-  alert(texts['msg-payment-success']);
+  showStatus(texts['msg-payment-success'], { tone: 'success' });
 }
 
 /* ==========================================================================
@@ -2163,7 +2170,7 @@ function renderPaymentHistory() {
   const sorted = [...db.payments].sort((a, b) => b.date.localeCompare(a.date));
 
   if (sorted.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 3rem;">${texts['msg-no-history']}</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="7" class="table-empty-state">${texts['msg-no-history']}</td></tr>`;
     return;
   }
 
@@ -2180,10 +2187,10 @@ function renderPaymentHistory() {
       const monthHeader = document.createElement('tr');
       monthHeader.className = 'history-month-header';
       monthHeader.innerHTML = `
-        <td colspan="7" style="background: rgba(139, 92, 246, 0.05); padding: 1rem; border-left: 4px solid var(--accent-purple);">
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <i data-lucide="calendar" style="width: 18px; height: 18px; color: var(--accent-purple);"></i>
-            <span style="font-weight: 700; color: var(--text-primary); text-transform: capitalize;">${monthLabel}</span>
+        <td colspan="7" class="history-month-cell">
+          <div class="history-month-label">
+            <i data-lucide="calendar" class="history-month-icon"></i>
+            <span>${monthLabel}</span>
           </div>
         </td>
       `;
@@ -2226,7 +2233,9 @@ function renderPaymentHistory() {
     }
 
     const hasAdvance = pay.advanceRemaining > 0;
-    const advanceBadge = hasAdvance ? `<div style="font-size:0.75rem; color: var(--accent-purple); font-weight:600; margin-top: 2px;"><i data-lucide="coins" style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-right: 2px;"></i>${texts['label-credit']}: ${formatCurrency(pay.advanceRemaining)}</div>` : '';
+    const advanceBadge = hasAdvance
+      ? `<div class="history-credit"><i data-lucide="coins"></i>${texts['label-credit']}: ${formatCurrency(pay.advanceRemaining)}</div>`
+      : '';
     const methodLabels = {
       'Dinheiro': texts['opt-cash'],
       'Depósito': texts['opt-deposit'],
@@ -2240,7 +2249,7 @@ function renderPaymentHistory() {
 
     tr.innerHTML = `
       <td>${formatDateStringDisplay(pay.date)}</td>
-      <td style="color: var(--status-paid); font-weight: 700;">
+      <td class="history-amount-paid">
         ${formatCurrency(pay.amount)}
         ${advanceBadge}
       </td>
@@ -2248,19 +2257,24 @@ function renderPaymentHistory() {
       <td><span class="history-pending-tag"><i data-lucide="check"></i> ${texts['status-processed']}</span></td>
       <td>${paymentMethod}</td>
       <td>${paymentObservation}</td>
-      <td><button class="btn-danger" onclick="deletePayment('${pay.id}')">${texts['btn-refund']}</button></td>
+      <td><button class="btn-danger" type="button" data-payment-id="${escapeHtml(pay.id)}">${texts['btn-refund']}</button></td>
     `;
     tableBody.appendChild(tr);
   });
   lucide.createIcons();
 }
 
-function deletePayment(id) {
+async function deletePayment(id) {
   const texts = translations[db.settings.language || 'pt-BR'];
-  if (!confirm(texts['msg-undo-confirm'])) return;
+  if (!await confirmAction(texts['msg-undo-confirm'], {
+    title: getText('dialog-confirm-title'),
+    confirmLabel: getText('btn-refund'),
+    cancelLabel: getText('btn-cancel'),
+    danger: true
+  })) return;
   if (!reversePayment(db, id)) return;
   saveToStorage(); renderPaymentHistory(); updateDashboardData();
-  alert(texts['msg-undo-success']);
+  showStatus(texts['msg-undo-success'], { tone: 'success' });
 }
 
 /* ==========================================================================
@@ -2349,8 +2363,8 @@ function updateAutoFillStatusText(enabled = db.settings.autoFillWorkedDays) {
 
 function togglePaymentCycleInputs() {
   const type = document.getElementById('setting-payment-type').value;
-  document.getElementById('group-payment-week').style.display = type === 'weekly' ? 'block' : 'none';
-  document.getElementById('group-payment-month').style.display = type === 'monthly' ? 'block' : 'none';
+  document.getElementById('group-payment-week').hidden = type !== 'weekly';
+  document.getElementById('group-payment-month').hidden = type !== 'monthly';
 }
 
 function savePaymentCycleSettings(event) {
@@ -2370,7 +2384,7 @@ function savePaymentCycleSettings(event) {
   };
   saveToStorage();
   updateDashboardData();
-  alert(translations[db.settings.language]['msg-save-success']);
+  showStatus(translations[db.settings.language]['msg-save-success'], { tone: 'success' });
 }
 
 async function saveAutoFillSettings(event) {
@@ -2412,13 +2426,13 @@ function updatePaymentCountdown() {
 
   if (daysDiff === 0) {
     countdownEl.innerText = texts['msg-payment-today'];
-    countdownEl.style.color = 'var(--status-paid)';
+    countdownEl.classList.add('payment-today');
   } else if (daysDiff === 1) {
     countdownEl.innerText = texts['msg-day-left'];
-    countdownEl.style.color = '';
+    countdownEl.classList.remove('payment-today');
   } else {
     countdownEl.innerText = texts['msg-days-left'].replace('{n}', daysDiff);
-    countdownEl.style.color = '';
+    countdownEl.classList.remove('payment-today');
   }
 }
 
@@ -2455,7 +2469,7 @@ async function saveWeeklyScheduleSettings(event) {
   renderCalendar();
   renderWeeksList();
   updateDashboardData();
-  alert(translations[db.settings.language]['msg-save-success']);
+  showStatus(translations[db.settings.language]['msg-save-success'], { tone: 'success' });
 }
 
 async function saveHalfDaysSettings(event) {
@@ -2474,23 +2488,7 @@ async function saveHalfDaysSettings(event) {
   renderCalendar();
   renderWeeksList();
   updateDashboardData();
-  alert(translations[db.settings.language]['msg-save-success']);
-}
-
-async function saveOffDaysSettings(event) {
-  event.preventDefault();
-  const offDays = [];
-  for (let i = 0; i <= 6; i++) {
-    const chk = document.getElementById(`offday-${i}`);
-    if (chk && chk.checked) offDays.push(parseInt(chk.value, 10));
-  }
-  db.settings.offDays = offDays;
-  await saveToStorage();
-  await applyAutomaticWorkedDayFill();
-  renderCalendar();
-  renderWeeksList();
-  updateDashboardData();
-  alert(translations[db.settings.language]['msg-save-success']);
+  showStatus(translations[db.settings.language]['msg-save-success'], { tone: 'success' });
 }
 
 async function saveRatesSettings(event) {
@@ -2498,7 +2496,7 @@ async function saveRatesSettings(event) {
   const morningRate = Number.parseFloat(document.getElementById('setting-morning-rate').value);
   const nightRate = Number.parseFloat(document.getElementById('setting-night-rate').value);
   if (!Number.isFinite(morningRate) || !Number.isFinite(nightRate) || morningRate < 0 || nightRate < 0) {
-    alert(getText('msg-invalid-rates'));
+    showStatus(getText('msg-invalid-rates'), { tone: 'error' });
     return;
   }
   db.settings.morningRate = normalizeMoney(morningRate);
@@ -2509,7 +2507,7 @@ async function saveRatesSettings(event) {
   renderCalendar();
   renderWeeksList();
   updateDashboardData();
-  alert(translations[db.settings.language]['msg-save-success']);
+  showStatus(translations[db.settings.language]['msg-save-success'], { tone: 'success' });
 }
 
 function exportDatabase() {
@@ -2524,7 +2522,7 @@ function importDatabase(event) {
   const file = event.target.files[0];
   if (!file) return;
   if (file.size > MAX_IMPORT_BYTES) {
-    alert(getText('msg-import-too-large'));
+    showStatus(getText('msg-import-too-large'), { tone: 'error' });
     event.target.value = '';
     return;
   }
@@ -2533,11 +2531,15 @@ function importDatabase(event) {
       const parsed = JSON.parse(e.target.result);
       const normalized = validateImportedDatabase(parsed, e.target.result);
       const { state: validated, repairs } = reconcileLedger(normalized);
-      if (!confirm(getText('msg-import-confirm'))) return;
+      if (!await confirmAction(getText('msg-import-confirm'), {
+        title: getText('dialog-confirm-title'),
+        confirmLabel: getText('btn-import'),
+        cancelLabel: getText('btn-cancel')
+      })) return;
 
       const recovery = databaseRepository.createRecoveryPoint(db, auth.currentUser.uid, 'before-import');
       if (!recovery) {
-        alert(getText('msg-recovery-failed'));
+        showStatus(getText('msg-recovery-failed'), { tone: 'error' });
         return;
       }
       db = validated;
@@ -2546,11 +2548,11 @@ function importDatabase(event) {
       if (repairs.length > 0) {
         showStatus(getText('msg-ledger-reconciled').replace('{count}', repairs.length), { tone: 'success' });
       }
-      alert(translations[db.settings.language]['msg-backup-success']);
+      showStatus(translations[db.settings.language]['msg-backup-success'], { tone: 'success' });
       document.querySelector('[data-tab="dashboard"]').click();
     } catch (error) {
       reportError('database:import', error);
-      alert(`${getText('msg-import-error')} ${error.message || ''}`.trim());
+      showStatus(`${getText('msg-import-error')} ${error.message || ''}`.trim(), { tone: 'error' });
     } finally {
       event.target.value = '';
     }
@@ -2559,30 +2561,38 @@ function importDatabase(event) {
 }
 
 async function clearDatabase() {
-  if (confirm(translations[db.settings.language]['msg-clear-confirm'])) {
-    const recovery = databaseRepository.createRecoveryPoint(db, auth.currentUser.uid, 'before-clear');
-    if (!recovery) {
-      alert(getText('msg-recovery-failed'));
-      return;
-    }
-    db = createDefaultDatabase();
-    await saveToStorage(); applyLanguage(); loadSettingsFields();
-    document.querySelector('[data-tab="dashboard"]').click();
-    showStatus(getText('msg-clear-recoverable'), { tone: 'success' });
+  if (!await confirmAction(translations[db.settings.language]['msg-clear-confirm'], {
+    title: getText('dialog-confirm-title'),
+    confirmLabel: getText('btn-clear-all'),
+    cancelLabel: getText('btn-cancel'),
+    danger: true
+  })) return;
+  const recovery = databaseRepository.createRecoveryPoint(db, auth.currentUser.uid, 'before-clear');
+  if (!recovery) {
+    showStatus(getText('msg-recovery-failed'), { tone: 'error' });
+    return;
   }
+  db = createDefaultDatabase();
+  await saveToStorage(); applyLanguage(); loadSettingsFields();
+  document.querySelector('[data-tab="dashboard"]').click();
+  showStatus(getText('msg-clear-recoverable'), { tone: 'success' });
 }
 
 async function restoreLatestDatabase() {
   const recovered = databaseRepository.restoreLatestRecovery(auth.currentUser?.uid);
   if (!recovered) {
-    alert(getText('msg-no-recovery'));
+    showStatus(getText('msg-no-recovery'), { tone: 'warning' });
     return;
   }
-  if (!confirm(getText('msg-restore-confirm'))) return;
+  if (!await confirmAction(getText('msg-restore-confirm'), {
+    title: getText('dialog-confirm-title'),
+    confirmLabel: getText('btn-restore-latest'),
+    cancelLabel: getText('btn-cancel')
+  })) return;
 
   const safetyCopy = databaseRepository.createRecoveryPoint(db, auth.currentUser.uid, 'before-restore');
   if (!safetyCopy) {
-    alert(getText('msg-recovery-failed'));
+    showStatus(getText('msg-recovery-failed'), { tone: 'error' });
     return;
   }
   db = recovered;
@@ -2602,18 +2612,18 @@ function openBatchModal() {
   const texts = translations[db.settings.language || 'pt-BR'];
   const container = document.getElementById('batch-days-container');
   container.innerHTML = `
-    <div style="text-align: center; color: var(--text-muted); padding: 2rem; font-size: 0.85rem;">
+    <div class="empty-state">
       ${texts['msg-no-batch-days']}
     </div>
   `;
   document.getElementById('batch-start-date').value = '';
   document.getElementById('batch-end-date').value = '';
-  document.getElementById('batch-modal').classList.add('active');
+  openDialog('batch-modal', { initialFocus: '#batch-start-date' });
   lucide.createIcons();
 }
 
 function closeBatchModal() {
-  document.getElementById('batch-modal').classList.remove('active');
+  closeDialog('batch-modal');
 }
 
 function generateBatchDaysList() {
@@ -2623,17 +2633,19 @@ function generateBatchDaysList() {
   const texts = translations[db.settings.language || 'pt-BR'];
   if (!startStr || !endStr) return;
 
-  const start = parseLocalDate(startStr);
-  const end = parseLocalDate(endStr);
-  if (start > end) return;
+  const dates = listDateRange(startStr, endStr, MAX_BATCH_DAYS + 1);
+  if (dates.length === 0) return;
+  if (dates.length > MAX_BATCH_DAYS) {
+    showStatus(texts['msg-batch-limit'].replace('{count}', MAX_BATCH_DAYS), { tone: 'warning' });
+    return;
+  }
   container.innerHTML = '';
-  let current = new Date(start);
+  const fragment = document.createDocumentFragment();
   const halfDays = db.settings.halfDays || {};
   const defaultPeriod = document.getElementById('batch-default-period').value;
   
-  while (current <= end) {
-    const dateStr = formatDateISO(current);
-    const dayOfWeek = current.getDay();
+  for (const dateStr of dates) {
+    const dayOfWeek = parseLocalDate(dateStr).getDay();
     const existing = db.workedDays[dateStr];
     
     let period = defaultPeriod;
@@ -2650,7 +2662,7 @@ function generateBatchDaysList() {
     row.innerHTML = `
       <div class="batch-day-info"><span>${formatDateStringDisplay(dateStr)}</span> <strong>${WEEKDAY_NAMES[dayOfWeek]}</strong></div>
       <div class="batch-day-controls">
-        <select class="batch-day-period-select" onchange="updateBatchRowRate(this)">
+        <select class="batch-day-period-select" aria-label="${texts['batch-default-period']}">
           <option value="morning" ${period === 'morning' ? 'selected' : ''}>${texts['legend-morning']}</option>
           <option value="night" ${period === 'night' ? 'selected' : ''}>${texts['legend-night']}</option>
           <option value="both" ${period === 'both' ? 'selected' : ''}>${texts['legend-both']}</option>
@@ -2661,9 +2673,10 @@ function generateBatchDaysList() {
       </div>
     `;
     row.setAttribute('data-date', dateStr);
-    container.appendChild(row);
-    current.setDate(current.getDate() + 1);
+    fragment.appendChild(row);
   }
+  container.appendChild(fragment);
+  document.getElementById('batch-days-count-label').textContent = `${dates.length} ${texts['week-days']}`;
 }
 
 function updateBatchRowRate(select) {
@@ -2749,28 +2762,28 @@ function saveBatchShifts(event) {
   });
   if (blockedByLegacyPayment || invalidBatchRate) {
     db = stateBeforeBatch;
-    alert(getText(invalidBatchRate ? 'msg-invalid-rates' : 'msg-unlinked-payment-blocked'));
+    showStatus(getText(invalidBatchRate ? 'msg-invalid-rates' : 'msg-unlinked-payment-blocked'), { tone: 'error' });
     return;
   }
   saveToStorage(); closeBatchModal(); renderCalendar(); updateDashboardData();
-  alert(texts['msg-batch-save-success']);
+  showStatus(texts['msg-batch-save-success'], { tone: 'success' });
 }
 
 function openBatchRemoveModal() {
   const texts = translations[db.settings.language || 'pt-BR'];
   const container = document.getElementById('batch-remove-days-container');
   container.innerHTML = `
-    <div style="text-align: center; color: var(--text-muted); padding: 2rem; font-size: 0.85rem;">
+    <div class="empty-state">
       ${texts['msg-no-remove-days']}
     </div>
   `;
   document.getElementById('batch-remove-start-date').value = '';
   document.getElementById('batch-remove-end-date').value = '';
-  document.getElementById('batch-remove-modal').classList.add('active');
+  openDialog('batch-remove-modal', { initialFocus: '#batch-remove-start-date' });
 }
 
 function closeBatchRemoveModal() {
-  document.getElementById('batch-remove-modal').classList.remove('active');
+  closeDialog('batch-remove-modal');
 }
 
 function generateBatchRemoveDaysList() {
@@ -2778,91 +2791,76 @@ function generateBatchRemoveDaysList() {
   const endStr = document.getElementById('batch-remove-end-date').value;
   const container = document.getElementById('batch-remove-days-container');
   if (!startStr || !endStr) return;
-  const start = parseLocalDate(startStr);
-  const end = parseLocalDate(endStr);
+  const texts = translations[db.settings.language || 'pt-BR'];
+  const dates = listDateRange(startStr, endStr, MAX_BATCH_DAYS + 1);
+  if (dates.length === 0) return;
+  if (dates.length > MAX_BATCH_DAYS) {
+    showStatus(texts['msg-batch-limit'].replace('{count}', MAX_BATCH_DAYS), { tone: 'warning' });
+    return;
+  }
   container.innerHTML = '';
-  let current = new Date(start);
+  const fragment = document.createDocumentFragment();
   let found = 0;
-  while (current <= end) {
-    const date = formatDateISO(current);
+  for (const date of dates) {
     if (db.workedDays[date]) {
       found++;
       const row = document.createElement('div');
       row.className = 'batch-day-row';
-      row.innerHTML = `<span>${formatDateStringDisplay(date)}</span> <input type="checkbox" class="batch-remove-day-checkbox" data-date="${date}" checked>`;
-      container.appendChild(row);
+      row.innerHTML = `<label class="batch-remove-option"><span>${formatDateStringDisplay(date)}</span><input type="checkbox" class="batch-remove-day-checkbox" data-date="${date}" checked></label>`;
+      fragment.appendChild(row);
     }
-    current.setDate(current.getDate() + 1);
   }
+  container.appendChild(fragment);
+  document.getElementById('batch-remove-days-count-label').textContent = `${found} ${texts['week-days']}`;
   if (found === 0) {
-    const texts = translations[db.settings.language || 'pt-BR'];
-    container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem; font-size: 0.85rem;">${texts['msg-no-history']}</div>`;
+    container.innerHTML = `<div class="empty-state">${texts['msg-no-history']}</div>`;
   }
 }
 
-function saveBatchRemoveShifts(event) {
+async function saveBatchRemoveShifts(event) {
   event.preventDefault();
   const checks = document.querySelectorAll('.batch-remove-day-checkbox:checked');
   const texts = translations[db.settings.language || 'pt-BR'];
-  if (!confirm(texts['msg-delete-confirm'])) return;
+  if (!await confirmAction(texts['msg-delete-confirm'], {
+    title: getText('dialog-confirm-title'),
+    confirmLabel: getText('btn-confirm-remove'),
+    cancelLabel: getText('btn-cancel'),
+    danger: true
+  })) return;
+  const stateBeforeRemoval = structuredClone(db);
+  let blockedByLegacyPayment = false;
   checks.forEach(chk => {
     const date = chk.getAttribute('data-date');
     const day = db.workedDays[date];
     if (day) {
       if (day.amountPaid > 0) {
-        refundPaymentCreditsFromDay(db, day, 0);
+        if (!refundPaymentCreditsFromDay(db, day, 0)) {
+          blockedByLegacyPayment = true;
+          return;
+        }
       }
       delete db.workedDays[date];
     }
   });
+  if (blockedByLegacyPayment) {
+    db = stateBeforeRemoval;
+    showStatus(getText('msg-unlinked-payment-blocked'), { tone: 'error' });
+    return;
+  }
   saveToStorage(); closeBatchRemoveModal(); renderCalendar(); updateDashboardData();
-  alert(texts['msg-batch-remove-success']);
+  showStatus(texts['msg-batch-remove-success'], { tone: 'success' });
 }
 
 async function handleLogout() {
-  if (confirm(getText('msg-logout-confirm'))) {
-    try {
-      await signOut(auth);
-      window.location.reload();
-    } catch (error) {
-      console.error("Erro ao sair:", error);
-    }
+  if (!await confirmAction(getText('msg-logout-confirm'), {
+    title: getText('dialog-confirm-title'),
+    confirmLabel: getText('btn-logout'),
+    cancelLabel: getText('btn-cancel')
+  })) return;
+  try {
+    await signOut(auth);
+    window.location.reload();
+  } catch (error) {
+    reportError('auth:logout', error, getText('msg-logout-error'));
   }
 }
-
-// Expoe funcoes ao escopo global
-window.handleLogout = handleLogout;
-window.quickLogShift = quickLogShift;
-window.changeMonth = changeMonth;
-window.goToCurrentMonth = goToCurrentMonth;
-window.openBatchModal = openBatchModal;
-window.openBatchRemoveModal = openBatchRemoveModal;
-window.toggleCustomNotesInput = toggleCustomNotesInput;
-window.processPayment = processPayment;
-window.exportDatabase = exportDatabase;
-window.importDatabase = importDatabase;
-window.clearDatabase = clearDatabase;
-window.restoreLatestDatabase = restoreLatestDatabase;
-window.setLanguage = setLanguage;
-window.changeTheme = changeTheme;
-window.saveRatesSettings = saveRatesSettings;
-window.saveWeeklyScheduleSettings = saveWeeklyScheduleSettings;
-window.saveOffDaysSettings = saveOffDaysSettings;
-window.saveHalfDaysSettings = saveHalfDaysSettings;
-window.saveAutoFillSettings = saveAutoFillSettings;
-window.savePaymentCycleSettings = savePaymentCycleSettings;
-window.togglePaymentCycleInputs = togglePaymentCycleInputs;
-window.toggleHalfDaySelect = toggleHalfDaySelect;
-window.closeDayModal = closeDayModal;
-window.saveDayDetails = saveDayDetails;
-window.deleteDayRecord = deleteDayRecord;
-window.generateBatchDaysList = generateBatchDaysList;
-window.applyDefaultPeriodToBatchDays = applyDefaultPeriodToBatchDays;
-window.saveBatchShifts = saveBatchShifts;
-window.closeBatchModal = closeBatchModal;
-window.generateBatchRemoveDaysList = generateBatchRemoveDaysList;
-window.saveBatchRemoveShifts = saveBatchRemoveShifts;
-window.closeBatchRemoveModal = closeBatchRemoveModal;
-window.refundPaymentCreditsFromDay = (day, newRate) => refundPaymentCreditsFromDay(db, day, newRate);
-window.deletePayment = deletePayment;
-window.openDayModal = openDayModal;

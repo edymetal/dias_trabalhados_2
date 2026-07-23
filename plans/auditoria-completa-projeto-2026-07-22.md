@@ -384,6 +384,8 @@ Critério de saída: matriz de casos unitários, incluindo pagamentos parciais, 
 
 Objetivo: melhorar a experiência sobre uma base confiável.
 
+Status em 23/07/2026: **critério técnico local concluído**. Handlers e estilos inline foram removidos do HTML, ações passaram a controles semânticos, diálogos e confirmações receberam gerenciamento de foco, teclado e retorno ao controle de origem, e a interface ganhou ajustes mobile e movimento reduzido. Lotes foram limitados a 366 dias e semanas a 10. Consulte `plans/etapa-4-interface-acessibilidade.md`.
+
 - remover handlers e estilos inline;
 - transformar ações em elementos semânticos;
 - implementar modais acessíveis;
