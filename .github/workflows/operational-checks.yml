@@ -1,0 +1,51 @@
+name: Operational checks
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 8 * * 1"
+
+concurrency:
+  group: operational-checks
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  recovery-and-health:
+    name: recovery-and-health
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Java for Firebase Emulator
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Confirm free-tier boundary
+        run: npm run test:free-tier
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Rehearse backup restore in Database Emulator
+        run: npm run test:restore-drill
+
+      - name: Verify GitHub Pages without accessing Firebase
+        run: node scripts/check-pages-health.mjs "https://edymetal.github.io/dias_trabalhados_2/"

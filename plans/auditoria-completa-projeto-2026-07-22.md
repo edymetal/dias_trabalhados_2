@@ -400,6 +400,15 @@ Critério de saída: fluxo completo utilizável por teclado e auditado em deskto
 
 Objetivo: publicar somente artefatos validados e recuperar falhas rapidamente.
 
+Status em 23/07/2026: **critério técnico concluído**. Dependências e Actions
+foram fixadas e passaram a atualização controlada, a CSP é gerada por ambiente,
+o Pages recebe exclusivamente `dist/` após todos os checks, e release, rollback,
+smoke test, monitoramento e ensaio sintético de restauração foram automatizados
+ou documentados. Service worker foi deliberadamente adiado e o manifesto não
+promete execução offline completa. Firebase e conteúdo de produção não foram
+alterados; consulte `plans/etapa-5-build-deploy-operacao.md` e
+`docs/operacao.md`.
+
 - dependências fixadas e atualizadas de forma controlada;
 - CSP e headers possíveis para a plataforma escolhida;
 - CI com lint, unitários, integração de regras, E2E e build;
@@ -422,6 +431,11 @@ Critério de saída: release reproduzível, observável e reversível.
 7. Dias gerados automaticamente devem mudar retroativamente quando a rotina/tarifa muda?
 
 ## O que falta para considerar o projeto completo
+
+Status em 23/07/2026: os itens técnicos abaixo foram tratados pelas Etapas 0 a
+5 no código, emuladores e automações. O que permanece é o rollout controlado:
+backup novo, PR para `master`, aplicação deliberada das regras/migração e
+validação da produção com autorização explícita.
 
 - backup e restauração comprovados;
 - regras versionadas e testadas;

@@ -50,6 +50,7 @@ npm run lint
 npm run test:unit
 npm run test:rules
 npm run test:e2e
+npm run test:restore-drill
 npm run test:free-tier
 npm run test:migration-backup -- D:\copia-temporaria\rtdb-data.json
 npm run build
@@ -67,13 +68,39 @@ O primeiro comando cria um backup criptografado em `D:\Backups\dias_trabalhados_
 
 `npm run test:rules` e `npm run test:e2e` precisam de Java. O E2E inicia e encerra Auth e Database Emulators automaticamente. O fluxo de CI instala Java 21 e executa as duas suítes.
 
-O Firebase Web permanece na série 10, atualmente em 10.14.1, compatível com `@firebase/rules-unit-testing` 3. A dependência transitiva `undici` é fixada em 6.27.0 para eliminar vulnerabilidades conhecidas; qualquer alteração desse `override` exige nova auditoria e todos os testes.
+O Firebase Web permanece na série 10, atualmente em 10.14.1, compatível com
+`@firebase/rules-unit-testing` 3. A dependência transitiva `undici` é fixada em
+6.27.0 para eliminar vulnerabilidades conhecidas; qualquer alteração desse
+`override` exige nova auditoria e todos os testes.
 
-Em 22/07/2026, `npm audit --omit=dev` retorna 0 vulnerabilidades. A auditoria completa ainda encontra 7 alertas moderados somente na árvore de desenvolvimento do Firebase CLI 15.24.0; a correção automática sugerida pelo npm é um downgrade para 14.23.0 e não foi aplicada. Essa árvore não entra no bundle publicado.
+Em 23/07/2026, a reinstalação reproduzível e
+`npm audit --omit=dev --audit-level=high` retornam 0 vulnerabilidades. O CI
+repete a consulta ao registro em cada entrega e semanalmente para não depender
+somente do resultado local.
 
 ## Build e publicação
 
-O Vite gera o site em `dist/`. Pushes para branches `codex/**` apenas validam lint, testes, emuladores e build. A publicação no GitHub Pages ocorre somente após um push validado na branch `master`.
+O Vite gera o site em `dist/`. Pushes para branches `codex/**` apenas validam
+lint, testes, emuladores e build. A publicação no GitHub Pages ocorre somente
+após um push validado na branch protegida `master`; o job de deploy recebe
+exclusivamente o `dist/` criado pelo job de validação.
+
+O projeto também possui:
+
+- Dependabot mensal para npm e GitHub Actions;
+- Actions fixadas por SHA;
+- CSP específica para produção e emuladores;
+- smoke test após deploy;
+- verificação operacional semanal com auditoria e restauração sintética;
+- release por tag com artefato compactado e SHA-256;
+- rollback por `git revert`, sem sobrescrever histórico ou dados.
+
+O manifesto oferece instalação como atalho, mas não há service worker nem
+promessa de abertura offline completa. A fila offline de dados continua
+funcionando depois que uma sessão foi carregada.
+
+O runbook completo está em [docs/operacao.md](docs/operacao.md) e o histórico
+em [CHANGELOG.md](CHANGELOG.md).
 
 ## Estrutura concluída na Etapa 1
 
@@ -87,4 +114,9 @@ O Vite gera o site em `dist/`. Pushes para branches `codex/**` apenas validam li
 - `firebase/`: regras exclusivas para validação no emulador;
 - `plans/`: auditoria e acompanhamento das etapas.
 
-A visão dos módulos e do fluxo de dados está em `docs/arquitetura.md`. As Etapas 0 a 4 estão concluídas tecnicamente. O domínio financeiro e o schema 3 estão documentados em `plans/etapa-3-dominio-financeiro.md`; a interface acessível e responsiva está documentada em `plans/etapa-4-interface-acessibilidade.md`. Rollouts de produção permanecem condicionados a backup novo e autorização explícita.
+A visão dos módulos e do fluxo de dados está em `docs/arquitetura.md`. As Etapas
+0 a 5 estão concluídas tecnicamente. O domínio financeiro e o schema 3 estão
+documentados em `plans/etapa-3-dominio-financeiro.md`; a interface acessível e
+responsiva em `plans/etapa-4-interface-acessibilidade.md`; build, entrega e
+operação em `plans/etapa-5-build-deploy-operacao.md`. Rollouts de produção
+permanecem condicionados a backup novo e autorização explícita.

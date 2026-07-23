@@ -22,6 +22,7 @@
     "test:unit": "node scripts/assert-test-project.mjs && vitest run tests/unit",
     "test:rules": "node scripts/assert-test-project.mjs && firebase emulators:exec --project demo-dias-trabalhados-2 --only database \"vitest run tests/integration\"",
     "test:e2e": "node scripts/assert-test-project.mjs && firebase emulators:exec --project demo-dias-trabalhados-2 --only auth,database \"playwright test\"",
+    "test:restore-drill": "node scripts/assert-test-project.mjs && firebase emulators:exec --project demo-dias-trabalhados-2 --only database \"node scripts/run-restore-drill.mjs\"",
     "test:migration-backup": "node scripts/validate-schema-migration.mjs",
     "test:free-tier": "node scripts/assert-free-tier.mjs",
     "emulators": "node scripts/assert-test-project.mjs && firebase emulators:start --project demo-dias-trabalhados-2 --only auth,database",
