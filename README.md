@@ -2,6 +2,8 @@
 
 Aplicação web para registrar dias trabalhados, folgas, pagamentos e créditos antecipados. A produção continua no Firebase e no GitHub Pages, mas o desenvolvimento e os testes desta etapa usam somente projetos Firebase `demo-*` e emuladores locais.
 
+O projeto possui uma restrição permanente: deve operar somente com **GitHub Free** e **Firebase Spark**, sem conta de faturamento ou migração para Blaze. Consulte [a política de plano gratuito](docs/plano-gratuito.md).
+
 ## Proteção dos dados existentes
 
 - O ID de produção é rejeitado pelos scripts e pela configuração de teste.
@@ -48,6 +50,7 @@ npm run lint
 npm run test:unit
 npm run test:rules
 npm run test:e2e
+npm run test:free-tier
 npm run test:migration-backup -- D:\copia-temporaria\rtdb-data.json
 npm run build
 npm run check
