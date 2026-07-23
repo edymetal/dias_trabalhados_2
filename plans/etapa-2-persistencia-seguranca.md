@@ -28,7 +28,7 @@ Nenhuma leitura, escrita, migração, publicação de regras, custom claim, rest
 - botão para restaurar a cópia mais recente;
 - autorização preferencial por custom claim `authorized`, com fallback temporário para a whitelist legada;
 - regras candidatas por UID, claim, schema e valores críticos;
-- preparação opcional para App Check com reCAPTCHA Enterprise, desativada sem site key;
+- preparação opcional para App Check com a classe Web `ReCaptchaEnterpriseProvider`, desativada sem site key e limitada ao nível gratuito reCAPTCHA Essentials sem billing;
 - ferramenta de validação da migração sobre backup real criptografado.
 
 ## Validação contra o backup real
@@ -83,9 +83,11 @@ Custom claims são transportadas no ID token e podem ser usadas em `auth.token` 
 
 ## Rollout de produção — bloqueado até autorização explícita
 
+O rollout deve permanecer no Firebase Spark. É proibido vincular billing, ativar Blaze ou usar Cloud Functions. As custom claims serão atribuídas por uma execução administrativa local do Admin SDK.
+
 Executar em janela controlada, nesta ordem:
 
-1. renovar `firebase login --reauth` e confirmar projeto/instância;
+1. renovar `firebase login --reauth`, confirmar projeto/instância e verificar que o plano continua Spark sem conta de faturamento;
 2. gerar novo backup criptografado e repetir a restauração no Emulator;
 3. atribuir `authorized: true` a todos os usuários válidos que não sejam mestres;
 4. confirmar renovação dos ID tokens e testar esses usuários em staging;
@@ -93,11 +95,13 @@ Executar em janela controlada, nesta ordem:
 6. confirmar migração para schema 2 e fila vazia em todas as contas;
 7. publicar as regras somente após teste de leitura/escrita por cada perfil;
 8. restringir a chave Web por domínios e APIs necessárias no Google Cloud;
-9. registrar o app Web no App Check e configurar `VITE_FIREBASE_APP_CHECK_SITE_KEY`;
+9. registrar o app Web no App Check sem billing, mantendo o nível reCAPTCHA Essentials, e configurar `VITE_FIREBASE_APP_CHECK_SITE_KEY`;
 10. observar métricas do App Check antes de ativar enforcement, pois requisições sem token passam a ser rejeitadas;
 11. manter rollback da aplicação, das regras e do backup disponível.
 
 A ativação de enforcement pode bloquear clientes ainda não preparados e leva alguns minutos para propagar. Referência: [ativação de enforcement do App Check](https://firebase.google.com/docs/app-check/enable-enforcement).
+
+App Check é oferecido sem custo, sujeito à cota do provedor. Sem billing, o reCAPTCHA Essentials permite até 10.000 avaliações mensais e passa a rejeitar novas avaliações ao exceder o limite, sem cobrança. A política permanente está em `docs/plano-gratuito.md`.
 
 ## Validação final
 

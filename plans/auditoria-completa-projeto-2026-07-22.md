@@ -4,6 +4,8 @@
 
 O projeto é um MVP funcional de controle de dias trabalhados e pagamentos, publicado no GitHub Pages e integrado ao Firebase Authentication e ao Firebase Realtime Database. A interface já cobre calendário, pagamentos, estornos, créditos antecipados, preenchimento automático, histórico, configurações, backup manual, português e italiano.
 
+Restrição permanente adicionada em 23/07/2026: todas as etapas devem permanecer compatíveis com GitHub Free e Firebase Spark, sem billing ou Blaze. Serviços pagos não são uma opção de implementação. Consulte `docs/plano-gratuito.md`.
+
 Entretanto, a base de dados ainda corre riscos relevantes antes de novas alterações:
 
 1. cada salvamento substitui todo o objeto do usuário no Realtime Database;
