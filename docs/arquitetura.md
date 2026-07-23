@@ -41,6 +41,29 @@ As migrações são sequenciais e idempotentes. Schema superior ao conhecido col
 
 `scripts/assert-test-project.mjs` e `src/firebase/config.js` interrompem testes que não usem um project ID `demo-*`.
 
+## Entrega e operação
+
+O Vite injeta uma Content Security Policy diferente por modo: produção permite
+somente as origens Google/Firebase necessárias, enquanto `test` adiciona as
+portas locais dos emuladores. O GitHub Pages recebe exclusivamente `dist/`
+depois que lint, unitários, regras, E2E e build terminam com sucesso.
+
+O pipeline operacional não possui segredos Firebase. O ensaio de restauração
+usa uma fixture sintética no Database Emulator, e o health check consulta
+somente HTML, bundle e manifesto no Pages. Releases são produzidas a partir de
+tags pertencentes à `master` e incluem SHA-256 do artefato.
+
+Não existe service worker. O manifesto é um atalho instalável; a fila offline
+de persistência não deve ser confundida com cache offline do código.
+
 ## Dívida arquitetural conhecida
 
-O `app.js` ainda mantém estado global e a maior parte da renderização. A fila resolve persistência entre reinícios e concorrência em caminhos diferentes; conflitos simultâneos no mesmo campo continuam com semântica de última gravação e devem ser evitados por operações de domínio mais específicas. A decomposição visual continuará na Etapa 4, após a consolidação financeira da Etapa 3.
+O `app.js` ainda mantém estado global e a maior parte da renderização. A fila
+resolve persistência entre reinícios e concorrência em caminhos diferentes;
+conflitos simultâneos no mesmo campo continuam com semântica de última gravação
+e devem ser evitados por operações de domínio mais específicas.
+
+A CSP ainda aceita estilos inline em tempo de execução por compatibilidade com
+bibliotecas e trechos legados. GitHub Pages não oferece headers HTTP
+arbitrários, portanto diretivas exclusivas de header exigiriam outra plataforma
+de hospedagem — opção fora do escopo gratuito definido para este projeto.

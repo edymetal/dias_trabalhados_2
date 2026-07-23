@@ -1,0 +1,41 @@
+{
+  "authorized_emails": {
+    "tester_example_com": true
+  },
+  "userData": {
+    "synthetic-user": {
+      "db": {
+        "schemaVersion": 3,
+        "revision": 1,
+        "updatedAt": 1784808000000,
+        "settings": {
+          "currency": "EUR",
+          "workStartTime": "08:00"
+        },
+        "workedDays": {
+          "2026-07-20": {
+            "amountPaid": 35,
+            "paymentsApplied": {
+              "synthetic-payment": 35
+            },
+            "pendingAmount": 0,
+            "rate": 35,
+            "status": "paid",
+            "type": "work"
+          }
+        },
+        "payments": [
+          {
+            "advanceRemaining": 0,
+            "amount": 35,
+            "coveredDays": {
+              "2026-07-20": 35
+            },
+            "date": "2026-07-21",
+            "id": "synthetic-payment"
+          }
+        ]
+      }
+    }
+  }
+}

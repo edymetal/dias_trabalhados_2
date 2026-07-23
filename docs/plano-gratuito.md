@@ -30,7 +30,9 @@ Custom claims devem ser atribuídas por operação administrativa local e contro
 - `.firebaserc` aponta somente para o projeto fictício `demo-dias-trabalhados-2`;
 - testes Firebase executam apenas nos emuladores;
 - branches `codex/**` não publicam o site;
-- `npm run test:free-tier` rejeita serviços Firebase que exigem billing, projeto padrão que não seja `demo-*`, runner não aprovado ou deploy Google Cloud no workflow;
+- `npm run test:free-tier` rejeita serviços Firebase que exigem billing, projeto padrão que não seja `demo-*`, runner não aprovado, Action sem SHA completo ou deploy Google Cloud no workflow;
+- monitoramento e ensaio de restauração usam Actions padrão do repositório público e somente dados sintéticos no Emulator;
+- nenhum backup real é enviado ao GitHub, Pages ou artifacts;
 - o uso das cotas deve ser acompanhado nos consoles, pois um teste estático não consegue medir consumo real.
 
 No Spark, exceder a cota de um produto interrompe esse produto até a renovação da cota; não autoriza upgrade e não deve ser contornado ativando faturamento.
