@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <a class="skip-link" href="#main-content" data-i18n="skip-to-content">Ir para o conteúdo principal</a>
   <!-- Login Screen -->
   <div id="login-screen" class="auth-wrapper">
     <div class="auth-card glass-card">
@@ -31,22 +32,22 @@
         </div>
         <h1 data-i18n="app-title">Dias Trabalhados</h1>
         <p data-i18n="login-subtitle">Gestão Profissional de Turnos</p>
-        <span class="app-version" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; display: block;"><span data-i18n="sidebar-version">Versão:</span> <span id="val-app-version-login">1.0.0</span></span>
+        <span class="app-version auth-version"><span data-i18n="sidebar-version">Versão:</span> <span id="val-app-version-login">1.0.0</span></span>
       </div>
       <div class="auth-body">
-        <button id="btn-google-login" class="btn-google">
+        <button id="btn-google-login" class="btn-google" type="button">
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
           <span data-i18n="btn-google-login">Entrar com Google</span>
         </button>
-        <p id="login-error-msg" class="error-msg" style="display: none;"></p>
+        <p id="login-error-msg" class="error-msg" role="alert" hidden></p>
       </div>
     </div>
   </div>
 
-  <div id="app-content" class="app-container" style="display: none;">
+  <div id="app-content" class="app-container" hidden>
     <div id="sidebar-overlay" class="sidebar-overlay"></div>
     <!-- Sidebar Navigation -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="app-sidebar" aria-label="Navegação principal" data-i18n-aria-label="aria-main-navigation">
       <div class="sidebar-header">
         <div class="brand">
           <div class="brand-logo">
@@ -58,7 +59,7 @@
         </div>
 
         <!-- User Profile Info -->
-        <div id="user-profile" class="user-profile-card" style="display: none;">
+        <div id="user-profile" class="user-profile-card" hidden>
           <img id="user-photo" src="" alt="Avatar" class="user-avatar">
           <div class="user-info">
             <span id="user-name" class="user-name">Usuário</span>
@@ -69,41 +70,41 @@
         <ul class="nav-links">
 
           <li class="nav-item active" data-tab="dashboard">
-            <a>
+            <button type="button" class="nav-link" aria-current="page">
               <i data-lucide="layout-dashboard"></i>
               <span data-i18n="nav-dashboard">Dashboard</span>
-            </a>
+            </button>
           </li>
           <li class="nav-item" data-tab="calendar">
-            <a>
+            <button type="button" class="nav-link">
               <i data-lucide="calendar"></i>
               <span data-i18n="nav-calendar">Calendário</span>
-            </a>
+            </button>
           </li>
           <li class="nav-item" data-tab="payments">
-            <a>
+            <button type="button" class="nav-link">
               <i data-lucide="wallet"></i>
               <span data-i18n="nav-payments">Pagamentos</span>
-            </a>
+            </button>
           </li>
           <li class="nav-item" data-tab="history">
-            <a>
+            <button type="button" class="nav-link">
               <i data-lucide="history"></i>
               <span data-i18n="nav-history">Histórico</span>
-            </a>
+            </button>
           </li>
           <li class="nav-item" data-tab="settings">
-            <a>
+            <button type="button" class="nav-link">
               <i data-lucide="settings"></i>
               <span data-i18n="nav-settings">Configurações</span>
-            </a>
+            </button>
           </li>
           <!-- Logout Button -->
-          <li class="nav-item" style="margin-top: auto; border-top: 1px solid var(--border-light);">
-            <a onclick="handleLogout()" style="color: #ef4444;">
+          <li class="nav-item nav-item-logout">
+            <button type="button" class="nav-link nav-link-danger" id="btn-logout">
               <i data-lucide="log-out"></i>
               <span data-i18n="btn-logout">Sair</span>
-            </a>
+            </button>
           </li>
           </ul>
 
@@ -114,12 +115,12 @@
     </aside>
 
     <!-- Main Content Panel -->
-    <main class="main-content">
+    <main class="main-content" id="main-content" tabindex="-1">
       
       <!-- Top header bar -->
       <header class="content-header">
         <div class="header-title-container">
-          <button id="btn-toggle-sidebar" class="btn-icon mobile-only">
+          <button id="btn-toggle-sidebar" class="btn-icon mobile-only" type="button" aria-controls="app-sidebar" aria-expanded="false" data-i18n-aria-label="aria-open-menu" aria-label="Abrir menu">
             <i data-lucide="menu"></i>
           </button>
           <div class="header-title">
@@ -128,8 +129,8 @@
           </div>
         </div>
         <div class="header-actions">
-          <span class="glass-card" style="padding: 0.5rem 1rem; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
-            <i data-lucide="calendar-days" style="color: var(--accent-purple); width: 16px; height: 16px;"></i>
+          <span class="glass-card header-date">
+            <i data-lucide="calendar-days" class="icon-accent icon-sm"></i>
             <span id="current-header-date">21 de Maio, 2026</span>
           </span>
         </div>
@@ -184,7 +185,7 @@
               <p data-i18n="stat-next-payment">Próximo Pagamento</p>
               <h3 id="stat-payment-countdown">...</h3>
             </div>
-            <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+            <div class="stat-icon stat-icon-blue">
               <i data-lucide="calendar-clock"></i>
             </div>
           </div>
@@ -270,20 +271,20 @@
           <div class="calendar-header">
             <h2 class="calendar-nav-title" id="calendar-month-year">Maio de 2026</h2>
             <div class="calendar-actions-nav">
-              <button class="btn-icon" id="btn-toggle-calendar-zoom" title="Alternar Zoom" data-i18n-title="tooltip-toggle-calendar-zoom">
+              <button class="btn-icon" type="button" id="btn-toggle-calendar-zoom" title="Alternar Zoom" data-i18n-title="tooltip-toggle-calendar-zoom" aria-label="Alternar zoom" data-i18n-aria-label="tooltip-toggle-calendar-zoom">
                 <i data-lucide="zoom-out"></i>
               </button>
-              <button class="btn-primary" style="padding: 0.5rem 1rem;" onclick="openBatchModal()">
+              <button class="btn-primary btn-compact" type="button" id="btn-open-batch">
                 <i data-lucide="calendar-plus"></i> <span data-i18n="btn-batch-launch">Lançar Vários Dias</span>
               </button>
-              <button class="btn-danger" style="padding: 0.5rem 1rem;" onclick="openBatchRemoveModal()">
+              <button class="btn-danger btn-compact" type="button" id="btn-open-batch-remove">
                 <i data-lucide="calendar-range"></i> <span data-i18n="btn-batch-remove">Remover Vários Dias</span>
               </button>
-              <button class="btn-icon" onclick="changeMonth(-1)">
+              <button class="btn-icon" type="button" id="btn-previous-month" data-i18n-aria-label="aria-previous-month" aria-label="Mês anterior">
                 <i data-lucide="chevron-left"></i>
               </button>
-              <button class="btn-secondary" style="padding: 0.5rem 1rem;" onclick="goToCurrentMonth()" data-i18n="btn-today">Hoje</button>
-              <button class="btn-icon" onclick="changeMonth(1)">
+              <button class="btn-secondary btn-compact" type="button" id="btn-current-month" data-i18n="btn-today">Hoje</button>
+              <button class="btn-icon" type="button" id="btn-next-month" data-i18n-aria-label="aria-next-month" aria-label="Próximo mês">
                 <i data-lucide="chevron-right"></i>
               </button>
             </div>
@@ -295,39 +296,39 @@
 
           <div class="calendar-legend">
             <div class="legend-item">
-              <div class="legend-color" style="background: var(--status-paid);"></div>
+              <div class="legend-color legend-paid"></div>
               <span data-i18n="legend-paid">Pago</span>
             </div>
             <div class="legend-item">
-              <div class="legend-color" style="background: var(--status-partial);"></div>
+              <div class="legend-color legend-partial"></div>
               <span data-i18n="legend-partial">Parcialmente Pago</span>
             </div>
             <div class="legend-item">
-              <div class="legend-color" style="background: var(--status-unpaid);"></div>
+              <div class="legend-color legend-unpaid"></div>
               <span data-i18n="legend-pending">Pendente</span>
             </div>
             <div class="legend-item">
-              <div class="legend-color" style="border: 1px dashed var(--accent-purple); background: var(--accent-purple-glow);"></div>
+              <div class="legend-color legend-projected"></div>
               <span data-i18n="legend-projected">Crédito Antecipado</span>
             </div>
             <div class="legend-item">
-              <div class="legend-color" style="border: 1px dashed var(--status-off); background: transparent;"></div>
+              <div class="legend-color legend-off"></div>
               <span data-i18n="legend-off">Folga</span>
             </div>
             <div class="legend-item">
-              <div class="legend-color" style="border-left: 4px solid #06b6d4; background: rgba(6, 182, 212, 0.1);"></div>
+              <div class="legend-color legend-vacation"></div>
               <span data-i18n="legend-vacation">Férias</span>
             </div>
             <div class="legend-item">
-              <i data-lucide="sun" style="width: 14px; height: 14px; color: var(--status-partial);"></i>
+              <i data-lucide="sun" class="icon-xs icon-partial"></i>
               <span data-i18n="legend-morning">Manhã</span>
             </div>
             <div class="legend-item">
-              <i data-lucide="moon" style="width: 14px; height: 14px; color: var(--accent-purple);"></i>
+              <i data-lucide="moon" class="icon-xs icon-accent"></i>
               <span data-i18n="legend-night">Noite</span>
             </div>
             <div class="legend-item">
-              <i data-lucide="sunset" style="width: 14px; height: 14px; color: #3b82f6;"></i>
+              <i data-lucide="sunset" class="icon-xs icon-blue"></i>
               <span data-i18n="legend-both">Ambos</span>
             </div>
           </div>
@@ -338,12 +339,12 @@
       <section id="section-payments" class="app-section">
         <div class="payments-container">
           <!-- Left side: List of Weeks -->
-          <div class="glass-card" style="padding: 1.75rem;">
-            <div class="dashboard-card-title" style="margin-bottom: 0.5rem;">
+          <div class="glass-card card-padded">
+            <div class="dashboard-card-title title-compact">
               <i data-lucide="calendar-days"></i>
               <span data-i18n="work-cycles-title">Ciclos de Trabalho Semanais</span>
             </div>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;" data-i18n="work-cycles-desc">
+            <p class="section-description" data-i18n="work-cycles-desc">
               Selecione as semanas que deseja incluir no recebimento do pagamento.
             </p>
             
@@ -370,19 +371,19 @@
               </div>
               <div class="summary-row">
                 <span data-i18n="summary-total-due">Valor Devido:</span>
-                <span id="summary-total-due" style="font-weight: 700;">€ 0,00</span>
+                <span id="summary-total-due" class="text-strong">€ 0,00</span>
               </div>
               <div class="summary-row">
                 <span data-i18n="summary-already-paid">Valor Recebido:</span>
-                <span id="summary-already-paid" style="color: var(--status-paid);">€ 0,00</span>
+                <span id="summary-already-paid" class="text-paid">€ 0,00</span>
               </div>
               <div class="summary-row">
                 <span data-i18n="summary-to-pay">Receber:</span>
-                <span id="summary-remaining-due" style="color: var(--status-unpaid); font-size: 1.1rem; font-weight: 800;">€ 0,00</span>
+                <span id="summary-remaining-due" class="text-due">€ 0,00</span>
               </div>
             </div>
 
-            <form id="payment-form" onsubmit="processPayment(event)">
+            <form id="payment-form">
               <div class="payment-form-group">
                 <label for="input-payment-amount" data-i18n="label-received-amount">Valor Recebido (€)</label>
                 <input type="number" step="0.01" class="form-input" id="input-payment-amount" placeholder="0,00" required>
@@ -395,7 +396,7 @@
 
               <div class="payment-form-group">
                 <label for="input-payment-method" data-i18n="label-payment-method">Método de Pagamento</label>
-                <select class="form-input" id="input-payment-method" onchange="toggleCustomNotesInput()">
+                <select class="form-input" id="input-payment-method">
                   <option value="Dinheiro" data-i18n="opt-cash">Dinheiro</option>
                   <option value="Depósito" data-i18n="opt-deposit">Depósito</option>
                   <option value="Misto" data-i18n="opt-mixed">Misto (Dinheiro + Depósito)</option>
@@ -408,8 +409,8 @@
                 <input type="text" class="form-input" id="input-payment-observation" placeholder="Ex: referência, recibo, detalhe do pagamento" data-i18n-placeholder="placeholder-payment-observation">
               </div>
 
-              <div class="payment-form-group" id="mixed-amounts-group" style="display: none;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="payment-form-group" id="mixed-amounts-group" hidden>
+                <div class="two-column-fields">
                   <div>
                     <label for="input-payment-cash-amount" data-i18n="label-cash-amount">Valor em Dinheiro (€)</label>
                     <input type="number" step="0.01" class="form-input" id="input-payment-cash-amount" placeholder="0,00">
@@ -421,7 +422,7 @@
                 </div>
               </div>
 
-              <div class="payment-form-group" id="custom-notes-group" style="display: none;">
+              <div class="payment-form-group" id="custom-notes-group" hidden>
                 <label for="input-payment-notes" data-i18n="label-notes">Especificação / Notas</label>
                 <input type="text" class="form-input" id="input-payment-notes" placeholder="Ex: Transferência Bancária, Cheque, etc." data-i18n-placeholder="placeholder-payment-notes">
               </div>
@@ -437,7 +438,7 @@
 
       <!-- SECTION: Histórico -->
       <section id="section-history" class="app-section">
-        <div class="glass-card" style="padding: 2rem;">
+        <div class="glass-card card-padded-large">
           <div class="dashboard-card-title">
             <i data-lucide="history"></i>
             <span data-i18n="payment-history-title">Histórico de Pagamentos Efetuados</span>
@@ -473,11 +474,11 @@
               <i data-lucide="calculator"></i>
               <span data-i18n="settings-rates-title">Configuração de Tarifas</span>
             </h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;" data-i18n="settings-rates-desc">
+            <p class="section-description" data-i18n="settings-rates-desc">
               Defina os valores padrão para cada período trabalhado. Novos dias utilizarão essas taxas.
             </p>
 
-            <form id="settings-rates-form" onsubmit="saveRatesSettings(event)">
+            <form id="settings-rates-form">
               <div class="form-group">
                 <label for="setting-morning-rate" data-i18n="label-morning-rate">Valor Período da Manhã (€)</label>
                 <input type="number" step="0.01" class="form-input" id="setting-morning-rate" required>
@@ -501,11 +502,11 @@
               <i data-lucide="calendar-days"></i>
               <span data-i18n="settings-weekly-schedule-title">Rotina semanal padrão</span>
             </h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;" data-i18n="settings-weekly-schedule-desc">
+            <p class="section-description" data-i18n="settings-weekly-schedule-desc">
               Defina o status padrão de cada dia da semana para lançamentos automáticos e em lote.
             </p>
 
-            <form id="settings-weekly-schedule-form" onsubmit="saveWeeklyScheduleSettings(event)">
+            <form id="settings-weekly-schedule-form">
               <div class="offdays-checkbox-grid legacy-weekly-settings">
                 <div class="checkbox-option">
                   <input type="checkbox" id="offday-0" value="0">
@@ -603,7 +604,7 @@
                 </div>
               </div>
 
-              <button type="submit" class="btn-primary" style="margin-top: 1.5rem;">
+              <button type="submit" class="btn-primary button-spaced">
                 <i data-lucide="save"></i>
                 <span data-i18n="btn-save-weekly-schedule">Salvar rotina semanal</span>
               </button>
@@ -616,85 +617,85 @@
               <i data-lucide="clock"></i>
               <span data-i18n="settings-halfdays-title">Meio Período Padrão</span>
             </h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;" data-i18n="settings-halfdays-desc">
+            <p class="section-description" data-i18n="settings-halfdays-desc">
               Defina os dias da semana em que você trabalha meio período fixo e qual o período padrão (Manhã ou Noite).
             </p>
 
-            <form id="settings-halfdays-form" onsubmit="saveHalfDaysSettings(event)">
-              <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                <div class="halfday-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border-light);">
-                  <div class="checkbox-option" style="margin-bottom: 0;">
-                    <input type="checkbox" id="halfday-active-0" value="0" onchange="toggleHalfDaySelect(0)">
+            <form id="settings-halfdays-form">
+              <div class="halfday-list">
+                <div class="halfday-row">
+                  <div class="checkbox-option checkbox-option-compact">
+                    <input type="checkbox" id="halfday-active-0" value="0" data-halfday-index="0">
                     <label for="halfday-active-0" data-i18n="day-0">Domingo</label>
                   </div>
-                  <select class="form-input" id="halfday-period-0" style="width: 140px; padding: 0.25rem 0.5rem;" disabled>
+                  <select class="form-input halfday-period" id="halfday-period-0" disabled>
                     <option value="morning" data-i18n="legend-morning">Manhã</option>
                     <option value="night" data-i18n="legend-night">Noite</option>
                   </select>
                 </div>
-                <div class="halfday-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border-light);">
-                  <div class="checkbox-option" style="margin-bottom: 0;">
-                    <input type="checkbox" id="halfday-active-1" value="1" onchange="toggleHalfDaySelect(1)">
+                <div class="halfday-row">
+                  <div class="checkbox-option checkbox-option-compact">
+                    <input type="checkbox" id="halfday-active-1" value="1" data-halfday-index="1">
                     <label for="halfday-active-1" data-i18n="day-1">Segunda-feira</label>
                   </div>
-                  <select class="form-input" id="halfday-period-1" style="width: 140px; padding: 0.25rem 0.5rem;" disabled>
+                  <select class="form-input halfday-period" id="halfday-period-1" disabled>
                     <option value="morning" data-i18n="legend-morning">Manhã</option>
                     <option value="night" data-i18n="legend-night">Noite</option>
                   </select>
                 </div>
-                <div class="halfday-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border-light);">
-                  <div class="checkbox-option" style="margin-bottom: 0;">
-                    <input type="checkbox" id="halfday-active-2" value="2" onchange="toggleHalfDaySelect(2)">
+                <div class="halfday-row">
+                  <div class="checkbox-option checkbox-option-compact">
+                    <input type="checkbox" id="halfday-active-2" value="2" data-halfday-index="2">
                     <label for="halfday-active-2" data-i18n="day-2">Terça-feira</label>
                   </div>
-                  <select class="form-input" id="halfday-period-2" style="width: 140px; padding: 0.25rem 0.5rem;" disabled>
+                  <select class="form-input halfday-period" id="halfday-period-2" disabled>
                     <option value="morning" data-i18n="legend-morning">Manhã</option>
                     <option value="night" data-i18n="legend-night">Noite</option>
                   </select>
                 </div>
-                <div class="halfday-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border-light);">
-                  <div class="checkbox-option" style="margin-bottom: 0;">
-                    <input type="checkbox" id="halfday-active-3" value="3" onchange="toggleHalfDaySelect(3)">
+                <div class="halfday-row">
+                  <div class="checkbox-option checkbox-option-compact">
+                    <input type="checkbox" id="halfday-active-3" value="3" data-halfday-index="3">
                     <label for="halfday-active-3" data-i18n="day-3">Quarta-feira</label>
                   </div>
-                  <select class="form-input" id="halfday-period-3" style="width: 140px; padding: 0.25rem 0.5rem;" disabled>
+                  <select class="form-input halfday-period" id="halfday-period-3" disabled>
                     <option value="morning" data-i18n="legend-morning">Manhã</option>
                     <option value="night" data-i18n="legend-night">Noite</option>
                   </select>
                 </div>
-                <div class="halfday-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border-light);">
-                  <div class="checkbox-option" style="margin-bottom: 0;">
-                    <input type="checkbox" id="halfday-active-4" value="4" onchange="toggleHalfDaySelect(4)">
+                <div class="halfday-row">
+                  <div class="checkbox-option checkbox-option-compact">
+                    <input type="checkbox" id="halfday-active-4" value="4" data-halfday-index="4">
                     <label for="halfday-active-4" data-i18n="day-4">Quinta-feira</label>
                   </div>
-                  <select class="form-input" id="halfday-period-4" style="width: 140px; padding: 0.25rem 0.5rem;" disabled>
+                  <select class="form-input halfday-period" id="halfday-period-4" disabled>
                     <option value="morning" data-i18n="legend-morning">Manhã</option>
                     <option value="night" data-i18n="legend-night">Noite</option>
                   </select>
                 </div>
-                <div class="halfday-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border-light);">
-                  <div class="checkbox-option" style="margin-bottom: 0;">
-                    <input type="checkbox" id="halfday-active-5" value="5" onchange="toggleHalfDaySelect(5)">
+                <div class="halfday-row">
+                  <div class="checkbox-option checkbox-option-compact">
+                    <input type="checkbox" id="halfday-active-5" value="5" data-halfday-index="5">
                     <label for="halfday-active-5" data-i18n="day-5">Sexta-feira</label>
                   </div>
-                  <select class="form-input" id="halfday-period-5" style="width: 140px; padding: 0.25rem 0.5rem;" disabled>
+                  <select class="form-input halfday-period" id="halfday-period-5" disabled>
                     <option value="morning" data-i18n="legend-morning">Manhã</option>
                     <option value="night" data-i18n="legend-night">Noite</option>
                   </select>
                 </div>
-                <div class="halfday-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border-light);">
-                  <div class="checkbox-option" style="margin-bottom: 0;">
-                    <input type="checkbox" id="halfday-active-6" value="6" onchange="toggleHalfDaySelect(6)">
+                <div class="halfday-row">
+                  <div class="checkbox-option checkbox-option-compact">
+                    <input type="checkbox" id="halfday-active-6" value="6" data-halfday-index="6">
                     <label for="halfday-active-6" data-i18n="day-6">Sábado</label>
                   </div>
-                  <select class="form-input" id="halfday-period-6" style="width: 140px; padding: 0.25rem 0.5rem;" disabled>
+                  <select class="form-input halfday-period" id="halfday-period-6" disabled>
                     <option value="morning" data-i18n="legend-morning">Manhã</option>
                     <option value="night" data-i18n="legend-night">Noite</option>
                   </select>
                 </div>
               </div>
 
-              <button type="submit" class="btn-primary" style="margin-top: 1.5rem;">
+              <button type="submit" class="btn-primary button-spaced">
                 <i data-lucide="save"></i>
                 <span data-i18n="btn-save-halfdays">Salvar Meio Período</span>
               </button>
@@ -708,12 +709,12 @@
               <i data-lucide="languages"></i>
               <span data-i18n="label-language">Idioma do Sistema</span>
             </h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+            <p class="section-description">
               Escolha o seu idioma preferido / Scegli la tua lingua preferita.
             </p>
 
             <div class="form-group">
-              <select class="form-input" id="setting-language" onchange="setLanguage(this.value)">
+              <select class="form-input" id="setting-language">
                 <option value="pt-BR">Português (Brasil)</option>
                 <option value="it-IT">Italiano (Italia)</option>
               </select>
@@ -724,12 +725,12 @@
                 <i data-lucide="palette"></i>
                 <span data-i18n="label-theme">Tema do Sistema</span>
               </h2>
-              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;" data-i18n="settings-theme-desc">
+              <p class="section-description" data-i18n="settings-theme-desc">
                 Escolha entre o tema claro ou escuro.
               </p>
 
               <div class="form-group">
-                <select class="form-input" id="setting-theme" onchange="changeTheme(this.value)">
+                <select class="form-input" id="setting-theme">
                   <option value="dark" data-i18n="theme-dark">Escuro</option>
                   <option value="light" data-i18n="theme-light">Claro</option>
                 </select>
@@ -741,13 +742,13 @@
                 <i data-lucide="calendar-check"></i>
                 <span data-i18n="settings-autofill-title">Preenchimento automático</span>
               </h2>
-              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;" data-i18n="settings-autofill-desc">
+              <p class="section-description" data-i18n="settings-autofill-desc">
                 Quando ativado, o sistema cria automaticamente os dias pendentes desde a ativação até hoje usando as folgas, meio período e valores configurados.
               </p>
 
               <div id="settings-autofill-form" class="autofill-toggle-group">
                 <label class="switch-option autofill-switch-option" for="setting-autofill-enabled">
-                  <input type="checkbox" id="setting-autofill-enabled" class="toggle-input" onchange="saveAutoFillSettings(event)">
+                  <input type="checkbox" id="setting-autofill-enabled" class="toggle-input">
                   <span class="toggle-slider" aria-hidden="true"></span>
                 </label>
                 <span id="setting-autofill-status" class="autofill-status-text" data-i18n="status-disabled">Desativado</span>
@@ -761,20 +762,20 @@
               <i data-lucide="calendar-clock"></i>
               <span data-i18n="settings-payment-cycle-title">Ciclo de Pagamento</span>
             </h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;" data-i18n="settings-payment-cycle-desc">
+            <p class="section-description" data-i18n="settings-payment-cycle-desc">
               Defina quando você costuma receber seus pagamentos para acompanhar o prazo no Dashboard.
             </p>
 
-            <form id="settings-payment-cycle-form" onsubmit="savePaymentCycleSettings(event)">
+            <form id="settings-payment-cycle-form">
               <div class="form-group">
                 <label for="setting-payment-type" data-i18n="label-payment-type">Tipo de Ciclo</label>
-                <select class="form-input" id="setting-payment-type" onchange="togglePaymentCycleInputs()">
+                <select class="form-input" id="setting-payment-type">
                   <option value="weekly" data-i18n="opt-weekly">Semanal (Dia da Semana)</option>
                   <option value="monthly" data-i18n="opt-monthly">Mensal (Dia do Mês)</option>
                 </select>
               </div>
 
-              <div class="form-group" id="group-payment-week" style="display: block;">
+              <div class="form-group" id="group-payment-week">
                 <label for="setting-payment-day-week" data-i18n="label-payment-day-week">Dia da Semana de Recebimento</label>
                 <select class="form-input" id="setting-payment-day-week">
                   <option value="0" data-i18n="day-0">Domingo</option>
@@ -787,7 +788,7 @@
                 </select>
               </div>
 
-              <div class="form-group" id="group-payment-month" style="display: none;">
+              <div class="form-group" id="group-payment-month" hidden>
                 <label for="setting-payment-day-month" data-i18n="label-payment-day-month">Dia do Mês de Recebimento</label>
                 <input type="number" min="1" max="31" class="form-input" id="setting-payment-day-month" placeholder="Ex: 5">
               </div>
@@ -805,37 +806,37 @@
               <i data-lucide="database"></i>
               <span data-i18n="settings-backup-title">Backup e Restauração</span>
             </h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;" data-i18n="settings-backup-desc">
+            <p class="section-description" data-i18n="settings-backup-desc">
               Exporte seus dados para segurança ou importe o arquivo JSON em outro dispositivo.
             </p>
 
             <div class="backup-actions-grid">
-              <button class="btn-secondary" onclick="exportDatabase()" data-i18n="btn-export">
+              <button class="btn-secondary" type="button" id="btn-export-database" data-i18n="btn-export">
                 <i data-lucide="download"></i>
                 Exportar Dados (JSON)
               </button>
               
               <div class="file-input-wrapper">
-                <button class="btn-secondary" style="width: 100%;" data-i18n="btn-import">
+                <button class="btn-secondary button-full" type="button" data-i18n="btn-import">
                   <i data-lucide="upload"></i>
                   Importar Dados (JSON)
                 </button>
-                <input type="file" id="import-db-file" accept=".json" onchange="importDatabase(event)">
+                <input type="file" id="import-db-file" accept=".json">
               </div>
             </div>
             
-            <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-light);">
+            <hr class="section-divider">
             
-            <h3 style="font-size: 1rem; font-weight: 700; color: var(--status-unpaid); margin-bottom: 0.5rem;" data-i18n="danger-zone">Zona de Perigo</h3>
-            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;" data-i18n="danger-zone-desc">
+            <h3 class="danger-zone-title" data-i18n="danger-zone">Zona de Perigo</h3>
+            <p class="danger-zone-description" data-i18n="danger-zone-desc">
               Antes da exclusão, uma cópia local recuperável será criada automaticamente.
             </p>
             <div class="backup-actions-grid">
-              <button class="btn-danger" onclick="clearDatabase()" data-i18n="btn-clear-all">
+              <button class="btn-danger" type="button" id="btn-clear-database" data-i18n="btn-clear-all">
                 <i data-lucide="trash-2"></i>
                 Apagar Todo o Histórico
               </button>
-              <button class="btn-secondary" onclick="restoreLatestDatabase()" data-i18n="btn-restore-latest">
+              <button class="btn-secondary" type="button" id="btn-restore-database" data-i18n="btn-restore-latest">
                 <i data-lucide="history"></i>
                 Restaurar Última Cópia
               </button>
@@ -848,14 +849,14 @@
   </div>
 
   <!-- MODAL: Registrar / Editar Dia de Trabalho -->
-  <div class="modal-overlay" id="day-modal">
-    <div class="glass-card modal-content">
+  <div class="modal-overlay" id="day-modal" hidden>
+    <div class="glass-card modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-date-title" tabindex="-1">
       <div class="modal-header">
         <h2 id="modal-date-title">Dia 21/05/2026</h2>
-        <button class="modal-close" onclick="closeDayModal()">&times;</button>
+        <button class="modal-close" type="button" data-dialog-close aria-label="Fechar" data-i18n-aria-label="aria-close-dialog">&times;</button>
       </div>
 
-      <form id="day-form" onsubmit="saveDayDetails(event)">
+      <form id="day-form">
         <input type="hidden" id="modal-date-value">
 
         <!-- Shift period options -->
@@ -900,7 +901,7 @@
 
             <div class="period-option">
               <input type="radio" name="modal-period" id="period-vacation" value="vacation">
-              <label for="period-vacation" class="period-card" style="border-left: 3px solid #06b6d4;">
+              <label for="period-vacation" class="period-card period-card-vacation">
                 <i data-lucide="palmtree"></i>
                 <span data-i18n="legend-vacation">Férias</span>
                 <span class="period-price">€ 0,00</span>
@@ -920,14 +921,14 @@
         </div>
 
         <!-- Payment Info Display if already paid/partial -->
-        <div id="modal-payment-info" class="payment-summary-box" style="display: none; font-size: 0.85rem; margin-bottom: 1.5rem;">
-          <div style="font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.25rem;">
-            <i data-lucide="info" style="width: 14px; height: 14px; color: var(--accent-purple);"></i>
+        <div id="modal-payment-info" class="payment-summary-box modal-payment-info" hidden>
+          <div class="modal-payment-heading">
+            <i data-lucide="info" class="icon-xs icon-accent"></i>
             <span data-i18n="modal-fin-info">Informações Financeiras do Dia</span>
           </div>
           <div class="summary-row">
             <span data-i18n="modal-status">Status:</span>
-            <span id="modal-pay-status-label" class="day-badge" style="align-self: center;">Pendente</span>
+            <span id="modal-pay-status-label" class="day-badge badge-centered">Pendente</span>
           </div>
           <div class="summary-row">
             <span data-i18n="modal-received">Valor Já Recebido:</span>
@@ -935,16 +936,16 @@
           </div>
           <div class="summary-row">
             <span data-i18n="modal-pending">Saldo Devedor:</span>
-            <span id="modal-pay-pending" style="font-weight: 700;">€ 0,00</span>
+            <span id="modal-pay-pending" class="text-strong">€ 0,00</span>
           </div>
         </div>
 
         <div class="actions-row">
-          <button type="button" class="btn-danger" id="btn-delete-day" onclick="deleteDayRecord()" style="display: none;" data-i18n="btn-delete">
+          <button type="button" class="btn-danger" id="btn-delete-day" hidden data-i18n="btn-delete">
             <i data-lucide="trash-2"></i>
             Excluir
           </button>
-          <button type="submit" class="btn-primary" style="flex-grow: 1;" data-i18n="btn-save-record">
+          <button type="submit" class="btn-primary action-grow" data-i18n="btn-save-record">
             <i data-lucide="check"></i>
             Salvar Registro
           </button>
@@ -954,59 +955,59 @@
   </div>
 
   <!-- MODAL: Lançamento de Dias em Lote -->
-  <div class="modal-overlay" id="batch-modal">
-    <div class="glass-card modal-content modal-large">
+  <div class="modal-overlay" id="batch-modal" hidden>
+    <div class="glass-card modal-content modal-large" role="dialog" aria-modal="true" aria-labelledby="batch-modal-title" tabindex="-1">
       <div class="modal-header">
-        <h2 data-i18n="batch-title">Lançamento em Lote</h2>
-        <button class="modal-close" onclick="closeBatchModal()">&times;</button>
+        <h2 id="batch-modal-title" data-i18n="batch-title">Lançamento em Lote</h2>
+        <button class="modal-close" type="button" data-dialog-close aria-label="Fechar" data-i18n-aria-label="aria-close-dialog">&times;</button>
       </div>
 
-      <form id="batch-form" onsubmit="saveBatchShifts(event)">
+      <form id="batch-form">
         <!-- Inputs de Intervalo de Datas -->
         <div class="batch-inputs-row">
           <div class="form-group">
             <label for="batch-start-date" data-i18n="batch-start">Data Inicial</label>
-            <input type="date" class="form-input" id="batch-start-date" required onchange="generateBatchDaysList()">
+            <input type="date" class="form-input" id="batch-start-date" required>
           </div>
 
           <div class="form-group">
             <label for="batch-end-date" data-i18n="batch-end">Data Final</label>
-            <input type="date" class="form-input" id="batch-end-date" required onchange="generateBatchDaysList()">
+            <input type="date" class="form-input" id="batch-end-date" required>
           </div>
         </div>
 
         <div class="form-group">
           <label for="batch-default-period" data-i18n="batch-default-period">Período Padrão para Dias Úteis</label>
-          <select class="form-input" id="batch-default-period" onchange="applyDefaultPeriodToBatchDays()">
+          <select class="form-input" id="batch-default-period">
             <option value="morning">Manhã (€ 80,00)</option>
             <option value="night">Noite (€ 100,00)</option>
             <option value="both">Ambos (€ 180,00)</option>
             <option value="off">Folga (€ 0,00)</option>
             <option value="vacation">Férias (€ 0,00)</option>
           </select>
-          <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block;" data-i18n="batch-offday-note">
+          <span class="field-hint" data-i18n="batch-offday-note">
             Obs: Os dias de folga semanal configurados serão pré-marcados como "Folga" automaticamente.
           </span>
         </div>
 
         <!-- Lista de Dias para Customização -->
-        <div class="form-group" style="margin-top: 1.5rem;">
-          <label style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="form-group form-group-spaced">
+          <div class="field-label-row">
             <span data-i18n="batch-customize-title">Personalizar Dias do Intervalo</span>
-            <span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);" id="batch-days-count-label">0 dias gerados</span>
-          </label>
+            <span class="field-count" id="batch-days-count-label" role="status">0 dias gerados</span>
+          </div>
           <div class="batch-days-list" id="batch-days-container">
-            <div style="text-align: center; color: var(--text-muted); padding: 2rem; font-size: 0.85rem;">
+            <div class="empty-state">
               ...
             </div>
           </div>
         </div>
 
-        <div class="actions-row" style="margin-top: 2rem;">
-          <button type="button" class="btn-secondary" onclick="closeBatchModal()" style="flex-grow: 1;" data-i18n="btn-cancel">
+        <div class="actions-row actions-spaced">
+          <button type="button" class="btn-secondary action-grow" data-dialog-close data-i18n="btn-cancel">
             Cancelar
           </button>
-          <button type="submit" class="btn-primary" style="flex-grow: 2;" data-i18n="btn-save-batch">
+          <button type="submit" class="btn-primary action-grow-2" data-i18n="btn-save-batch">
             <i data-lucide="check"></i>
             Salvar Lote de Dias
           </button>
@@ -1016,50 +1017,64 @@
   </div>
 
   <!-- MODAL: Remoção de Dias em Lote -->
-  <div class="modal-overlay" id="batch-remove-modal">
-    <div class="glass-card modal-content modal-large">
+  <div class="modal-overlay" id="batch-remove-modal" hidden>
+    <div class="glass-card modal-content modal-large" role="dialog" aria-modal="true" aria-labelledby="batch-remove-modal-title" tabindex="-1">
       <div class="modal-header">
-        <h2 data-i18n="batch-remove-title">Remover Dias em Lote</h2>
-        <button type="button" class="modal-close" onclick="closeBatchRemoveModal()">&times;</button>
+        <h2 id="batch-remove-modal-title" data-i18n="batch-remove-title">Remover Dias em Lote</h2>
+        <button type="button" class="modal-close" data-dialog-close aria-label="Fechar" data-i18n-aria-label="aria-close-dialog">&times;</button>
       </div>
 
-      <form id="batch-remove-form" onsubmit="saveBatchRemoveShifts(event)">
+      <form id="batch-remove-form">
         <!-- Inputs de Intervalo de Datas -->
         <div class="batch-inputs-row">
           <div class="form-group">
             <label for="batch-remove-start-date" data-i18n="batch-start">Data Inicial</label>
-            <input type="date" class="form-input" id="batch-remove-start-date" required onchange="generateBatchRemoveDaysList()">
+            <input type="date" class="form-input" id="batch-remove-start-date" required>
           </div>
 
           <div class="form-group">
             <label for="batch-remove-end-date" data-i18n="batch-end">Data Final</label>
-            <input type="date" class="form-input" id="batch-remove-end-date" required onchange="generateBatchRemoveDaysList()">
+            <input type="date" class="form-input" id="batch-remove-end-date" required>
           </div>
         </div>
 
         <!-- Lista de Dias para Exclusão -->
-        <div class="form-group" style="margin-top: 1.5rem;">
-          <label style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="form-group form-group-spaced">
+          <div class="field-label-row">
             <span data-i18n="batch-remove-select">Selecionar Dias para Remoção</span>
-            <span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);" id="batch-remove-days-count-label">0 dias encontrados</span>
-          </label>
+            <span class="field-count" id="batch-remove-days-count-label" role="status">0 dias encontrados</span>
+          </div>
           <div class="batch-days-list" id="batch-remove-days-container">
-            <div style="text-align: center; color: var(--text-muted); padding: 2rem; font-size: 0.85rem;">
+            <div class="empty-state">
               ...
             </div>
           </div>
         </div>
 
-        <div class="actions-row" style="margin-top: 2rem;">
-          <button type="button" class="btn-secondary" onclick="closeBatchRemoveModal()" style="flex-grow: 1;" data-i18n="btn-cancel">
+        <div class="actions-row actions-spaced">
+          <button type="button" class="btn-secondary action-grow" data-dialog-close data-i18n="btn-cancel">
             Cancelar
           </button>
-          <button type="submit" class="btn-danger" style="flex-grow: 2;" data-i18n="btn-confirm-remove">
+          <button type="submit" class="btn-danger action-grow-2" data-i18n="btn-confirm-remove">
             <i data-lucide="trash-2"></i>
             Confirmar Remoção
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="confirmation-modal" hidden>
+    <div class="glass-card modal-content modal-confirmation" role="alertdialog" aria-modal="true" aria-labelledby="confirmation-title" aria-describedby="confirmation-message" tabindex="-1">
+      <div class="modal-header">
+        <h2 id="confirmation-title" data-i18n="dialog-confirm-title">Confirmar ação</h2>
+        <button type="button" class="modal-close" data-confirm-value="false" aria-label="Fechar" data-i18n-aria-label="aria-close-dialog">&times;</button>
+      </div>
+      <p id="confirmation-message" class="confirmation-message"></p>
+      <div class="actions-row actions-spaced">
+        <button type="button" class="btn-secondary action-grow" data-confirm-value="false" data-i18n="btn-cancel">Cancelar</button>
+        <button type="button" class="btn-primary action-grow" id="confirmation-accept" data-confirm-value="true" data-i18n="btn-confirm">Confirmar</button>
+      </div>
     </div>
   </div>
 

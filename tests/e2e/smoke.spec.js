@@ -118,16 +118,23 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
   expect(cacheState.queue).toEqual([]);
 
   await page.locator('[data-tab="calendar"]').click();
-  await page.locator(`.calendar-day[data-date="${workedDate}"]`).click();
+  const workedDayButton = page.locator(`.calendar-day[data-date="${workedDate}"]`);
+  await workedDayButton.click();
   await expect(page.locator('#day-modal')).toHaveClass(/active/);
   await expect(page.locator('#modal-date-value')).toHaveValue(workedDate);
+  await expect(page.locator('#period-morning')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#day-modal')).toBeHidden();
+  await expect(workedDayButton).toBeFocused();
+  await workedDayButton.click();
   await page.locator('#modal-notes').fill('Registro validado no navegador');
   await page.getByRole('button', { name: 'Salvar Registro' }).click();
-  await expect(page.locator('#day-modal')).not.toHaveClass(/active/);
+  await expect(page.locator('#day-modal')).toBeHidden();
 
   await page.locator('[data-tab="payments"]').click();
   await expect(page.locator('.week-card')).toHaveCount(2);
   await page.locator('.week-card').first().click();
+  await expect(page.locator('.week-card').first()).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#input-payment-amount')).toHaveValue('35.00');
   await page.locator('#input-payment-date').click();
   await page.locator('[data-action="today-date"]').click();
@@ -149,12 +156,47 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
   await expect(page.locator('#payment-history-table-body')).toContainText('35');
 
   await page.locator('[data-tab="settings"]').click();
-  await page.getByRole('button', { name: 'Apagar Todo o Histórico' }).click();
+  await page.locator('#btn-clear-database').click();
+  await expect(page.getByRole('alertdialog')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cancelar' })).toBeFocused();
+  await page.locator('#confirmation-accept').click();
   await page.locator('[data-tab="history"]').click();
   await expect(page.locator('#payment-history-table-body')).toContainText('Nenhum registro');
 
   await page.locator('[data-tab="settings"]').click();
-  await page.getByRole('button', { name: 'Restaurar Última Cópia' }).click();
+  await page.locator('#btn-restore-database').click();
+  await page.locator('#confirmation-accept').click();
   await page.locator('[data-tab="history"]').click();
   await expect(page.locator('#payment-history-table-body')).toContainText('35');
+});
+
+test('mantém navegação e diálogos utilizáveis em viewport mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await signInWithEmulator(page);
+
+  const menuButton = page.locator('#btn-toggle-sidebar');
+  await expect(menuButton).toBeVisible();
+  await menuButton.click();
+  await expect(menuButton).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('#app-sidebar')).toHaveClass(/active/);
+
+  await page.keyboard.press('Escape');
+  await expect(menuButton).toHaveAttribute('aria-expanded', 'false');
+  await expect(menuButton).toBeFocused();
+
+  await menuButton.click();
+  await page.getByRole('button', { name: 'Calendário' }).click();
+  await expect(page.locator('#section-calendar')).toHaveClass(/active/);
+  const firstDay = page.locator('.calendar-day').first();
+  await firstDay.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('dialog')).toBeVisible();
+
+  const dialogBox = await page.getByRole('dialog').boundingBox();
+  expect(dialogBox.x).toBeGreaterThanOrEqual(0);
+  expect(dialogBox.x + dialogBox.width).toBeLessThanOrEqual(390);
+  expect(dialogBox.height).toBeLessThanOrEqual(844);
+  await page.keyboard.press('Escape');
+  await expect(firstDay).toBeFocused();
 });

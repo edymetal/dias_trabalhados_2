@@ -1,5 +1,8 @@
 # Plano de Melhoria do Layout do Calendário
 
+Status em 23/07/2026: **incorporado e substituído pela Etapa 4**. O resultado
+vigente está documentado em `plans/etapa-4-interface-acessibilidade.md`.
+
 O objetivo deste plano é resolver o problema de informações "espremidas" nas células do calendário, especialmente em dispositivos móveis, proporcionando uma visualização mais clara e espaçosa.
 
 ## Alterações Propostas

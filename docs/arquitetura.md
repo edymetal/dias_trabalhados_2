@@ -29,6 +29,8 @@ O caminho remoto continua sendo `userData/{uid}/db`. As propriedades principais 
 
 Valores continuam serializados em euros por compatibilidade, mas o domínio converte toda operação para centavos inteiros em `src/domain/money.js`. `ledger.js` concentra alocação, crédito, estorno, reconciliação e invariantes; `autofill.js` pagina datas sem recalcular registros históricos.
 
+`src/ui/dialog.js` centraliza abertura, fechamento, foco, `Escape` e confirmações acessíveis. `src/ui/feedback.js` mantém notificações e sincronização em regiões vivas. O HTML não executa handlers nem estilos inline; os eventos permanecem no controlador e a apresentação em `style.css`.
+
 As migrações são sequenciais e idempotentes. Schema superior ao conhecido coloca a sincronização em modo bloqueado para impedir que um cliente antigo sobrescreva dados novos. Nenhuma migração remota foi executada durante a implementação.
 
 ## Ambientes
