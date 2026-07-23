@@ -5,7 +5,7 @@
 1. `app.js` inicia a autenticação e a interface.
 2. `src/firebase/access-control.js` verifica os e-mails autorizados; os administradores mestres mantêm o comportamento legado.
 3. `src/persistence/database.js` solicita os dados ao adaptador `src/firebase/user-database.js`.
-4. A base é migrada de forma idempotente para o schema 2 e combinada com operações locais ainda pendentes.
+4. A base é migrada de forma idempotente para o schema 3 e combinada com operações locais ainda pendentes.
 5. Toda gravação salva primeiro no cache específico do UID, calcula as folhas modificadas e persiste a operação em uma fila durável.
 6. O adaptador usa `update()` para enviar os caminhos da operação atomicamente, sem substituir irmãos não relacionados.
 7. A fila só remove uma operação após confirmação e volta a tentar quando a conexão retorna.
@@ -25,7 +25,9 @@
 
 ## Contrato de dados preservado
 
-O caminho remoto continua sendo `userData/{uid}/db`. As propriedades principais continuam `settings`, `workedDays` e `payments`, com `schemaVersion: 2`. A normalização preenche somente campos ausentes e preserva propriedades desconhecidas, permitindo ler bases antigas sem descartar raízes ou metadados.
+O caminho remoto continua sendo `userData/{uid}/db`. As propriedades principais continuam `settings`, `workedDays` e `payments`, com `schemaVersion: 3`. A normalização preenche somente campos ausentes e preserva propriedades desconhecidas, permitindo ler bases antigas sem descartar raízes ou metadados.
+
+Valores continuam serializados em euros por compatibilidade, mas o domínio converte toda operação para centavos inteiros em `src/domain/money.js`. `ledger.js` concentra alocação, crédito, estorno, reconciliação e invariantes; `autofill.js` pagina datas sem recalcular registros históricos.
 
 As migrações são sequenciais e idempotentes. Schema superior ao conhecido coloca a sincronização em modo bloqueado para impedir que um cliente antigo sobrescreva dados novos. Nenhuma migração remota foi executada durante a implementação.
 

@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  addDaysISO,
   formatDateISO,
   formatDateStringDisplay,
+  getNextPaymentDate,
   getWeekRange,
+  isValidISODate,
+  listDateRange,
   parseLocalDate
 } from '../../src/domain/dates.js';
 
@@ -31,5 +35,27 @@ describe('datas locais', () => {
       mondayStr: '2026-12-28',
       sundayStr: '2027-01-03'
     });
+  });
+
+  it('rejeita datas inexistentes e itera sem depender de horário de verão', () => {
+    expect(isValidISODate('2026-02-29')).toBe(false);
+    expect(isValidISODate('2028-02-29')).toBe(true);
+    expect(parseLocalDate('2026-02-31')).toBeNull();
+    expect(addDaysISO('2026-03-28', 1)).toBe('2026-03-29');
+    expect(listDateRange('2026-10-24', '2026-10-27')).toEqual([
+      '2026-10-24', '2026-10-25', '2026-10-26', '2026-10-27'
+    ]);
+  });
+
+  it('limita o dia mensal ao último dia válido', () => {
+    expect(formatDateISO(getNextPaymentDate(
+      { type: 'monthly', day: 31 },
+      new Date(2026, 1, 10)
+    ))).toBe('2026-02-28');
+
+    expect(formatDateISO(getNextPaymentDate(
+      { type: 'monthly', day: 31 },
+      new Date(2026, 1, 28)
+    ))).toBe('2026-02-28');
   });
 });

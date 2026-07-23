@@ -18,9 +18,9 @@ describe('schema versionado', () => {
     const first = migrateDatabase(legacy);
     const second = migrateDatabase(first.data);
 
-    expect(first).toMatchObject({ fromVersion: 0, toVersion: 2, changed: true });
+    expect(first).toMatchObject({ fromVersion: 0, toVersion: 3, changed: true });
     expect(first.data).toMatchObject({
-      schemaVersion: 2,
+      schemaVersion: 3,
       settings: { morningRate: 35, nightRate: 25, custom: 'preservado' },
       legacyRoot: { preserved: true }
     });
@@ -42,7 +42,7 @@ describe('schema versionado', () => {
     valid.workedDays['2026-07-23'] = {
       date: '2026-07-23', rate: 35, amountPaid: 0, pendingAmount: 35
     };
-    expect(validateImportedDatabase(valid)).toMatchObject({ schemaVersion: 2 });
+    expect(validateImportedDatabase(valid)).toMatchObject({ schemaVersion: 3 });
 
     const negative = structuredClone(valid);
     negative.workedDays['2026-07-23'].rate = -1;
@@ -64,5 +64,50 @@ describe('schema versionado', () => {
     const dangerous = JSON.parse('{"settings":{},"workedDays":{},"payments":[],"__proto__":{"polluted":true}}');
     expect(() => validateImportedDatabase(dangerous)).toThrow('Chave insegura');
     expect(() => normalizeDatabase({ ...valid, schemaVersion: 99 })).toThrow('não suportada');
+  });
+
+  it('normaliza resíduos decimais sem perder valores pagos não vinculados', () => {
+    const migrated = migrateDatabase({
+      schemaVersion: 2,
+      settings: createDefaultDatabase().settings,
+      workedDays: {
+        '2026-07-23': {
+          date: '2026-07-23',
+          period: 'morning',
+          rate: 0.1 + 0.2,
+          amountPaid: 0.1,
+          pendingAmount: 0.20000000000000004,
+          paymentsApplied: {}
+        }
+      },
+      payments: []
+    }).data;
+
+    expect(migrated.workedDays['2026-07-23']).toMatchObject({
+      rate: 0.3,
+      amountPaid: 0.1,
+      pendingAmount: 0.2,
+      unlinkedAmountPaid: 0.1
+    });
+  });
+
+  it('fecha em centavos a divisão de pagamentos mistos legados', () => {
+    const migrated = migrateDatabase({
+      schemaVersion: 2,
+      settings: createDefaultDatabase().settings,
+      workedDays: {},
+      payments: [{
+        id: 'pay_mixed',
+        date: '2026-07-23',
+        amount: 10.01,
+        method: 'Misto'
+      }]
+    }).data;
+
+    expect(migrated.payments[0]).toMatchObject({
+      amount: 10.01,
+      cashAmount: 5,
+      depositAmount: 5.01
+    });
   });
 });
