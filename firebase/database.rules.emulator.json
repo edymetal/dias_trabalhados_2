@@ -9,7 +9,50 @@
     "userData": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid && (auth.token.authorized === true || auth.token.email === 'edneypugliese.dev@gmail.com' || auth.token.email === 'edneypugleise@gmail.com')",
-        ".write": "auth != null && auth.uid === $uid && (auth.token.authorized === true || auth.token.email === 'edneypugliese.dev@gmail.com' || auth.token.email === 'edneypugleise@gmail.com')"
+        ".write": "auth != null && auth.uid === $uid && (auth.token.authorized === true || auth.token.email === 'edneypugliese.dev@gmail.com' || auth.token.email === 'edneypugleise@gmail.com')",
+        "db": {
+          ".validate": "newData.hasChildren(['schemaVersion', 'settings'])",
+          "schemaVersion": {
+            ".validate": "newData.isNumber() && newData.val() === 2"
+          },
+          "settings": {
+            ".validate": "newData.hasChildren(['morningRate', 'nightRate', 'currency', 'language', 'theme'])",
+            "morningRate": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
+            },
+            "nightRate": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
+            },
+            "currency": {
+              ".validate": "newData.isString() && newData.val().length === 3"
+            },
+            "language": {
+              ".validate": "newData.val() === 'pt-BR' || newData.val() === 'it-IT'"
+            },
+            "theme": {
+              ".validate": "newData.val() === 'dark' || newData.val() === 'light'"
+            },
+            "$other": {
+              ".validate": true
+            }
+          },
+          "workedDays": {
+            "$date": {
+              ".validate": "!newData.exists() || ($date.matches(/^\\d{4}-\\d{2}-\\d{2}$/) && newData.hasChild('rate') && newData.child('rate').isNumber() && newData.child('rate').val() >= 0 && (!newData.hasChild('amountPaid') || (newData.child('amountPaid').isNumber() && newData.child('amountPaid').val() >= 0)) && (!newData.hasChild('pendingAmount') || (newData.child('pendingAmount').isNumber() && newData.child('pendingAmount').val() >= 0)))"
+            }
+          },
+          "payments": {
+            "$index": {
+              ".validate": "!newData.exists() || ($index.matches(/^[0-9]+$/) && newData.hasChildren(['id', 'date', 'amount']) && newData.child('id').isString() && newData.child('date').isString() && newData.child('date').val().matches(/^\\d{4}-\\d{2}-\\d{2}$/) && newData.child('amount').isNumber() && newData.child('amount').val() > 0 && (!newData.hasChild('advanceRemaining') || (newData.child('advanceRemaining').isNumber() && newData.child('advanceRemaining').val() >= 0)))"
+            }
+          },
+          "$other": {
+            ".validate": true
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
       }
     }
   }

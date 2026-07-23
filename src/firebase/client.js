@@ -2,6 +2,7 @@ import { getApp, getApps, initializeApp } from 'firebase/app';
 import {
   connectAuthEmulator,
   getAuth,
+  getIdTokenResult,
   GoogleAuthProvider,
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -12,12 +13,14 @@ import {
   connectDatabaseEmulator,
   get,
   getDatabase,
+  onValue,
   ref,
-  set
+  set,
+  update
 } from 'firebase/database';
 import { firebaseConfig, useFirebaseEmulators } from './config.js';
 
-const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+export const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 export const database = getDatabase(firebaseApp);
 export const auth = getAuth(firebaseApp);
@@ -33,10 +36,13 @@ if (useFirebaseEmulators && !globalThis[emulatorConnectionKey]) {
 
 export {
   get,
+  getIdTokenResult,
+  onValue,
   onAuthStateChanged,
   ref,
   set,
   signInWithEmailAndPassword,
   signInWithPopup,
-  signOut
+  signOut,
+  update
 };

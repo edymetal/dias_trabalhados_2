@@ -7,6 +7,7 @@ Aplicação web para registrar dias trabalhados, folgas, pagamentos e créditos 
 - O ID de produção é rejeitado pelos scripts e pela configuração de teste.
 - O projeto padrão do Firebase CLI neste repositório é `demo-dias-trabalhados-2`, que existe apenas durante a execução dos emuladores.
 - Os testes de navegador usam Auth e Realtime Database Emulators; os testes de regras usam uma instância isolada do Database Emulator.
+- O cache, a fila offline e as cópias recuperáveis são separados por UID.
 - Nenhum teste deve ser executado alterando `.env.test` para apontar à produção.
 - As regras em `firebase/database.rules.emulator.json` são uma proposta para validação local. **Não executar `firebase deploy --only database` a partir desta branch.**
 - Backups JSON, hashes e exportações do emulador estão ignorados pelo Git.
@@ -47,6 +48,7 @@ npm run lint
 npm run test:unit
 npm run test:rules
 npm run test:e2e
+npm run test:migration-backup -- D:\copia-temporaria\rtdb-data.json
 npm run build
 npm run check
 ```
@@ -82,4 +84,4 @@ O Vite gera o site em `dist/`. Pushes para branches `codex/**` apenas validam li
 - `firebase/`: regras exclusivas para validação no emulador;
 - `plans/`: auditoria e acompanhamento das etapas.
 
-A visão dos módulos, fluxo de dados e dívida conhecida está em `docs/arquitetura.md`. A Etapa 1 foi concluída; gravações granulares e concorrência pertencem à Etapa 2.
+A visão dos módulos e do fluxo de dados está em `docs/arquitetura.md`. As Etapas 0, 1 e o critério técnico local da Etapa 2 estão concluídos. O rollout de regras, claims, restrições de chave e App Check em produção permanece condicionado ao checklist em `plans/etapa-2-persistencia-seguranca.md`.

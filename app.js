@@ -72,15 +72,19 @@ import {
   signInWithPopup,
   signOut
 } from './src/firebase/client.js';
-import { getAuthorizedEmails } from './src/firebase/access-control.js';
+import { checkUserAccess } from './src/firebase/access-control.js';
+import { initializeApplicationProtection } from './src/firebase/app-check.js';
 import { userDatabase } from './src/firebase/user-database.js';
 import {
   createDatabaseRepository,
   createDefaultDatabase,
-  DATABASE_STORAGE_KEY
+  DATABASE_STORAGE_KEY,
+  getUserStorageKey,
+  MAX_IMPORT_BYTES,
+  validateImportedDatabase
 } from './src/persistence/database.js';
 import { loadChartRuntime } from './src/ui/chart-runtime.js';
-import { reportError } from './src/ui/feedback.js';
+import { renderSyncState, reportError, showStatus } from './src/ui/feedback.js';
 import { translations } from './src/ui/translations.js';
 
 const lucideIcons = {
@@ -134,32 +138,25 @@ const lucide = {
   createIcons: () => createIcons({ icons: lucideIcons })
 };
 
+const applicationProtectionReady = initializeApplicationProtection().catch(error => {
+  reportError('app-check', error, 'Falha ao iniciar a proteção App Check.');
+  return false;
+});
+
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.116';
-const APP_BUILD_DATE = '2026-07-22 19:42:25';
+const APP_VERSION = '1.0.117';
+const APP_BUILD_DATE = '2026-07-23 04:43:42';
 
 
 
-
-// Configuração de Acesso (Whitelist)
-const MASTER_ADMINS = ['edneypugliese.dev@gmail.com', 'edneypugleise@gmail.com'];
 
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    // 1. Verificação imediata para Master Admins (sem necessidade de rede)
-    if (MASTER_ADMINS.includes(user.email)) {
-      console.log("Master Admin autenticado:", user.email);
-      setupUserProfile(user);
-      await initDatabase();
-      return;
-    }
-
-    // 2. Verificação via Whitelist no Banco de Dados para outros usuários
     try {
-      const allowedEmails = await getAuthorizedEmails();
-
-      if (allowedEmails.includes(user.email)) {
-        console.log("Usuário autorizado via whitelist:", user.email);
+      await applicationProtectionReady;
+      const access = await checkUserAccess(user);
+      if (access.authorized) {
+        console.info(`Usuário autorizado por: ${access.source}.`);
         setupUserProfile(user);
         await initDatabase();
       } else {
@@ -228,16 +225,21 @@ let selectedWeeks = []; // Lista de chaves de semana selecionadas ('YYYY-MM-DD_Y
 const MAX_WORK_CYCLE_WEEKS = 10;
 const MONTH_NAMES = [];
 const WEEKDAY_NAMES = [];
+let unsubscribeDatabase = null;
 
 const databaseRepository = createDatabaseRepository({
   localStorage: window.localStorage,
   remoteStore: userDatabase,
+  onSyncState: renderSyncState,
   onError: ({ phase, error }) => {
     const messages = {
       'local-read': 'O armazenamento local estava inválido. Uma base vazia e segura foi carregada.',
       'local-write': 'Não foi possível salvar os dados neste dispositivo.',
       'remote-read': 'Não foi possível carregar a nuvem. Os dados locais foram usados.',
-      'remote-write': 'Os dados foram salvos neste dispositivo, mas a sincronização com a nuvem falhou.'
+      'remote-write': 'Os dados foram salvos neste dispositivo e entrarão na fila até a conexão voltar.',
+      'queue-read': 'A fila local de sincronização estava inválida.',
+      'queue-write': 'Não foi possível persistir a fila de sincronização.',
+      'incompatible-schema': 'A nuvem usa uma versão mais nova. Alterações remotas foram bloqueadas para evitar perda de dados.'
     };
     reportError(`database:${phase}`, error, messages[phase]);
   }
@@ -292,7 +294,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Inicializa o banco de dados carregando do Firebase ou localStorage
 async function initDatabase() {
-  const loaded = await databaseRepository.load(auth.currentUser?.uid);
+  const userId = auth.currentUser?.uid;
+  if (!userId) return;
+  const loaded = await databaseRepository.load(userId);
   db = loaded.data;
   console.info(`Base carregada da origem: ${loaded.source}.`);
   
@@ -305,12 +309,24 @@ async function initDatabase() {
   if (typeof renderCalendar === 'function') {
     renderAll();
   }
+
+  unsubscribeDatabase?.();
+  unsubscribeDatabase = databaseRepository.subscribe(userId, remoteData => {
+    db = remoteData;
+    renderAll();
+  });
 }
 
 // Salva o estado atual no localStorage e no Firebase
 async function saveToStorage() {
-  return databaseRepository.save(db, auth.currentUser?.uid);
+  const userId = auth.currentUser?.uid;
+  if (!userId) return { local: false, remote: false };
+  return databaseRepository.save(db, userId);
 }
+
+window.addEventListener('online', () => {
+  if (auth.currentUser?.uid) databaseRepository.retry(auth.currentUser.uid);
+});
 
 // Função auxiliar para renderizar toda a UI (chamada após carga inicial)
 function renderAll() {
@@ -332,11 +348,17 @@ function getCurrentLanguage() {
   }
 
   try {
-    const stored = localStorage.getItem(DATABASE_STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      const lang = parsed?.settings?.language;
-      if (translations[lang]) return lang;
+    const keys = [
+      auth.currentUser?.uid ? getUserStorageKey(auth.currentUser.uid) : null,
+      DATABASE_STORAGE_KEY
+    ].filter(Boolean);
+    for (const key of keys) {
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const lang = parsed?.settings?.language;
+        if (translations[lang]) return lang;
+      }
     }
   } catch (e) {
     console.warn("Erro ao ler idioma salvo:", e);
@@ -2551,25 +2573,71 @@ function importDatabase(event) {
   const reader = new FileReader();
   const file = event.target.files[0];
   if (!file) return;
-  reader.onload = (e) => {
+  if (file.size > MAX_IMPORT_BYTES) {
+    alert(getText('msg-import-too-large'));
+    event.target.value = '';
+    return;
+  }
+  reader.onload = async (e) => {
     try {
       const parsed = JSON.parse(e.target.result);
-      if (parsed.settings && parsed.workedDays) {
-        db = parsed; saveToStorage(); applyLanguage();
-        alert(translations[db.settings.language]['msg-backup-success']);
-        document.querySelector('[data-tab="dashboard"]').click();
+      const validated = validateImportedDatabase(parsed, e.target.result);
+      if (!confirm(getText('msg-import-confirm'))) return;
+
+      const recovery = databaseRepository.createRecoveryPoint(db, auth.currentUser.uid, 'before-import');
+      if (!recovery) {
+        alert(getText('msg-recovery-failed'));
+        return;
       }
-    } catch { alert(getText('msg-import-error')); }
+      db = validated;
+      await saveToStorage();
+      applyLanguage();
+      alert(translations[db.settings.language]['msg-backup-success']);
+      document.querySelector('[data-tab="dashboard"]').click();
+    } catch (error) {
+      reportError('database:import', error);
+      alert(`${getText('msg-import-error')} ${error.message || ''}`.trim());
+    } finally {
+      event.target.value = '';
+    }
   };
   reader.readAsText(file);
 }
 
-function clearDatabase() {
+async function clearDatabase() {
   if (confirm(translations[db.settings.language]['msg-clear-confirm'])) {
+    const recovery = databaseRepository.createRecoveryPoint(db, auth.currentUser.uid, 'before-clear');
+    if (!recovery) {
+      alert(getText('msg-recovery-failed'));
+      return;
+    }
     db = createDefaultDatabase();
-    saveToStorage(); applyLanguage(); loadSettingsFields();
+    await saveToStorage(); applyLanguage(); loadSettingsFields();
     document.querySelector('[data-tab="dashboard"]').click();
+    showStatus(getText('msg-clear-recoverable'), { tone: 'success' });
   }
+}
+
+async function restoreLatestDatabase() {
+  const recovered = databaseRepository.restoreLatestRecovery(auth.currentUser?.uid);
+  if (!recovered) {
+    alert(getText('msg-no-recovery'));
+    return;
+  }
+  if (!confirm(getText('msg-restore-confirm'))) return;
+
+  const safetyCopy = databaseRepository.createRecoveryPoint(db, auth.currentUser.uid, 'before-restore');
+  if (!safetyCopy) {
+    alert(getText('msg-recovery-failed'));
+    return;
+  }
+  db = recovered;
+  await saveToStorage();
+  applyLanguage();
+  loadSettingsFields();
+  renderAll();
+  document.querySelector('[data-tab="dashboard"]').click();
+  showStatus(getText('msg-restore-success'), { tone: 'success' });
 }
 
 /* ==========================================================================
@@ -2809,6 +2877,7 @@ window.processPayment = processPayment;
 window.exportDatabase = exportDatabase;
 window.importDatabase = importDatabase;
 window.clearDatabase = clearDatabase;
+window.restoreLatestDatabase = restoreLatestDatabase;
 window.setLanguage = setLanguage;
 window.changeTheme = changeTheme;
 window.saveRatesSettings = saveRatesSettings;

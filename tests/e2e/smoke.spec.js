@@ -91,6 +91,18 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
 
   await expect(page.locator('#user-email')).toHaveText(masterEmail);
   await expect(page.locator('#stat-total-earnings')).toContainText('35');
+  const cacheState = await page.evaluate(async () => {
+    const { auth } = await import('/src/firebase/client.js');
+    const userId = auth.currentUser.uid;
+    return {
+      owner: localStorage.getItem('fluxoturno_db:legacy-owner'),
+      cached: JSON.parse(localStorage.getItem(`fluxoturno_db:user:${userId}`)),
+      queue: JSON.parse(localStorage.getItem(`fluxoturno_db:queue:${userId}`))
+    };
+  });
+  expect(cacheState.owner).toBeTruthy();
+  expect(cacheState.cached.schemaVersion).toBe(2);
+  expect(cacheState.queue).toEqual([]);
 
   await page.locator('[data-tab="calendar"]').click();
   await page.locator(`.calendar-day[data-date="${workedDate}"]`).click();
@@ -111,5 +123,15 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
 
   await page.locator('[data-tab="history"]').click();
   await expect(page.locator('#payment-history-table-body tr:not(.history-month-header)')).toHaveCount(1);
+  await expect(page.locator('#payment-history-table-body')).toContainText('35');
+
+  await page.locator('[data-tab="settings"]').click();
+  await page.getByRole('button', { name: 'Apagar Todo o Histórico' }).click();
+  await page.locator('[data-tab="history"]').click();
+  await expect(page.locator('#payment-history-table-body')).toContainText('Nenhum registro');
+
+  await page.locator('[data-tab="settings"]').click();
+  await page.getByRole('button', { name: 'Restaurar Última Cópia' }).click();
+  await page.locator('[data-tab="history"]').click();
   await expect(page.locator('#payment-history-table-body')).toContainText('35');
 });
