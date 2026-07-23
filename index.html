@@ -828,12 +828,18 @@
             
             <h3 style="font-size: 1rem; font-weight: 700; color: var(--status-unpaid); margin-bottom: 0.5rem;" data-i18n="danger-zone">Zona de Perigo</h3>
             <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;" data-i18n="danger-zone-desc">
-              Esta ação excluirá permanentemente todos os registros de dias trabalhados e pagamentos.
+              Antes da exclusão, uma cópia local recuperável será criada automaticamente.
             </p>
-            <button class="btn-danger" onclick="clearDatabase()" data-i18n="btn-clear-all">
-              <i data-lucide="trash-2"></i>
-              Apagar Todo o Histórico
-            </button>
+            <div class="backup-actions-grid">
+              <button class="btn-danger" onclick="clearDatabase()" data-i18n="btn-clear-all">
+                <i data-lucide="trash-2"></i>
+                Apagar Todo o Histórico
+              </button>
+              <button class="btn-secondary" onclick="restoreLatestDatabase()" data-i18n="btn-restore-latest">
+                <i data-lucide="history"></i>
+                Restaurar Última Cópia
+              </button>
+            </div>
           </div>
         </div>
       </section>

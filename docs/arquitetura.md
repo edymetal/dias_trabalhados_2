@@ -5,10 +5,13 @@
 1. `app.js` inicia a autenticação e a interface.
 2. `src/firebase/access-control.js` verifica os e-mails autorizados; os administradores mestres mantêm o comportamento legado.
 3. `src/persistence/database.js` solicita os dados ao adaptador `src/firebase/user-database.js`.
-4. Se a nuvem estiver disponível, ela é a fonte principal. Se estiver vazia, a cópia local é normalizada e enviada uma única vez. Se falhar, a aplicação usa a cópia local e informa o usuário.
-5. Toda gravação salva primeiro em `localStorage` e depois tenta sincronizar o mesmo objeto em `userData/{uid}/db`.
-6. O domínio calcula datas, resumos e alocação de pagamentos sem conhecer DOM ou Firebase.
-7. A UI renderiza o estado; Chart.js é importado somente quando os gráficos são solicitados.
+4. A base é migrada de forma idempotente para o schema 2 e combinada com operações locais ainda pendentes.
+5. Toda gravação salva primeiro no cache específico do UID, calcula as folhas modificadas e persiste a operação em uma fila durável.
+6. O adaptador usa `update()` para enviar os caminhos da operação atomicamente, sem substituir irmãos não relacionados.
+7. A fila só remove uma operação após confirmação e volta a tentar quando a conexão retorna.
+8. Uma assinatura `onValue` atualiza a sessão quando outro cliente modifica a mesma base.
+9. O domínio calcula datas, resumos e alocação de pagamentos sem conhecer DOM ou Firebase.
+10. A UI renderiza o estado e a situação da sincronização; Chart.js é importado somente quando solicitado.
 
 ## Limites dos módulos
 
@@ -22,9 +25,9 @@
 
 ## Contrato de dados preservado
 
-O caminho remoto continua sendo `userData/{uid}/db`. As propriedades principais continuam `settings`, `workedDays` e `payments`. A normalização preenche somente campos ausentes e preserva propriedades desconhecidas, permitindo ler bases antigas sem descartar raízes ou metadados.
+O caminho remoto continua sendo `userData/{uid}/db`. As propriedades principais continuam `settings`, `workedDays` e `payments`, com `schemaVersion: 2`. A normalização preenche somente campos ausentes e preserva propriedades desconhecidas, permitindo ler bases antigas sem descartar raízes ou metadados.
 
-Nesta etapa não existe migração remota. Alterações de schema devem ser versionadas, idempotentes, testadas com a cópia restaurada no Emulator e ter rollback antes de chegar à produção.
+As migrações são sequenciais e idempotentes. Schema superior ao conhecido coloca a sincronização em modo bloqueado para impedir que um cliente antigo sobrescreva dados novos. Nenhuma migração remota foi executada durante a implementação.
 
 ## Ambientes
 
@@ -36,4 +39,4 @@ Nesta etapa não existe migração remota. Alterações de schema devem ser vers
 
 ## Dívida arquitetural conhecida
 
-O `app.js` ainda mantém estado global e a maior parte da renderização. Essa decomposição deverá continuar por tela na Etapa 4, depois que a Etapa 2 entregar persistência concorrente e a Etapa 3 consolidar as regras financeiras. A ordem evita uma reescrita ampla sobre regras e persistência ainda em evolução.
+O `app.js` ainda mantém estado global e a maior parte da renderização. A fila resolve persistência entre reinícios e concorrência em caminhos diferentes; conflitos simultâneos no mesmo campo continuam com semântica de última gravação e devem ser evitados por operações de domínio mais específicas. A decomposição visual continuará na Etapa 4, após a consolidação financeira da Etapa 3.

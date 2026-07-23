@@ -346,6 +346,8 @@ Critério de saída: testes rodam localmente e no CI com rede de produção bloq
 
 Objetivo: eliminar perda silenciosa e isolamento incorreto.
 
+Status em 23/07/2026: **critério técnico local concluído**. Cache e fila por UID, patches atômicos, assinatura remota, schema 2, migrações, importação validada, recuperação local e regras candidatas foram testados. Duas sessões preservaram alterações distintas e o isolamento entre UIDs foi comprovado no Emulator. A migração manteve os invariantes das duas bases do backup real. Nenhuma mudança foi aplicada em produção; consulte `plans/etapa-2-persistencia-seguranca.md`.
+
 - cache por UID;
 - gravações granulares/atômicas;
 - fila e estado de sincronização;
