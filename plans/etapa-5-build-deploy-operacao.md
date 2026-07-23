@@ -2,7 +2,7 @@
 
 Data de conclusão técnica: 23/07/2026
 
-Status: **concluída tecnicamente; Firebase e conteúdo publicado não alterados**
+Status: **concluída; Firebase e conteúdo publicado não alterados**
 
 Branch: `codex/etapa-5-build-deploy-operacao`
 
@@ -55,13 +55,28 @@ executada no Firebase de produção.
 | CSP de produção sem localhost | aprovado |
 | Artefato restrito a `dist/` | aprovado |
 | Actions fixadas por SHA | aprovado |
+| Regras do Realtime Database Emulator | 8/8 |
+| E2E desktop/mobile em Auth/Database Emulators | 3/3 |
+| Ensaio de restauração e reexportação | hash idêntico |
+| Auditoria de dependências | 0 vulnerabilidades |
+| GitHub Actions da branch | aprovado |
 
-Regras, E2E, restauração e GitHub Actions são registrados após a validação final
-da branch.
+Execução validada:
+<https://github.com/edymetal/dias_trabalhados_2/actions/runs/30027505623>.
+
+## Configuração remota concluída
+
+- GitHub Pages: `build_type: workflow`, HTTPS forçado e conteúdo atual mantido;
+- `master`: pull request obrigatório;
+- checks obrigatórios: `validate` e `e2e`, em modo estrito;
+- resolução de conversas e histórico linear obrigatórios;
+- force push e exclusão da branch desativados;
+- zero aprovações obrigatórias para não bloquear o mantenedor único.
 
 ## Rollout pendente
 
-A conclusão técnica não publica a branch, não cria tag e não altera dados.
+A conclusão da etapa não publica a branch em produção, não cria tag e não
+altera dados.
 Antes do rollout real:
 
 1. obter um backup novo e validar a recuperação;
