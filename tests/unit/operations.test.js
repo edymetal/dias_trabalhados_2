@@ -13,8 +13,9 @@ function response(body, url, contentType = 'text/plain') {
 }
 
 describe('operação e entrega', () => {
-  it('valida a página, o bundle e o manifesto sem consultar o Firebase', async () => {
+  it('valida a página, o bundle, o manifesto e seus ícones sem consultar o Firebase', async () => {
     const calls = [];
+    const png = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
     const html = [
       '<html><head>',
       '<meta http-equiv="Content-Security-Policy" content="default-src \'self\'">',
@@ -27,8 +28,15 @@ describe('operação e entrega', () => {
       const url = String(input);
       calls.push(url);
       if (url.endsWith('site.webmanifest')) {
-        return response(JSON.stringify({ name: 'Dias Trabalhados' }), url, 'application/json');
+        return response(JSON.stringify({
+          name: 'Dias Trabalhados',
+          icons: [
+            { src: './icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+            { src: './icons/icon-512.png', sizes: '512x512', type: 'image/png' }
+          ]
+        }), url, 'application/json');
       }
+      if (url.endsWith('.png')) return response(png, url, 'image/png');
       if (url.endsWith('assets/index.js')) return response('x'.repeat(1_001), url);
       return response(html, url, 'text/html');
     };
@@ -39,7 +47,9 @@ describe('operação e entrega', () => {
     expect(calls).toEqual([
       'https://example.test/app/',
       'https://example.test/app/assets/index.js',
-      'https://example.test/app/site.webmanifest'
+      'https://example.test/app/site.webmanifest',
+      'https://example.test/app/icons/icon-192.png',
+      'https://example.test/app/icons/icon-512.png'
     ]);
     expect(calls.some(url => /firebase|googleapis/.test(url))).toBe(false);
   });
@@ -58,8 +68,23 @@ describe('operação e entrega', () => {
 
   it('mantém os assets de instalação relativos ao subdiretório do Pages', async () => {
     const html = await readFile(projectFile('index.html'), 'utf8');
+    const manifest = JSON.parse(await readFile(projectFile('public/site.webmanifest'), 'utf8'));
+    const pngSignature = [137, 80, 78, 71, 13, 10, 26, 10];
 
     expect(html).not.toMatch(/\b(?:href|src)="\/(?:favicon|icons|site\.webmanifest)/);
     expect(html).toContain('name="referrer" content="strict-origin-when-cross-origin"');
+    expect(manifest.start_url).toBe('./');
+    expect(manifest.icons.map(icon => icon.src)).toEqual([
+      './icons/icon-192.png',
+      './icons/icon-512.png'
+    ]);
+
+    for (const icon of manifest.icons) {
+      const bytes = await readFile(projectFile(`public/${icon.src}`));
+      expect(Array.from(bytes.subarray(0, pngSignature.length))).toEqual(pngSignature);
+    }
+
+    await expect(readFile(projectFile('site.webmanifest'), 'utf8'))
+      .rejects.toMatchObject({ code: 'ENOENT' });
   });
 });
