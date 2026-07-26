@@ -158,8 +158,8 @@ const applicationProtectionReady = initializeApplicationProtection().catch(error
 });
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.121';
-const APP_BUILD_DATE = '2026-07-23 13:59:25';
+const APP_VERSION = '1.0.123';
+const APP_BUILD_DATE = '2026-07-26 20:24:19';
 
 
 

@@ -51,15 +51,39 @@ export async function checkPagesHealth(target, {
     /<link\b[^>]*\brel=["']manifest["'][^>]*\bhref=["']([^"']+)["'][^>]*>/i,
     'Manifesto'
   );
+  const manifestUrl = new URL(manifestPath, pageUrl);
   const [moduleResponse, manifestResponse] = await Promise.all([
     fetchRequired(new URL(modulePath, pageUrl), fetchImpl, { timeoutMs }),
-    fetchRequired(new URL(manifestPath, pageUrl), fetchImpl, { timeoutMs })
+    fetchRequired(manifestUrl, fetchImpl, { timeoutMs })
   ]);
   const manifest = await manifestResponse.json();
   const moduleSource = await moduleResponse.text();
 
   if (manifest.name !== 'Dias Trabalhados') {
     throw new Error('Manifesto publicado não corresponde à aplicação.');
+  }
+  const requiredIconSizes = ['192x192', '512x512'];
+  const requiredIcons = requiredIconSizes.map(size => {
+    const icon = manifest.icons?.find(candidate =>
+      candidate.src && candidate.sizes?.split(/\s+/).includes(size)
+    );
+    if (!icon) throw new Error(`Manifesto publicado não contém o ícone ${size}.`);
+    return { icon, size };
+  });
+  const iconResponses = await Promise.all(requiredIcons.map(({ icon }) =>
+    fetchRequired(new URL(icon.src, manifestUrl), fetchImpl, { timeoutMs })
+  ));
+  const pngSignature = [137, 80, 78, 71, 13, 10, 26, 10];
+
+  for (let index = 0; index < iconResponses.length; index += 1) {
+    const response = iconResponses[index];
+    const contentType = response.headers.get('content-type') || '';
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    const validSignature = pngSignature.every((byte, offset) => bytes[offset] === byte);
+
+    if (!contentType.toLowerCase().startsWith('image/png') || !validSignature) {
+      throw new Error(`Ícone ${requiredIcons[index].size} publicado não é um PNG válido.`);
+    }
   }
   if (moduleSource.length < 1_000) {
     throw new Error('Bundle JavaScript publicado está vazio ou incompleto.');
