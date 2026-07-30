@@ -151,6 +151,7 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
   await expect(page.locator('#stat-total-received')).toContainText('35');
   await expect(page.locator('#stat-total-earnings')).toContainText(String(expectedAccumulatedThisMonth));
   await expect(page.locator('#annual-months-received-list [aria-current="date"]')).toContainText('35');
+  await expect(page.locator('#annual-months-total')).toContainText('35');
   const paymentState = await page.evaluate(async () => {
     const { auth } = await import('/src/firebase/client.js');
     const userId = auth.currentUser.uid;

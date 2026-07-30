@@ -159,8 +159,8 @@ const applicationProtectionReady = initializeApplicationProtection().catch(error
 });
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.126';
-const APP_BUILD_DATE = '2026-07-30 05:04:55';
+const APP_VERSION = '1.0.127';
+const APP_BUILD_DATE = '2026-07-30 05:16:50';
 
 
 
@@ -1112,24 +1112,39 @@ function updateDashboardData() {
 function renderAnnualMonthlyReceivedSummary() {
   const container = document.getElementById('annual-months-received-list');
   const yearEl = document.getElementById('annual-months-year');
-  if (!container || !yearEl) return;
+  const annualTotalEl = document.getElementById('annual-months-total');
+  if (!container || !yearEl || !annualTotalEl) return;
 
   const today = new Date();
   const year = today.getFullYear();
   const currentMonth = today.getMonth();
   const texts = translations[db.settings.language || 'pt-BR'];
   const monthlyTotals = calculateReceivedByMonthInYear(db.workedDays, year);
+  const annualTotal = fromCents(
+    monthlyTotals.reduce((total, monthTotal) => total + toCents(monthTotal), 0)
+  );
+  const maxMonthlyTotal = Math.max(...monthlyTotals, 1);
 
   yearEl.innerText = String(year);
+  annualTotalEl.innerText = formatCurrency(annualTotal);
   container.innerHTML = monthlyTotals.map((total, monthIndex) => {
     const monthName = texts[`month-${monthIndex}`];
     const currentMonthAttribute = monthIndex === currentMonth ? ' aria-current="date"' : '';
     const currentMonthClass = monthIndex === currentMonth ? ' is-current' : '';
+    const receivedClass = toCents(total) > 0 ? ' has-received' : ' is-empty';
+    const monthNumber = String(monthIndex + 1).padStart(2, '0');
 
     return `
-      <article class="annual-month-item${currentMonthClass}" role="listitem"${currentMonthAttribute}>
-        <span>${monthName}</span>
-        <strong>${formatCurrency(total)}</strong>
+      <article class="annual-month-item${currentMonthClass}${receivedClass}" role="listitem" data-month="${monthIndex}"${currentMonthAttribute}>
+        <div class="annual-month-heading">
+          <span class="annual-month-name">${monthName}</span>
+          <span class="annual-month-number" aria-hidden="true">${monthNumber}</span>
+        </div>
+        <strong class="annual-month-value">${formatCurrency(total)}</strong>
+        <div class="annual-month-progress-row">
+          <span>${texts['dashboard-annual-months-received']}</span>
+          <progress class="annual-month-progress" value="${total}" max="${maxMonthlyTotal}" aria-hidden="true"></progress>
+        </div>
       </article>
     `;
   }).join('');

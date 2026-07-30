@@ -195,16 +195,24 @@
         <!-- Annual Monthly Received Summary -->
         <div class="glass-card dashboard-card annual-months-card">
           <div class="annual-months-card-header">
-            <div>
+            <div class="annual-months-heading">
               <h2 class="dashboard-card-title">
-                <i data-lucide="calendar-days"></i>
+                <span class="annual-months-title-icon">
+                  <i data-lucide="calendar-days"></i>
+                </span>
                 <span data-i18n="dashboard-annual-months-title">Recebimentos por Mês</span>
               </h2>
               <p class="annual-months-description" data-i18n="dashboard-annual-months-desc">
                 Total recebido nos dias trabalhados de cada mês do ano.
               </p>
             </div>
-            <span class="annual-months-year" id="annual-months-year">—</span>
+            <div class="annual-months-overview">
+              <div class="annual-months-total">
+                <span data-i18n="dashboard-annual-months-total">Recebido no ano</span>
+                <strong id="annual-months-total">€ 0,00</strong>
+              </div>
+              <span class="annual-months-year" id="annual-months-year">—</span>
+            </div>
           </div>
           <div class="annual-months-grid" id="annual-months-received-list" role="list">
             <!-- Dynamically populated with all months of the current year -->
