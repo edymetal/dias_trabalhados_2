@@ -108,6 +108,8 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
   await expect(page.locator('#user-email')).toHaveText(masterEmail);
   await expect(page.locator('[data-i18n="stat-total-accumulated"]')).toHaveText('Acumulado Mês');
   await expect(page.locator('#stat-total-earnings')).toContainText(String(expectedAccumulatedThisMonth));
+  await expect(page.locator('#annual-months-received-list .annual-month-item')).toHaveCount(12);
+  await expect(page.locator('#annual-months-year')).toHaveText(String(new Date().getFullYear()));
   const cacheState = await page.evaluate(async () => {
     const { auth } = await import('/src/firebase/client.js');
     const userId = auth.currentUser.uid;
@@ -148,6 +150,7 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
   await page.locator('[data-tab="dashboard"]').click();
   await expect(page.locator('#stat-total-received')).toContainText('35');
   await expect(page.locator('#stat-total-earnings')).toContainText(String(expectedAccumulatedThisMonth));
+  await expect(page.locator('#annual-months-received-list [aria-current="date"]')).toContainText('35');
   const paymentState = await page.evaluate(async () => {
     const { auth } = await import('/src/firebase/client.js');
     const userId = auth.currentUser.uid;

@@ -526,6 +526,78 @@ body.dialog-open {
   padding: 1.75rem;
 }
 
+.annual-months-card {
+  margin-bottom: 1.5rem;
+}
+
+.annual-months-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.annual-months-card-header .dashboard-card-title {
+  margin-bottom: 0.35rem;
+}
+
+.annual-months-description {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.annual-months-year {
+  flex: 0 0 auto;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: 999px;
+  background: rgba(139, 92, 246, 0.1);
+  color: var(--accent-purple-hover);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.annual-months-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.annual-month-item {
+  min-width: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-sm);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.annual-month-item span,
+.annual-month-item strong {
+  display: block;
+}
+
+.annual-month-item span {
+  margin-bottom: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.annual-month-item strong {
+  color: var(--text-primary);
+  font-size: clamp(0.82rem, 1vw, 1rem);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.annual-month-item.is-current {
+  border-color: rgba(139, 92, 246, 0.55);
+  background: rgba(139, 92, 246, 0.09);
+  box-shadow: inset 0 3px 0 var(--accent-purple);
+}
+
 .dashboard-weekly-card {
   display: flex;
   flex-direction: column;
@@ -2670,6 +2742,10 @@ body.dialog-open {
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
+
+  .annual-months-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 768px) {
@@ -2701,6 +2777,14 @@ body.dialog-open {
 
   .stat-card {
     padding: 1.25rem;
+  }
+
+  .annual-months-card-header {
+    align-items: center;
+  }
+
+  .annual-months-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .stat-info h3 {

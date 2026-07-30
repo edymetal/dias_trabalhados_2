@@ -69,6 +69,7 @@ import {
 } from './src/domain/ledger.js';
 import {
   calculateFinancialSummary,
+  calculateReceivedByMonthInYear,
   splitPaymentMethod
 } from './src/domain/dashboard.js';
 import { getAutoFillBatch } from './src/domain/autofill.js';
@@ -158,8 +159,8 @@ const applicationProtectionReady = initializeApplicationProtection().catch(error
 });
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.125';
-const APP_BUILD_DATE = '2026-07-30 04:47:32';
+const APP_VERSION = '1.0.126';
+const APP_BUILD_DATE = '2026-07-30 05:04:55';
 
 
 
@@ -1100,11 +1101,38 @@ function updateDashboardData() {
   if (depositValEl) depositValEl.innerText = formatCurrency(annualReceivedDeposit);
   if (cashValEl) cashValEl.innerText = formatCurrency(annualReceivedCash);
   if (workedDaysEl) workedDaysEl.innerText = `${annualWorkedDays} ${annualWorkedDays === 1 ? texts['week-day'] : texts['week-days']}`;
+  renderAnnualMonthlyReceivedSummary();
   renderMonthlyWeeksSummary();
 
   // Atualiza gráficos
   renderEarningsChart();
   renderAnnualMethodChart(annualReceivedCash, annualReceivedDeposit);
+}
+
+function renderAnnualMonthlyReceivedSummary() {
+  const container = document.getElementById('annual-months-received-list');
+  const yearEl = document.getElementById('annual-months-year');
+  if (!container || !yearEl) return;
+
+  const today = new Date();
+  const year = today.getFullYear();
+  const currentMonth = today.getMonth();
+  const texts = translations[db.settings.language || 'pt-BR'];
+  const monthlyTotals = calculateReceivedByMonthInYear(db.workedDays, year);
+
+  yearEl.innerText = String(year);
+  container.innerHTML = monthlyTotals.map((total, monthIndex) => {
+    const monthName = texts[`month-${monthIndex}`];
+    const currentMonthAttribute = monthIndex === currentMonth ? ' aria-current="date"' : '';
+    const currentMonthClass = monthIndex === currentMonth ? ' is-current' : '';
+
+    return `
+      <article class="annual-month-item${currentMonthClass}" role="listitem"${currentMonthAttribute}>
+        <span>${monthName}</span>
+        <strong>${formatCurrency(total)}</strong>
+      </article>
+    `;
+  }).join('');
 }
 
 // Cria/Atualiza o gráfico dinÃƒÂ¢mico

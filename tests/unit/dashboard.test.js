@@ -4,6 +4,7 @@ import {
   calculateCashReceivedInMonth,
   calculateEarnedInMonth,
   calculateFinancialSummary,
+  calculateReceivedByMonthInYear,
   calculateReceivedForWorkedDaysInMonth,
   getMonthDateRange,
   splitPaymentMethod
@@ -27,6 +28,21 @@ describe('resumo do dashboard', () => {
 
     expect(calculateReceivedForWorkedDaysInMonth(workedDays, new Date(2026, 6, 15))).toBe(60);
     expect(calculateAccumulatedInMonth(workedDays, new Date(2026, 6, 15))).toBe(85);
+  });
+
+  it('apresenta os doze meses do ano com o total recebido em cada mês', () => {
+    const workedDays = {
+      '2025-12-31': { period: 'morning', rate: 90, amountPaid: 90 },
+      '2026-01-02': { period: 'morning', rate: 35, amountPaid: 35 },
+      '2026-01-03': { period: 'night', rate: 25, amountPaid: 10 },
+      '2026-07-10': { period: 'both', rate: 60, amountPaid: 60 },
+      '2026-08-01': { period: 'vacation', rate: 999, amountPaid: 999 },
+      '2027-01-01': { period: 'morning', rate: 100, amountPaid: 100 }
+    };
+
+    expect(calculateReceivedByMonthInYear(workedDays, 2026)).toEqual([
+      45, 0, 0, 0, 0, 0, 60, 0, 0, 0, 0, 0
+    ]);
   });
 
   it('separa caixa por data do pagamento e competência por data trabalhada', () => {

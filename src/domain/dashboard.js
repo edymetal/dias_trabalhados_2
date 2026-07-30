@@ -36,6 +36,20 @@ export function calculateAccumulatedInMonth(workedDays, referenceDate = new Date
   );
 }
 
+export function calculateReceivedByMonthInYear(workedDays, year = new Date().getFullYear()) {
+  const monthlyCents = Array(12).fill(0);
+  const yearPrefix = `${year}-`;
+
+  for (const [date, day] of Object.entries(workedDays || {})) {
+    if (!date.startsWith(yearPrefix) || !isFinancialDay(day)) continue;
+    const monthIndex = Number.parseInt(date.slice(5, 7), 10) - 1;
+    if (monthIndex < 0 || monthIndex > 11) continue;
+    monthlyCents[monthIndex] += toCents(day.amountPaid || 0);
+  }
+
+  return monthlyCents.map(fromCents);
+}
+
 export function calculateCashReceivedInMonth(payments, referenceDate = new Date()) {
   return sumEntriesInMonth(payments || [], referenceDate, payment => payment.amount);
 }
