@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  calculateAccumulatedInMonth,
   calculateCashReceivedInMonth,
   calculateEarnedInMonth,
   calculateFinancialSummary,
@@ -18,13 +19,14 @@ describe('resumo do dashboard', () => {
 
   it('soma somente pagamentos aplicados aos dias do mês', () => {
     const workedDays = {
-      '2026-06-30': { amountPaid: 100 },
-      '2026-07-01': { amountPaid: 35 },
-      '2026-07-31': { amountPaid: 25 },
-      '2026-08-01': { amountPaid: 200 }
+      '2026-06-30': { period: 'morning', rate: 100, amountPaid: 100, pendingAmount: 0 },
+      '2026-07-01': { period: 'morning', rate: 35, amountPaid: 35, pendingAmount: 0 },
+      '2026-07-31': { period: 'night', rate: 50, amountPaid: 25, pendingAmount: 25 },
+      '2026-08-01': { period: 'morning', rate: 200, amountPaid: 200, pendingAmount: 0 }
     };
 
     expect(calculateReceivedForWorkedDaysInMonth(workedDays, new Date(2026, 6, 15))).toBe(60);
+    expect(calculateAccumulatedInMonth(workedDays, new Date(2026, 6, 15))).toBe(85);
   });
 
   it('separa caixa por data do pagamento e competência por data trabalhada', () => {
@@ -46,6 +48,8 @@ describe('resumo do dashboard', () => {
       totalEarnings: 135,
       totalAdvance: 65,
       netBalance: -65,
+      receivedThisMonth: 35,
+      accumulatedThisMonth: 35,
       receivedThisMonthCash: 100,
       earnedThisMonth: 35
     });

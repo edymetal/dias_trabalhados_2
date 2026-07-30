@@ -24,7 +24,16 @@ function sumEntriesInMonth(entries, referenceDate, readAmount) {
 
 export function calculateReceivedForWorkedDaysInMonth(workedDays, referenceDate = new Date()) {
   const entries = Object.entries(workedDays || {}).map(([date, day]) => ({ date, ...day }));
-  return sumEntriesInMonth(entries, referenceDate, day => day.amountPaid);
+  return sumEntriesInMonth(entries.filter(isFinancialDay), referenceDate, day => day.amountPaid);
+}
+
+export function calculateAccumulatedInMonth(workedDays, referenceDate = new Date()) {
+  const entries = Object.entries(workedDays || {}).map(([date, day]) => ({ date, ...day }));
+  return sumEntriesInMonth(
+    entries.filter(isFinancialDay),
+    referenceDate,
+    day => fromCents(toCents(day.amountPaid || 0) + toCents(day.pendingAmount || 0))
+  );
 }
 
 export function calculateCashReceivedInMonth(payments, referenceDate = new Date()) {
@@ -70,6 +79,8 @@ export function calculateFinancialSummary(state, referenceDate = new Date()) {
     totalAdvance: fromCents(creditCents),
     netBalance: fromCents(pendingCents - creditCents),
     thisWeekEarnings: fromCents(weekEarningsCents),
+    receivedThisMonth: calculateReceivedForWorkedDaysInMonth(state.workedDays, referenceDate),
+    accumulatedThisMonth: calculateAccumulatedInMonth(state.workedDays, referenceDate),
     receivedThisMonthCash: calculateCashReceivedInMonth(state.payments, referenceDate),
     earnedThisMonth: calculateEarnedInMonth(state.workedDays, referenceDate)
   };

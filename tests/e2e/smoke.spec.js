@@ -60,6 +60,9 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
   const previousWeek = new Date();
   previousWeek.setDate(previousWeek.getDate() - 7);
   const previousWorkedDate = localDateISO(previousWeek);
+  const expectedAccumulatedThisMonth = previousWorkedDate.slice(0, 7) === workedDate.slice(0, 7)
+    ? 70
+    : 35;
   const syntheticDatabase = {
     settings: {
       morningRate: 35,
@@ -103,7 +106,8 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
   await signInWithEmulator(page);
 
   await expect(page.locator('#user-email')).toHaveText(masterEmail);
-  await expect(page.locator('#stat-total-earnings')).toContainText('70');
+  await expect(page.locator('[data-i18n="stat-total-accumulated"]')).toHaveText('Acumulado Mês');
+  await expect(page.locator('#stat-total-earnings')).toContainText(String(expectedAccumulatedThisMonth));
   const cacheState = await page.evaluate(async () => {
     const { auth } = await import('/src/firebase/client.js');
     const userId = auth.currentUser.uid;
@@ -143,6 +147,7 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
 
   await page.locator('[data-tab="dashboard"]').click();
   await expect(page.locator('#stat-total-received')).toContainText('35');
+  await expect(page.locator('#stat-total-earnings')).toContainText(String(expectedAccumulatedThisMonth));
   const paymentState = await page.evaluate(async () => {
     const { auth } = await import('/src/firebase/client.js');
     const userId = auth.currentUser.uid;

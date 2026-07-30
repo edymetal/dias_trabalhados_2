@@ -38,7 +38,7 @@ export const translations = {
     'header-settings-subtitle': 'Ajustes finos do sistema, exportação de dados e tarifas padrão.',
 
     // Dashboard
-    'stat-total-accumulated': 'Total Acumulado',
+    'stat-total-accumulated': 'Acumulado Mês',
     'stat-total-received': 'Recebido no Mês',
     'stat-total-pending': 'Total Pendente',
     'stat-this-week': 'Esta Semana',
@@ -303,7 +303,7 @@ export const translations = {
     'header-settings-subtitle': 'Regolazioni del sistema, esportazione dati e tariffe standard.',
 
     // Dashboard
-    'stat-total-accumulated': 'Totale Accumulato',
+    'stat-total-accumulated': 'Accumulato del Mese',
     'stat-total-received': 'Ricevuto nel Mese',
     'stat-total-pending': 'Totale Pendente',
     'stat-this-week': 'Questa Settimana',

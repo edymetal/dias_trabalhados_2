@@ -158,8 +158,8 @@ const applicationProtectionReady = initializeApplicationProtection().catch(error
 });
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.124';
-const APP_BUILD_DATE = '2026-07-30 04:20:10';
+const APP_VERSION = '1.0.125';
+const APP_BUILD_DATE = '2026-07-30 04:47:32';
 
 
 
@@ -1013,15 +1013,15 @@ function calculateProjectedCreditDays() {
 function updateDashboardData() {
   if (!db) return; // Segurança contra carga incompleta
   const {
-    totalEarnings,
+    accumulatedThisMonth,
     netBalance,
     thisWeekEarnings,
-    receivedThisMonthCash: totalReceived
+    receivedThisMonth
   } = calculateFinancialSummary(db);
 
   // Atualiza os elementos da tela
-  document.getElementById('stat-total-earnings').innerText = formatCurrency(totalEarnings);
-  document.getElementById('stat-total-received').innerText = formatCurrency(totalReceived);
+  document.getElementById('stat-total-earnings').innerText = formatCurrency(accumulatedThisMonth);
+  document.getElementById('stat-total-received').innerText = formatCurrency(receivedThisMonth);
   document.getElementById('stat-this-week-earnings').innerText = formatCurrency(thisWeekEarnings);
 
   // Atualiza contagem regressiva para pagamento
