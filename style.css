@@ -1328,6 +1328,7 @@ body.dialog-open {
 
 .day-status-paid {
   border-left: 4px solid var(--status-paid) !important;
+  border-bottom: 3px solid var(--status-paid) !important;
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(139, 92, 246, 0.02)) !important;
 }
 
@@ -1338,6 +1339,7 @@ body.dialog-open {
 
 .day-status-partial {
   border-left: 4px solid var(--status-partial) !important;
+  border-bottom: 3px solid var(--status-partial) !important;
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(139, 92, 246, 0.02)) !important;
 }
 
@@ -1348,6 +1350,7 @@ body.dialog-open {
 
 .day-status-unpaid {
   border-left: 4px solid var(--status-unpaid) !important;
+  border-bottom: 3px solid var(--status-unpaid) !important;
   background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(139, 92, 246, 0.02)) !important;
 }
 
