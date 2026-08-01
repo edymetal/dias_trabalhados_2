@@ -76,8 +76,13 @@ function calculateDaysBetween(startDate, endDate) {
   );
 }
 
-export function calculatePaymentDelaySummary(state, year = new Date().getFullYear()) {
+export function calculatePaymentDelaySummary(
+  state,
+  year = new Date().getFullYear(),
+  referenceDate = new Date()
+) {
   const reportYear = Number.isInteger(year) ? year : new Date().getFullYear();
+  const todayISO = formatDateISO(referenceDate);
   const months = Array.from({ length: 12 }, (_, monthIndex) => ({
     monthIndex,
     delayCount: 0,
@@ -97,12 +102,13 @@ export function calculatePaymentDelaySummary(state, year = new Date().getFullYea
   for (const [workedDate, day] of Object.entries(state?.workedDays || {})) {
     if (!isFinancialDay(day) || !isValidISODate(workedDate)) continue;
     const dueDate = calculateExpectedPaymentDate(workedDate, cycle);
-    if (!dueDate || !dueDate.startsWith(`${reportYear}-`)) continue;
+    if (!dueDate || !dueDate.startsWith(`${reportYear}-`) || dueDate >= todayISO) continue;
 
     for (const [paymentId, appliedAmount] of Object.entries(day.paymentsApplied || {})) {
       const amountCents = toCents(appliedAmount || 0);
       const payment = paymentsById.get(String(paymentId));
-      if (amountCents <= 0 || !payment || !isValidISODate(payment.date) || payment.date <= dueDate) continue;
+      if (amountCents <= 0 || !payment || !isValidISODate(payment.date)
+          || payment.date <= dueDate || payment.date > todayISO) continue;
 
       const eventKey = dueDate;
       if (!groupedEvents.has(eventKey)) {

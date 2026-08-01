@@ -129,6 +129,66 @@ describe('resumo do dashboard', () => {
     expect(summary.mostProblematicMonth.monthIndex).toBe(1);
   });
 
+  it('ignora vencimentos futuros, pagamentos futuros e pagamentos antecipados', () => {
+    const state = {
+      settings: { paymentCycle: { type: 'weekly', day: 0 } },
+      workedDays: {
+        '2026-08-01': {
+          period: 'morning', rate: 100, paymentsApplied: { pay_early_future_due: 100 }
+        },
+        '2026-07-27': {
+          period: 'morning', rate: 200, paymentsApplied: { pay_after_future_due: 200 }
+        },
+        '2026-07-20': {
+          period: 'morning', rate: 50, paymentsApplied: { pay_early_past_due: 50 }
+        },
+        '2026-07-21': {
+          period: 'morning', rate: 60, paymentsApplied: { pay_future_receipt: 60 }
+        },
+        '2026-07-13': {
+          period: 'morning', rate: 75, paymentsApplied: { pay_late_today: 75 }
+        }
+      },
+      payments: [
+        { id: 'pay_early_future_due', date: '2026-08-01', amount: 100 },
+        { id: 'pay_after_future_due', date: '2026-08-03', amount: 200 },
+        { id: 'pay_early_past_due', date: '2026-07-25', amount: 50 },
+        { id: 'pay_future_receipt', date: '2026-08-02', amount: 60 },
+        { id: 'pay_late_today', date: '2026-08-01', amount: 75 }
+      ]
+    };
+
+    const onAugustFirst = calculatePaymentDelaySummary(state, 2026, new Date(2026, 7, 1));
+
+    expect(onAugustFirst).toMatchObject({
+      delayCount: 1,
+      expectedAmount: 75
+    });
+    expect(onAugustFirst.months[6]).toMatchObject({
+      delayCount: 1,
+      expectedAmount: 75
+    });
+    expect(onAugustFirst.months[7]).toMatchObject({
+      delayCount: 0,
+      expectedAmount: 0
+    });
+
+    const onAugustFourth = calculatePaymentDelaySummary(state, 2026, new Date(2026, 7, 4));
+
+    expect(onAugustFourth).toMatchObject({
+      delayCount: 3,
+      expectedAmount: 335
+    });
+    expect(onAugustFourth.months[6]).toMatchObject({
+      delayCount: 2,
+      expectedAmount: 135
+    });
+    expect(onAugustFourth.months[7]).toMatchObject({
+      delayCount: 1,
+      expectedAmount: 200
+    });
+  });
+
   it('separa caixa por data do pagamento e competência por data trabalhada', () => {
     const state = {
       workedDays: {
