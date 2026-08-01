@@ -526,6 +526,398 @@ body.dialog-open {
   padding: 1.75rem;
 }
 
+.payment-delays-card {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  border-color: rgba(245, 158, 11, 0.24);
+  background:
+    radial-gradient(circle at 96% 0%, rgba(239, 68, 68, 0.13), transparent 28%),
+    radial-gradient(circle at 4% 100%, rgba(245, 158, 11, 0.09), transparent 24%),
+    var(--bg-secondary);
+}
+
+.payment-delays-card::before {
+  content: '';
+  position: absolute;
+  top: -130px;
+  right: -90px;
+  width: 290px;
+  height: 290px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.07);
+  filter: blur(14px);
+  pointer-events: none;
+}
+
+.payment-delays-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.payment-delays-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.payment-delays-header .dashboard-card-title {
+  margin-bottom: 0.35rem;
+}
+
+.payment-delays-title-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(245, 158, 11, 0.38);
+  border-radius: 11px;
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.22), rgba(239, 68, 68, 0.12));
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.13);
+}
+
+.payment-delays-title-icon i,
+.payment-delays-title-icon svg {
+  width: 20px;
+  height: 20px;
+  color: var(--status-partial);
+}
+
+.payment-delays-description {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.payment-delays-year {
+  flex: 0 0 auto;
+  padding: 0.48rem 0.8rem;
+  border: 1px solid rgba(245, 158, 11, 0.36);
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--status-partial);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.payment-delays-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.payment-delay-highlight {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--border-light);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.payment-delay-highlight:first-child {
+  border-color: rgba(239, 68, 68, 0.3);
+  background: linear-gradient(145deg, rgba(239, 68, 68, 0.12), rgba(245, 158, 11, 0.05));
+}
+
+.payment-delay-highlight > span,
+.payment-delay-highlight > strong,
+.payment-delay-highlight > small {
+  display: block;
+}
+
+.payment-delay-highlight > span {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.payment-delay-highlight > strong {
+  margin-top: 0.35rem;
+  color: var(--text-primary);
+  font-size: clamp(1.05rem, 1.5vw, 1.35rem);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.payment-delay-highlight > small {
+  margin-top: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.payment-delays-section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.payment-delays-section-heading h3 {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.payment-delays-section-heading > span {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  text-align: right;
+}
+
+.payment-delays-months-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.payment-delay-month {
+  min-width: 0;
+  padding: 0.85rem;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.022);
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.payment-delay-month.has-delays {
+  border-color: rgba(245, 158, 11, 0.3);
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.1), rgba(239, 68, 68, 0.035));
+}
+
+.payment-delay-month.is-critical {
+  border-color: rgba(239, 68, 68, 0.65);
+  background: linear-gradient(145deg, rgba(239, 68, 68, 0.16), rgba(245, 158, 11, 0.08));
+  box-shadow: 0 10px 26px rgba(239, 68, 68, 0.1);
+  transform: translateY(-2px);
+}
+
+.payment-delay-month.is-clear {
+  opacity: 0.62;
+}
+
+.payment-delay-month-header,
+.payment-delay-month-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.payment-delay-month-header > strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.payment-delay-month-header > span {
+  flex: 0 0 auto;
+  padding: 0.2rem 0.38rem;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--text-muted);
+  font-size: 0.6rem;
+  font-weight: 800;
+}
+
+.payment-delay-month.has-delays .payment-delay-month-header > span {
+  background: rgba(239, 68, 68, 0.13);
+  color: #fca5a5;
+}
+
+.payment-delay-month-amount {
+  margin: 0.85rem 0 0.7rem;
+}
+
+.payment-delay-month-amount > span,
+.payment-delay-month-amount > strong {
+  display: block;
+}
+
+.payment-delay-month-amount > span,
+.payment-delay-month-footer {
+  color: var(--text-muted);
+  font-size: 0.62rem;
+}
+
+.payment-delay-month-amount > strong {
+  margin-top: 0.18rem;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.payment-delay-month-footer > strong {
+  color: var(--text-secondary);
+  font-size: 0.65rem;
+}
+
+.payment-delay-month progress {
+  display: block;
+  width: 100%;
+  height: 5px;
+  margin-top: 0.55rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  appearance: none;
+  background: rgba(148, 163, 184, 0.14);
+}
+
+.payment-delay-month progress::-webkit-progress-bar {
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.14);
+}
+
+.payment-delay-month progress::-webkit-progress-value,
+.payment-delay-month progress::-moz-progress-bar {
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--status-partial), var(--status-unpaid));
+}
+
+.payment-delay-events-heading {
+  margin-top: 1.5rem;
+}
+
+.payment-delay-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 430px;
+  overflow-y: auto;
+  padding-right: 0.2rem;
+}
+
+.payment-delay-event-group {
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.payment-delay-event-group.is-critical {
+  border-color: rgba(239, 68, 68, 0.38);
+}
+
+.payment-delay-event-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid var(--border-light);
+  background: rgba(148, 163, 184, 0.04);
+}
+
+.payment-delay-event-group-header > div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+}
+
+.payment-delay-event-group-header strong {
+  color: var(--text-primary);
+  font-size: 0.82rem;
+}
+
+.payment-delay-event-group-header span {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+}
+
+.payment-delay-event-group-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.payment-delay-event {
+  display: grid;
+  grid-template-columns: minmax(95px, 1fr) auto minmax(95px, 1fr) auto minmax(90px, auto);
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem 0.9rem;
+}
+
+.payment-delay-event + .payment-delay-event {
+  border-top: 1px solid var(--border-light);
+}
+
+.payment-delay-event-date span,
+.payment-delay-event-date strong {
+  display: block;
+}
+
+.payment-delay-event-date span {
+  color: var(--text-muted);
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.payment-delay-event-date strong {
+  margin-top: 0.15rem;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+}
+
+.payment-delay-event-arrow {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.payment-delay-event-days {
+  padding: 0.28rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+  font-size: 0.68rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.payment-delay-event-amount {
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.payment-delay-events-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 1.25rem;
+  border: 1px dashed rgba(16, 185, 129, 0.3);
+  border-radius: 12px;
+  background: rgba(16, 185, 129, 0.045);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.payment-delay-events-empty > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--status-paid);
+  font-weight: 900;
+}
+
 .annual-months-card {
   position: relative;
   overflow: hidden;
@@ -3032,6 +3424,10 @@ body.dialog-open {
   .annual-months-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .payment-delays-months-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 768px) {
@@ -3080,6 +3476,37 @@ body.dialog-open {
 
   .annual-months-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .payment-delays-header,
+  .payment-delays-section-heading {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .payment-delays-section-heading > span {
+    text-align: left;
+  }
+
+  .payment-delays-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-delays-months-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .payment-delay-event {
+    grid-template-columns: minmax(90px, 1fr) auto minmax(90px, 1fr);
+  }
+
+  .payment-delay-event-days {
+    grid-column: 1 / 3;
+    justify-self: start;
+  }
+
+  .payment-delay-event-amount {
+    grid-column: 3;
   }
 
   .stat-info h3 {

@@ -110,6 +110,10 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
   await expect(page.locator('#stat-total-earnings')).toContainText(String(expectedAccumulatedThisMonth));
   await expect(page.locator('#annual-months-received-list .annual-month-item')).toHaveCount(12);
   await expect(page.locator('#annual-months-year')).toHaveText(String(new Date().getFullYear()));
+  await expect(page.locator('.payment-delays-card')).toBeVisible();
+  await expect(page.locator('#payment-delays-months-list .payment-delay-month')).toHaveCount(12);
+  await expect(page.locator('#payment-delays-expected-amount')).toContainText('0');
+  await expect(page.locator('#payment-delay-events-list')).toContainText('Nenhum pagamento rastreável');
   const cacheState = await page.evaluate(async () => {
     const { auth } = await import('/src/firebase/client.js');
     const userId = auth.currentUser.uid;
@@ -183,6 +187,11 @@ test('mantém navegação e diálogos utilizáveis em viewport mobile', async ({
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await signInWithEmulator(page);
+
+  await expect(page.locator('#payment-delays-months-list .payment-delay-month')).toHaveCount(12);
+  const delaysCardBox = await page.locator('.payment-delays-card').boundingBox();
+  expect(delaysCardBox.x).toBeGreaterThanOrEqual(0);
+  expect(delaysCardBox.x + delaysCardBox.width).toBeLessThanOrEqual(390);
 
   const menuButton = page.locator('#btn-toggle-sidebar');
   await expect(menuButton).toBeVisible();

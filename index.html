@@ -219,6 +219,58 @@
           </div>
         </div>
 
+        <!-- Payment Delays Summary -->
+        <div class="glass-card dashboard-card payment-delays-card">
+          <div class="payment-delays-header">
+            <div>
+              <h2 class="dashboard-card-title">
+                <span class="payment-delays-title-icon">
+                  <i data-lucide="calendar-clock"></i>
+                </span>
+                <span data-i18n="dashboard-delays-title">Atrasos no recebimento</span>
+              </h2>
+              <p class="payment-delays-description" data-i18n="dashboard-delays-desc">
+                Compara a data prevista no ciclo de pagamento com a data em que o dinheiro foi recebido.
+              </p>
+            </div>
+            <span class="payment-delays-year" id="payment-delays-year">—</span>
+          </div>
+
+          <div class="payment-delays-overview">
+            <div class="payment-delay-highlight">
+              <span data-i18n="dashboard-delays-critical-month">Mês mais problemático</span>
+              <strong id="payment-delays-critical-month">—</strong>
+              <small id="payment-delays-critical-detail">—</small>
+            </div>
+            <div class="payment-delay-highlight">
+              <span data-i18n="dashboard-delays-expected-amount">Deveria ter recebido em dia</span>
+              <strong id="payment-delays-expected-amount">€ 0,00</strong>
+              <small data-i18n="dashboard-delays-expected-help">Soma dos valores que chegaram após o prazo.</small>
+            </div>
+            <div class="payment-delay-highlight">
+              <span data-i18n="dashboard-delays-total">Pagamentos atrasados</span>
+              <strong id="payment-delays-total">0</strong>
+              <small data-i18n="dashboard-delays-total-help">Ocorrências com data prevista e realizada diferentes.</small>
+            </div>
+          </div>
+
+          <div class="payment-delays-section-heading">
+            <h3 data-i18n="dashboard-delays-by-month">Atrasos por mês</h3>
+            <span data-i18n="dashboard-delays-basis">Organizado pelo mês em que o pagamento deveria ter chegado.</span>
+          </div>
+          <div class="payment-delays-months-grid" id="payment-delays-months-list" role="list">
+            <!-- Dynamically populated with all months of the current year -->
+          </div>
+
+          <div class="payment-delays-section-heading payment-delay-events-heading">
+            <h3 data-i18n="dashboard-delays-events-title">Datas previstas x realizadas</h3>
+            <span data-i18n="dashboard-delays-events-help">Detalhes dos recebimentos identificados com atraso.</span>
+          </div>
+          <div class="payment-delay-events-list" id="payment-delay-events-list">
+            <!-- Dynamically populated with delayed payment events -->
+          </div>
+        </div>
+
         <!-- Dashboard Layout -->
         <div class="dashboard-grid">
           <!-- Coluna de Gráficos -->

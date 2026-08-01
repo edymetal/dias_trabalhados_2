@@ -1,4 +1,10 @@
-import { formatDateISO, getWeekRange } from './dates.js';
+import {
+  formatDateISO,
+  getNextPaymentDate,
+  getWeekRange,
+  isValidISODate,
+  parseLocalDate
+} from './dates.js';
 import { isFinancialDay } from './ledger.js';
 import { fromCents, toCents } from './money.js';
 
@@ -48,6 +54,129 @@ export function calculateReceivedByMonthInYear(workedDays, year = new Date().get
   }
 
   return monthlyCents.map(fromCents);
+}
+
+export function calculateExpectedPaymentDate(workedDate, cycle) {
+  const parsedWorkedDate = parseLocalDate(workedDate);
+  if (!parsedWorkedDate) return null;
+
+  const normalizedCycle = cycle?.type === 'monthly'
+    ? { type: 'monthly', day: cycle.day }
+    : { type: 'weekly', day: cycle?.day ?? 0 };
+
+  return formatDateISO(getNextPaymentDate(normalizedCycle, parsedWorkedDate));
+}
+
+function calculateDaysBetween(startDate, endDate) {
+  const [startYear, startMonth, startDay] = startDate.split('-').map(Number);
+  const [endYear, endMonth, endDay] = endDate.split('-').map(Number);
+  return Math.round(
+    (Date.UTC(endYear, endMonth - 1, endDay) - Date.UTC(startYear, startMonth - 1, startDay))
+      / 86_400_000
+  );
+}
+
+export function calculatePaymentDelaySummary(state, year = new Date().getFullYear()) {
+  const reportYear = Number.isInteger(year) ? year : new Date().getFullYear();
+  const months = Array.from({ length: 12 }, (_, monthIndex) => ({
+    monthIndex,
+    delayCount: 0,
+    expectedAmount: 0,
+    averageDaysLate: 0,
+    maxDaysLate: 0,
+    events: []
+  }));
+  const cycle = state?.settings?.paymentCycle || { type: 'weekly', day: 0 };
+  const paymentsById = new Map(
+    (state?.payments || [])
+      .filter(payment => payment?.id !== undefined && payment?.id !== null)
+      .map(payment => [String(payment.id), payment])
+  );
+  const groupedEvents = new Map();
+
+  for (const [workedDate, day] of Object.entries(state?.workedDays || {})) {
+    if (!isFinancialDay(day) || !isValidISODate(workedDate)) continue;
+    const dueDate = calculateExpectedPaymentDate(workedDate, cycle);
+    if (!dueDate || !dueDate.startsWith(`${reportYear}-`)) continue;
+
+    for (const [paymentId, appliedAmount] of Object.entries(day.paymentsApplied || {})) {
+      const amountCents = toCents(appliedAmount || 0);
+      const payment = paymentsById.get(String(paymentId));
+      if (amountCents <= 0 || !payment || !isValidISODate(payment.date) || payment.date <= dueDate) continue;
+
+      const eventKey = `${dueDate}:${paymentId}`;
+      if (!groupedEvents.has(eventKey)) {
+        groupedEvents.set(eventKey, {
+          paymentId: String(paymentId),
+          dueDate,
+          paymentDate: payment.date,
+          amountCents: 0,
+          daysLate: calculateDaysBetween(dueDate, payment.date),
+          coveredDays: new Set()
+        });
+      }
+
+      const event = groupedEvents.get(eventKey);
+      event.amountCents += amountCents;
+      event.coveredDays.add(workedDate);
+    }
+  }
+
+  const events = [...groupedEvents.values()]
+    .sort((left, right) => (
+      left.dueDate.localeCompare(right.dueDate)
+      || left.paymentDate.localeCompare(right.paymentDate)
+      || left.paymentId.localeCompare(right.paymentId)
+    ))
+    .map(event => ({
+      paymentId: event.paymentId,
+      dueDate: event.dueDate,
+      paymentDate: event.paymentDate,
+      amount: fromCents(event.amountCents),
+      daysLate: event.daysLate,
+      coveredDays: event.coveredDays.size
+    }));
+
+  for (const event of events) {
+    const monthIndex = Number.parseInt(event.dueDate.slice(5, 7), 10) - 1;
+    if (monthIndex < 0 || monthIndex > 11) continue;
+    months[monthIndex].events.push(event);
+  }
+
+  let totalAmountCents = 0;
+  let totalDelayCount = 0;
+  for (const month of months) {
+    const monthAmountCents = month.events.reduce((total, event) => total + toCents(event.amount), 0);
+    const totalDaysLate = month.events.reduce((total, event) => total + event.daysLate, 0);
+    month.delayCount = month.events.length;
+    month.expectedAmount = fromCents(monthAmountCents);
+    month.averageDaysLate = month.delayCount > 0
+      ? Math.round((totalDaysLate / month.delayCount) * 10) / 10
+      : 0;
+    month.maxDaysLate = month.events.reduce((maximum, event) => Math.max(maximum, event.daysLate), 0);
+    totalAmountCents += monthAmountCents;
+    totalDelayCount += month.delayCount;
+  }
+
+  const mostProblematicMonth = months.reduce((current, month) => {
+    if (month.delayCount === 0) return current;
+    if (!current) return month;
+    if (toCents(month.expectedAmount) !== toCents(current.expectedAmount)) {
+      return toCents(month.expectedAmount) > toCents(current.expectedAmount) ? month : current;
+    }
+    if (month.delayCount !== current.delayCount) {
+      return month.delayCount > current.delayCount ? month : current;
+    }
+    return month.maxDaysLate > current.maxDaysLate ? month : current;
+  }, null);
+
+  return {
+    year: reportYear,
+    delayCount: totalDelayCount,
+    expectedAmount: fromCents(totalAmountCents),
+    mostProblematicMonth,
+    months
+  };
 }
 
 export function calculateCashReceivedInMonth(payments, referenceDate = new Date()) {

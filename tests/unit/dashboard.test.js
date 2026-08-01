@@ -3,7 +3,9 @@ import {
   calculateAccumulatedInMonth,
   calculateCashReceivedInMonth,
   calculateEarnedInMonth,
+  calculateExpectedPaymentDate,
   calculateFinancialSummary,
+  calculatePaymentDelaySummary,
   calculateReceivedByMonthInYear,
   calculateReceivedForWorkedDaysInMonth,
   getMonthDateRange,
@@ -43,6 +45,77 @@ describe('resumo do dashboard', () => {
     expect(calculateReceivedByMonthInYear(workedDays, 2026)).toEqual([
       45, 0, 0, 0, 0, 0, 60, 0, 0, 0, 0, 0
     ]);
+  });
+
+  it('calcula a data prevista conforme o ciclo semanal ou mensal', () => {
+    expect(calculateExpectedPaymentDate('2026-07-06', { type: 'weekly', day: 5 })).toBe('2026-07-10');
+    expect(calculateExpectedPaymentDate('2026-07-11', { type: 'weekly', day: 5 })).toBe('2026-07-17');
+    expect(calculateExpectedPaymentDate('2026-07-04', { type: 'monthly', day: 5 })).toBe('2026-07-05');
+    expect(calculateExpectedPaymentDate('2026-07-06', { type: 'monthly', day: 5 })).toBe('2026-08-05');
+  });
+
+  it('agrupa atrasos pelo mês da data prevista e destaca o maior valor afetado', () => {
+    const state = {
+      settings: { paymentCycle: { type: 'weekly', day: 0 } },
+      workedDays: {
+        '2026-01-05': {
+          period: 'morning', rate: 100, paymentsApplied: { pay_jan: 100 }
+        },
+        '2026-01-06': {
+          period: 'night', rate: 50, paymentsApplied: { pay_jan: 50 }
+        },
+        '2026-01-12': {
+          period: 'morning', rate: 90, paymentsApplied: { pay_on_time: 90 }
+        },
+        '2026-02-02': {
+          period: 'morning', rate: 200, paymentsApplied: { pay_feb_a: 200 }
+        },
+        '2026-02-03': {
+          period: 'night', rate: 50, paymentsApplied: { pay_feb_b: 50 }
+        },
+        '2025-12-22': {
+          period: 'morning', rate: 500, paymentsApplied: { pay_previous_year: 500 }
+        },
+        '2026-03-02': {
+          period: 'morning', rate: 70, amountPaid: 70
+        }
+      },
+      payments: [
+        { id: 'pay_jan', date: '2026-01-13', amount: 150 },
+        { id: 'pay_on_time', date: '2026-01-18', amount: 90 },
+        { id: 'pay_feb_a', date: '2026-02-15', amount: 200 },
+        { id: 'pay_feb_b', date: '2026-02-10', amount: 50 },
+        { id: 'pay_previous_year', date: '2026-01-10', amount: 500 }
+      ]
+    };
+
+    const summary = calculatePaymentDelaySummary(state, 2026);
+
+    expect(summary).toMatchObject({
+      year: 2026,
+      delayCount: 3,
+      expectedAmount: 400
+    });
+    expect(summary.months[0]).toMatchObject({
+      delayCount: 1,
+      expectedAmount: 150,
+      averageDaysLate: 2,
+      maxDaysLate: 2
+    });
+    expect(summary.months[0].events[0]).toMatchObject({
+      dueDate: '2026-01-11',
+      paymentDate: '2026-01-13',
+      amount: 150,
+      daysLate: 2,
+      coveredDays: 2
+    });
+    expect(summary.months[1]).toMatchObject({
+      delayCount: 2,
+      expectedAmount: 250,
+      averageDaysLate: 4.5,
+      maxDaysLate: 7
+    });
+    expect(summary.mostProblematicMonth.monthIndex).toBe(1);
   });
 
   it('separa caixa por data do pagamento e competência por data trabalhada', () => {

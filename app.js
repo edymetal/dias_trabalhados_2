@@ -69,6 +69,7 @@ import {
 } from './src/domain/ledger.js';
 import {
   calculateFinancialSummary,
+  calculatePaymentDelaySummary,
   calculateReceivedByMonthInYear,
   splitPaymentMethod
 } from './src/domain/dashboard.js';
@@ -159,8 +160,8 @@ const applicationProtectionReady = initializeApplicationProtection().catch(error
 });
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.127';
-const APP_BUILD_DATE = '2026-07-30 05:16:50';
+const APP_VERSION = '1.0.128';
+const APP_BUILD_DATE = '2026-08-01 12:56:30';
 
 
 
@@ -1102,6 +1103,7 @@ function updateDashboardData() {
   if (cashValEl) cashValEl.innerText = formatCurrency(annualReceivedCash);
   if (workedDaysEl) workedDaysEl.innerText = `${annualWorkedDays} ${annualWorkedDays === 1 ? texts['week-day'] : texts['week-days']}`;
   renderAnnualMonthlyReceivedSummary();
+  renderPaymentDelaysSummary();
   renderMonthlyWeeksSummary();
 
   // Atualiza gráficos
@@ -1150,7 +1152,108 @@ function renderAnnualMonthlyReceivedSummary() {
   }).join('');
 }
 
-// Cria/Atualiza o gráfico dinÃƒÂ¢mico
+// Renderiza atrasos por mês e compara as datas previstas com as realizadas
+function renderPaymentDelaysSummary() {
+  const yearEl = document.getElementById('payment-delays-year');
+  const criticalMonthEl = document.getElementById('payment-delays-critical-month');
+  const criticalDetailEl = document.getElementById('payment-delays-critical-detail');
+  const expectedAmountEl = document.getElementById('payment-delays-expected-amount');
+  const totalEl = document.getElementById('payment-delays-total');
+  const monthsListEl = document.getElementById('payment-delays-months-list');
+  const eventsListEl = document.getElementById('payment-delay-events-list');
+  if (!yearEl || !criticalMonthEl || !criticalDetailEl || !expectedAmountEl || !totalEl
+      || !monthsListEl || !eventsListEl) return;
+
+  const year = new Date().getFullYear();
+  const texts = translations[db.settings.language || 'pt-BR'];
+  const summary = calculatePaymentDelaySummary(db, year);
+  const mostProblematic = summary.mostProblematicMonth;
+  const delayLabel = count => `${count} ${count === 1
+    ? texts['dashboard-delays-one']
+    : texts['dashboard-delays-many']}`;
+  const daysLabel = days => `${days} ${days === 1
+    ? texts['dashboard-delays-day']
+    : texts['dashboard-delays-days']}`;
+
+  yearEl.innerText = String(year);
+  expectedAmountEl.innerText = formatCurrency(summary.expectedAmount);
+  totalEl.innerText = String(summary.delayCount);
+
+  if (mostProblematic) {
+    criticalMonthEl.innerText = texts[`month-${mostProblematic.monthIndex}`];
+    criticalDetailEl.innerText = `${delayLabel(mostProblematic.delayCount)} · ${formatCurrency(mostProblematic.expectedAmount)}`;
+  } else {
+    criticalMonthEl.innerText = texts['dashboard-delays-no-critical'];
+    criticalDetailEl.innerText = formatCurrency(0);
+  }
+
+  const maxDelayedAmount = Math.max(...summary.months.map(month => month.expectedAmount), 1);
+  monthsListEl.innerHTML = summary.months.map(month => {
+    const hasDelays = month.delayCount > 0;
+    const isCritical = mostProblematic?.monthIndex === month.monthIndex;
+    const statusClass = hasDelays ? ' has-delays' : ' is-clear';
+    const criticalClass = isCritical ? ' is-critical' : '';
+
+    return `
+      <article class="payment-delay-month${statusClass}${criticalClass}" role="listitem" data-month="${month.monthIndex}">
+        <div class="payment-delay-month-header">
+          <strong>${texts[`month-${month.monthIndex}`]}</strong>
+          <span>${delayLabel(month.delayCount)}</span>
+        </div>
+        <div class="payment-delay-month-amount">
+          <span>${texts['dashboard-delays-expected-label']}</span>
+          <strong>${formatCurrency(month.expectedAmount)}</strong>
+        </div>
+        <div class="payment-delay-month-footer">
+          <span>${texts['dashboard-delays-max-label']}</span>
+          <strong>${daysLabel(month.maxDaysLate)}</strong>
+        </div>
+        <progress value="${month.expectedAmount}" max="${maxDelayedAmount}" aria-hidden="true"></progress>
+      </article>
+    `;
+  }).join('');
+
+  const monthsWithEvents = summary.months.filter(month => month.delayCount > 0);
+  if (monthsWithEvents.length === 0) {
+    eventsListEl.innerHTML = `
+      <div class="payment-delay-events-empty">
+        <span aria-hidden="true">✓</span>
+        <p>${texts['dashboard-delays-no-events']}</p>
+      </div>
+    `;
+    return;
+  }
+
+  eventsListEl.innerHTML = monthsWithEvents.map(month => `
+    <section class="payment-delay-event-group${mostProblematic?.monthIndex === month.monthIndex ? ' is-critical' : ''}">
+      <div class="payment-delay-event-group-header">
+        <div>
+          <strong>${texts[`month-${month.monthIndex}`]}</strong>
+          <span>${delayLabel(month.delayCount)}</span>
+        </div>
+        <strong>${formatCurrency(month.expectedAmount)}</strong>
+      </div>
+      <div class="payment-delay-event-group-list">
+        ${month.events.map(event => `
+          <article class="payment-delay-event">
+            <div class="payment-delay-event-date">
+              <span>${texts['dashboard-delays-expected-date']}</span>
+              <strong>${formatDateStringDisplay(event.dueDate)}</strong>
+            </div>
+            <span class="payment-delay-event-arrow" aria-hidden="true">→</span>
+            <div class="payment-delay-event-date">
+              <span>${texts['dashboard-delays-paid-date']}</span>
+              <strong>${formatDateStringDisplay(event.paymentDate)}</strong>
+            </div>
+            <span class="payment-delay-event-days">+${daysLabel(event.daysLate)}</span>
+            <strong class="payment-delay-event-amount">${formatCurrency(event.amount)}</strong>
+          </article>
+        `).join('')}
+      </div>
+    </section>
+  `).join('');
+}
+
 // Renderiza o resumo de pagamentos semanais do mês atual
 function renderMonthlyWeeksSummary() {
   const listEl = document.getElementById('monthly-weeks-summary-list');
