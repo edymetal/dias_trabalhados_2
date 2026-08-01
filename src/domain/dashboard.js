@@ -104,20 +104,24 @@ export function calculatePaymentDelaySummary(state, year = new Date().getFullYea
       const payment = paymentsById.get(String(paymentId));
       if (amountCents <= 0 || !payment || !isValidISODate(payment.date) || payment.date <= dueDate) continue;
 
-      const eventKey = `${dueDate}:${paymentId}`;
+      const eventKey = dueDate;
       if (!groupedEvents.has(eventKey)) {
         groupedEvents.set(eventKey, {
-          paymentId: String(paymentId),
           dueDate,
-          paymentDate: payment.date,
           amountCents: 0,
-          daysLate: calculateDaysBetween(dueDate, payment.date),
+          paymentIds: new Set(),
+          receipts: new Map(),
           coveredDays: new Set()
         });
       }
 
       const event = groupedEvents.get(eventKey);
       event.amountCents += amountCents;
+      event.paymentIds.add(String(paymentId));
+      event.receipts.set(
+        payment.date,
+        (event.receipts.get(payment.date) || 0) + amountCents
+      );
       event.coveredDays.add(workedDate);
     }
   }
@@ -125,17 +129,27 @@ export function calculatePaymentDelaySummary(state, year = new Date().getFullYea
   const events = [...groupedEvents.values()]
     .sort((left, right) => (
       left.dueDate.localeCompare(right.dueDate)
-      || left.paymentDate.localeCompare(right.paymentDate)
-      || left.paymentId.localeCompare(right.paymentId)
     ))
-    .map(event => ({
-      paymentId: event.paymentId,
-      dueDate: event.dueDate,
-      paymentDate: event.paymentDate,
-      amount: fromCents(event.amountCents),
-      daysLate: event.daysLate,
-      coveredDays: event.coveredDays.size
-    }));
+    .map(event => {
+      const receipts = [...event.receipts.entries()]
+        .sort(([leftDate], [rightDate]) => leftDate.localeCompare(rightDate))
+        .map(([date, amountCents]) => ({
+          date,
+          amount: fromCents(amountCents),
+          daysLate: calculateDaysBetween(event.dueDate, date)
+        }));
+      const lastReceipt = receipts.at(-1);
+
+      return {
+        dueDate: event.dueDate,
+        paymentDate: lastReceipt?.date || null,
+        paymentDates: receipts,
+        amount: fromCents(event.amountCents),
+        daysLate: lastReceipt?.daysLate || 0,
+        paymentCount: event.paymentIds.size,
+        coveredDays: event.coveredDays.size
+      };
+    });
 
   for (const event of events) {
     const monthIndex = Number.parseInt(event.dueDate.slice(5, 7), 10) - 1;

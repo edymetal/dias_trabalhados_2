@@ -699,6 +699,12 @@ body.dialog-open {
   transform: translateY(-2px);
 }
 
+.payment-delay-month.is-selected {
+  opacity: 1;
+  outline: 2px solid rgba(59, 130, 246, 0.5);
+  outline-offset: 2px;
+}
+
 .payment-delay-month.is-clear {
   opacity: 0.62;
 }
@@ -786,7 +792,52 @@ body.dialog-open {
 }
 
 .payment-delay-events-heading {
+  align-items: center;
   margin-top: 1.5rem;
+}
+
+.payment-delay-events-heading-copy > span {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+}
+
+.payment-delay-month-navigation {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.payment-delay-month-nav-button {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+}
+
+.payment-delay-selected-month {
+  min-width: 116px;
+  padding: 0.42rem 0.7rem;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.08);
+  text-align: center;
+}
+
+.payment-delay-selected-month strong,
+.payment-delay-selected-month span {
+  display: block;
+}
+
+.payment-delay-selected-month strong {
+  color: var(--text-primary);
+  font-size: 0.78rem;
+}
+
+.payment-delay-selected-month span {
+  margin-top: 0.1rem;
+  color: var(--text-muted);
+  font-size: 0.6rem;
 }
 
 .payment-delay-events-list {
@@ -799,6 +850,7 @@ body.dialog-open {
 }
 
 .payment-delay-event-group {
+  flex: 0 0 auto;
   overflow: hidden;
   border: 1px solid var(--border-light);
   border-radius: 12px;
@@ -868,6 +920,33 @@ body.dialog-open {
   margin-top: 0.15rem;
   color: var(--text-primary);
   font-size: 0.8rem;
+}
+
+.payment-delay-receipts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.2rem;
+}
+
+.payment-delay-receipt {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.28rem;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 7px;
+  background: rgba(148, 163, 184, 0.06);
+}
+
+.payment-delay-receipt strong {
+  margin-top: 0;
+}
+
+.payment-delay-receipt small {
+  color: var(--text-muted);
+  font-size: 0.62rem;
+  white-space: nowrap;
 }
 
 .payment-delay-event-arrow {
@@ -3486,6 +3565,18 @@ body.dialog-open {
 
   .payment-delays-section-heading > span {
     text-align: left;
+  }
+
+  .payment-delay-events-heading-copy > span {
+    text-align: left;
+  }
+
+  .payment-delay-month-navigation {
+    width: 100%;
+  }
+
+  .payment-delay-selected-month {
+    flex: 1;
   }
 
   .payment-delays-overview {

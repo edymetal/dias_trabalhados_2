@@ -307,14 +307,14 @@
               <small id="payment-delays-critical-detail">—</small>
             </div>
             <div class="payment-delay-highlight">
-              <span data-i18n="dashboard-delays-expected-amount">Deveria ter recebido em dia</span>
+              <span data-i18n="dashboard-delays-expected-amount">Valor afetado</span>
               <strong id="payment-delays-expected-amount">€ 0,00</strong>
-              <small data-i18n="dashboard-delays-expected-help">Soma dos valores que chegaram após o prazo.</small>
+              <small data-i18n="dashboard-delays-expected-help">Total que ficou em atraso e foi recebido após o prazo.</small>
             </div>
             <div class="payment-delay-highlight">
-              <span data-i18n="dashboard-delays-total">Pagamentos atrasados</span>
+              <span data-i18n="dashboard-delays-total">Ciclos com atraso</span>
               <strong id="payment-delays-total">0</strong>
-              <small data-i18n="dashboard-delays-total-help">Ocorrências com data prevista e realizada diferentes.</small>
+              <small data-i18n="dashboard-delays-total-help">Cada vencimento é contado uma vez, mesmo quando pago em partes.</small>
             </div>
           </div>
 
@@ -327,8 +327,22 @@
           </div>
 
           <div class="payment-delays-section-heading payment-delay-events-heading">
-            <h3 data-i18n="dashboard-delays-events-title">Datas previstas x realizadas</h3>
-            <span data-i18n="dashboard-delays-events-help">Detalhes dos recebimentos identificados com atraso.</span>
+            <div class="payment-delay-events-heading-copy">
+              <h3 data-i18n="dashboard-delays-events-title">Datas previstas x realizadas</h3>
+              <span data-i18n="dashboard-delays-events-help">Consulte os ciclos em atraso de um mês por vez.</span>
+            </div>
+            <nav class="payment-delay-month-navigation" data-i18n-aria-label="dashboard-delays-navigation-label" aria-label="Navegação dos meses com atrasos">
+              <button class="btn-icon payment-delay-month-nav-button" type="button" id="btn-delay-previous-month" data-i18n-title="dashboard-delays-previous-month" title="Mês anterior" data-i18n-aria-label="dashboard-delays-previous-month" aria-label="Mês anterior">
+                <i data-lucide="chevron-left"></i>
+              </button>
+              <div class="payment-delay-selected-month" aria-live="polite">
+                <strong id="payment-delay-events-month">—</strong>
+                <span id="payment-delay-events-position">—</span>
+              </div>
+              <button class="btn-icon payment-delay-month-nav-button" type="button" id="btn-delay-next-month" data-i18n-title="dashboard-delays-next-month" title="Próximo mês" data-i18n-aria-label="dashboard-delays-next-month" aria-label="Próximo mês">
+                <i data-lucide="chevron-right"></i>
+              </button>
+            </nav>
           </div>
           <div class="payment-delay-events-list" id="payment-delay-events-list">
             <!-- Dynamically populated with delayed payment events -->

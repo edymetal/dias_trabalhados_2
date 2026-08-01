@@ -93,7 +93,7 @@ describe('resumo do dashboard', () => {
 
     expect(summary).toMatchObject({
       year: 2026,
-      delayCount: 3,
+      delayCount: 2,
       expectedAmount: 400
     });
     expect(summary.months[0]).toMatchObject({
@@ -110,10 +110,21 @@ describe('resumo do dashboard', () => {
       coveredDays: 2
     });
     expect(summary.months[1]).toMatchObject({
-      delayCount: 2,
+      delayCount: 1,
       expectedAmount: 250,
-      averageDaysLate: 4.5,
+      averageDaysLate: 7,
       maxDaysLate: 7
+    });
+    expect(summary.months[1].events[0]).toMatchObject({
+      dueDate: '2026-02-08',
+      paymentDate: '2026-02-15',
+      amount: 250,
+      daysLate: 7,
+      paymentCount: 2,
+      paymentDates: [
+        { date: '2026-02-10', amount: 50, daysLate: 2 },
+        { date: '2026-02-15', amount: 200, daysLate: 7 }
+      ]
     });
     expect(summary.mostProblematicMonth.monthIndex).toBe(1);
   });

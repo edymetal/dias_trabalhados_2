@@ -113,7 +113,12 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
   await expect(page.locator('.payment-delays-card')).toBeVisible();
   await expect(page.locator('#payment-delays-months-list .payment-delay-month')).toHaveCount(12);
   await expect(page.locator('#payment-delays-expected-amount')).toContainText('0');
-  await expect(page.locator('#payment-delay-events-list')).toContainText('Nenhum pagamento rastreável');
+  await expect(page.locator('#payment-delay-events-list')).toContainText('Nenhum ciclo rastreável');
+  const currentDelayMonthNumber = new Date().getMonth() + 1;
+  await expect(page.locator('#payment-delay-events-position')).toHaveText(`Mês ${currentDelayMonthNumber} de 12`);
+  await page.locator('#btn-delay-next-month').click();
+  const nextDelayMonthNumber = currentDelayMonthNumber === 12 ? 1 : currentDelayMonthNumber + 1;
+  await expect(page.locator('#payment-delay-events-position')).toHaveText(`Mês ${nextDelayMonthNumber} de 12`);
   const cacheState = await page.evaluate(async () => {
     const { auth } = await import('/src/firebase/client.js');
     const userId = auth.currentUser.uid;
