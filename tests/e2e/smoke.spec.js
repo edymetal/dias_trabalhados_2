@@ -224,11 +224,17 @@ test('mantém navegação e diálogos utilizáveis em viewport mobile', async ({
   await firstDay.focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('dialog')).toBeVisible();
+  await page.locator('#modal-payment-info').evaluate(element => {
+    element.hidden = false;
+  });
 
   const dialogBox = await page.getByRole('dialog').boundingBox();
+  const saveRecordBox = await page.getByRole('button', { name: 'Salvar Registro' }).boundingBox();
   expect(dialogBox.x).toBeGreaterThanOrEqual(0);
   expect(dialogBox.x + dialogBox.width).toBeLessThanOrEqual(390);
   expect(dialogBox.height).toBeLessThanOrEqual(844);
+  expect(saveRecordBox.y).toBeGreaterThanOrEqual(0);
+  expect(saveRecordBox.y + saveRecordBox.height).toBeLessThanOrEqual(844);
   await page.keyboard.press('Escape');
   await expect(firstDay).toBeFocused();
 });

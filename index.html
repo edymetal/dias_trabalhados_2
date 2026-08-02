@@ -927,13 +927,14 @@
 
   <!-- MODAL: Registrar / Editar Dia de Trabalho -->
   <div class="modal-overlay" id="day-modal" hidden>
-    <div class="glass-card modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-date-title" tabindex="-1">
+    <div class="glass-card modal-content modal-day-content" role="dialog" aria-modal="true" aria-labelledby="modal-date-title" tabindex="-1">
       <div class="modal-header">
         <h2 id="modal-date-title">Dia 21/05/2026</h2>
         <button class="modal-close" type="button" data-dialog-close aria-label="Fechar" data-i18n-aria-label="aria-close-dialog">&times;</button>
       </div>
 
       <form id="day-form">
+        <div class="modal-day-body">
         <input type="hidden" id="modal-date-value">
 
         <!-- Shift period options -->
@@ -1015,6 +1016,8 @@
             <span data-i18n="modal-pending">Saldo Devedor:</span>
             <span id="modal-pay-pending" class="text-strong">€ 0,00</span>
           </div>
+        </div>
+
         </div>
 
         <div class="actions-row">

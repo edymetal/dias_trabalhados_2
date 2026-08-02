@@ -3097,6 +3097,42 @@ body.dialog-open {
   padding: 2rem;
 }
 
+.modal-day-content {
+  display: flex;
+  max-height: calc(100dvh - 2rem);
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.modal-day-content .modal-header {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+  padding: 1.5rem 2rem 1rem;
+}
+
+.modal-day-content #day-form {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.modal-day-body {
+  min-height: 0;
+  padding: 0 2rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.modal-day-content .actions-row {
+  flex: 0 0 auto;
+  padding: 1rem 2rem 1.5rem;
+  border-top: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+}
+
 .modal-overlay.active .modal-content {
   transform: scale(1);
 }
@@ -3682,6 +3718,24 @@ body.dialog-open {
     margin: 10px;
     max-height: 90vh;
     overflow-y: auto;
+  }
+
+  .modal-day-content {
+    max-height: calc(100dvh - 20px);
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .modal-day-content .modal-header {
+    padding: 1.1rem 1.25rem 0.8rem;
+  }
+
+  .modal-day-body {
+    padding: 0 1.25rem;
+  }
+
+  .modal-day-content .actions-row {
+    padding: 0.9rem 1.25rem 1.25rem;
   }
 
   .period-select-grid {
