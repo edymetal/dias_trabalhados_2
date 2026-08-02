@@ -160,8 +160,8 @@ const applicationProtectionReady = initializeApplicationProtection().catch(error
 });
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.132';
-const APP_BUILD_DATE = '2026-08-02 03:23:20';
+const APP_VERSION = '1.0.133';
+const APP_BUILD_DATE = '2026-08-02 03:31:11';
 
 
 
@@ -1168,7 +1168,9 @@ function renderPaymentDelaysSummary() {
       || !monthsListEl || !detailsEl || !eventsListEl) return;
 
   const year = new Date().getFullYear();
-  const texts = translations[db.settings.language || 'pt-BR'];
+  const language = db.settings.language || 'pt-BR';
+  const texts = translations[language];
+  const delayDaysFormatter = new Intl.NumberFormat(language, { maximumFractionDigits: 1 });
   const summary = calculatePaymentDelaySummary(db, year);
   const mostProblematic = summary.mostProblematicMonth;
   const hasSelectedMonth = Number.isInteger(selectedDelayMonthIndex)
@@ -1178,7 +1180,7 @@ function renderPaymentDelaysSummary() {
   const delayLabel = count => `${count} ${count === 1
     ? texts['dashboard-delays-one']
     : texts['dashboard-delays-many']}`;
-  const daysLabel = days => `${days} ${days === 1
+  const daysLabel = days => `${delayDaysFormatter.format(days)} ${days === 1
     ? texts['dashboard-delays-day']
     : texts['dashboard-delays-days']}`;
 
@@ -1215,8 +1217,14 @@ function renderPaymentDelaysSummary() {
             <strong>${formatCurrency(month.expectedAmount)}</strong>
           </span>
           <span class="payment-delay-month-footer">
-            <span>${texts['dashboard-delays-max-label']}</span>
-            <strong>${daysLabel(month.maxDaysLate)}</strong>
+            <span class="payment-delay-month-metric payment-delay-month-average">
+              <span>${texts['dashboard-delays-average-label']}</span>
+              <strong>${daysLabel(month.averageDaysLate)}</strong>
+            </span>
+            <span class="payment-delay-month-metric">
+              <span>${texts['dashboard-delays-max-label']}</span>
+              <strong>${daysLabel(month.maxDaysLate)}</strong>
+            </span>
           </span>
           <progress value="${month.expectedAmount}" max="${maxDelayedAmount}" aria-hidden="true"></progress>
         </button>

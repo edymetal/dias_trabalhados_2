@@ -112,6 +112,8 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
   await expect(page.locator('#annual-months-year')).toHaveText(String(new Date().getFullYear()));
   await expect(page.locator('.payment-delays-card')).toBeVisible();
   await expect(page.locator('#payment-delays-months-list .payment-delay-month')).toHaveCount(12);
+  await expect(page.locator('#payment-delays-months-list .payment-delay-month-average')).toHaveCount(12);
+  await expect(page.locator('[data-delay-month="0"] .payment-delay-month-average')).toContainText('Média do atraso');
   await expect(page.locator('#payment-delays-expected-amount')).toContainText('0');
   const delayDetails = page.locator('#payment-delay-month-details');
   await expect(delayDetails).toBeHidden();
