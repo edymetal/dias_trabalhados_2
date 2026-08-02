@@ -160,8 +160,8 @@ const applicationProtectionReady = initializeApplicationProtection().catch(error
 });
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.131';
-const APP_BUILD_DATE = '2026-08-01 13:36:44';
+const APP_VERSION = '1.0.132';
+const APP_BUILD_DATE = '2026-08-02 03:23:20';
 
 
 
@@ -324,8 +324,7 @@ function initInterfaceEvents() {
   bindElement('btn-previous-month', 'click', () => changeMonth(-1));
   bindElement('btn-current-month', 'click', goToCurrentMonth);
   bindElement('btn-next-month', 'click', () => changeMonth(1));
-  bindElement('btn-delay-previous-month', 'click', () => navigatePaymentDelayMonth(-1));
-  bindElement('btn-delay-next-month', 'click', () => navigatePaymentDelayMonth(1));
+  bindElement('payment-delays-months-list', 'click', selectPaymentDelayMonth);
   bindElement('payment-form', 'submit', processPayment);
   bindElement('input-payment-method', 'change', toggleCustomNotesInput);
   bindElement('settings-rates-form', 'submit', saveRatesSettings);
@@ -1163,21 +1162,19 @@ function renderPaymentDelaysSummary() {
   const expectedAmountEl = document.getElementById('payment-delays-expected-amount');
   const totalEl = document.getElementById('payment-delays-total');
   const monthsListEl = document.getElementById('payment-delays-months-list');
+  const detailsEl = document.getElementById('payment-delay-month-details');
   const eventsListEl = document.getElementById('payment-delay-events-list');
-  const selectedMonthEl = document.getElementById('payment-delay-events-month');
-  const selectedPositionEl = document.getElementById('payment-delay-events-position');
   if (!yearEl || !criticalMonthEl || !criticalDetailEl || !expectedAmountEl || !totalEl
-      || !monthsListEl || !eventsListEl || !selectedMonthEl || !selectedPositionEl) return;
+      || !monthsListEl || !detailsEl || !eventsListEl) return;
 
   const year = new Date().getFullYear();
   const texts = translations[db.settings.language || 'pt-BR'];
   const summary = calculatePaymentDelaySummary(db, year);
   const mostProblematic = summary.mostProblematicMonth;
-  if (!Number.isInteger(selectedDelayMonthIndex)) {
-    selectedDelayMonthIndex = mostProblematic?.monthIndex ?? new Date().getMonth();
-  }
-  selectedDelayMonthIndex = Math.max(0, Math.min(11, selectedDelayMonthIndex));
-  const selectedMonth = summary.months[selectedDelayMonthIndex];
+  const hasSelectedMonth = Number.isInteger(selectedDelayMonthIndex)
+    && selectedDelayMonthIndex >= 0
+    && selectedDelayMonthIndex < summary.months.length;
+  const selectedMonth = hasSelectedMonth ? summary.months[selectedDelayMonthIndex] : null;
   const delayLabel = count => `${count} ${count === 1
     ? texts['dashboard-delays-one']
     : texts['dashboard-delays-many']}`;
@@ -1188,10 +1185,6 @@ function renderPaymentDelaysSummary() {
   yearEl.innerText = String(year);
   expectedAmountEl.innerText = formatCurrency(summary.expectedAmount);
   totalEl.innerText = String(summary.delayCount);
-  selectedMonthEl.innerText = texts[`month-${selectedDelayMonthIndex}`];
-  selectedPositionEl.innerText = texts['dashboard-delays-month-position']
-    .replace('{current}', selectedDelayMonthIndex + 1)
-    .replace('{total}', summary.months.length);
 
   if (mostProblematic) {
     criticalMonthEl.innerText = texts[`month-${mostProblematic.monthIndex}`];
@@ -1212,22 +1205,35 @@ function renderPaymentDelaysSummary() {
 
     return `
       <article class="payment-delay-month${statusClass}${criticalClass}${selectedClass}" role="listitem" data-month="${month.monthIndex}">
-        <div class="payment-delay-month-header">
-          <strong>${texts[`month-${month.monthIndex}`]}</strong>
-          <span>${delayLabel(month.delayCount)}</span>
-        </div>
-        <div class="payment-delay-month-amount">
-          <span>${texts['dashboard-delays-expected-label']}</span>
-          <strong>${formatCurrency(month.expectedAmount)}</strong>
-        </div>
-        <div class="payment-delay-month-footer">
-          <span>${texts['dashboard-delays-max-label']}</span>
-          <strong>${daysLabel(month.maxDaysLate)}</strong>
-        </div>
-        <progress value="${month.expectedAmount}" max="${maxDelayedAmount}" aria-hidden="true"></progress>
+        <button class="payment-delay-month-button" type="button" data-delay-month="${month.monthIndex}" aria-expanded="${isSelected}" aria-controls="payment-delay-month-details">
+          <span class="payment-delay-month-header">
+            <strong>${texts[`month-${month.monthIndex}`]}</strong>
+            <span>${delayLabel(month.delayCount)}</span>
+          </span>
+          <span class="payment-delay-month-amount">
+            <span>${texts['dashboard-delays-expected-label']}</span>
+            <strong>${formatCurrency(month.expectedAmount)}</strong>
+          </span>
+          <span class="payment-delay-month-footer">
+            <span>${texts['dashboard-delays-max-label']}</span>
+            <strong>${daysLabel(month.maxDaysLate)}</strong>
+          </span>
+          <progress value="${month.expectedAmount}" max="${maxDelayedAmount}" aria-hidden="true"></progress>
+        </button>
       </article>
     `;
   }).join('');
+
+  detailsEl.hidden = !selectedMonth;
+  if (!selectedMonth) {
+    detailsEl.removeAttribute('aria-label');
+    eventsListEl.innerHTML = '';
+    return;
+  }
+  detailsEl.setAttribute(
+    'aria-label',
+    texts['dashboard-delays-details-label'].replace('{month}', texts[`month-${selectedMonth.monthIndex}`])
+  );
 
   if (selectedMonth.delayCount === 0) {
     eventsListEl.innerHTML = `
@@ -1277,13 +1283,26 @@ function renderPaymentDelaysSummary() {
   eventsListEl.scrollTop = 0;
 }
 
-function navigatePaymentDelayMonth(offset) {
-  if (!db || !Number.isInteger(offset)) return;
-  const currentIndex = Number.isInteger(selectedDelayMonthIndex)
-    ? selectedDelayMonthIndex
-    : new Date().getMonth();
-  selectedDelayMonthIndex = (currentIndex + offset + 12) % 12;
+function selectPaymentDelayMonth(event) {
+  if (!db) return;
+  const monthButton = event.target.closest('[data-delay-month]');
+  if (!monthButton) return;
+  const monthIndex = Number.parseInt(monthButton.dataset.delayMonth, 10);
+  if (!Number.isInteger(monthIndex) || monthIndex < 0 || monthIndex > 11) return;
+
+  const shouldOpen = selectedDelayMonthIndex !== monthIndex;
+  selectedDelayMonthIndex = shouldOpen ? monthIndex : null;
   renderPaymentDelaysSummary();
+
+  requestAnimationFrame(() => {
+    if (shouldOpen) {
+      const detailsEl = document.getElementById('payment-delay-month-details');
+      detailsEl?.focus({ preventScroll: true });
+      detailsEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      return;
+    }
+    document.querySelector(`[data-delay-month="${monthIndex}"]`)?.focus({ preventScroll: true });
+  });
 }
 
 // Renderiza o resumo de pagamentos semanais do mês atual

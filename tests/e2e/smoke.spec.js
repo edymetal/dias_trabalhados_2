@@ -113,12 +113,16 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
   await expect(page.locator('.payment-delays-card')).toBeVisible();
   await expect(page.locator('#payment-delays-months-list .payment-delay-month')).toHaveCount(12);
   await expect(page.locator('#payment-delays-expected-amount')).toContainText('0');
+  const delayDetails = page.locator('#payment-delay-month-details');
+  await expect(delayDetails).toBeHidden();
+  const currentDelayMonthIndex = new Date().getMonth();
+  const currentDelayMonthButton = page.locator(`[data-delay-month="${currentDelayMonthIndex}"]`);
+  await currentDelayMonthButton.click();
+  await expect(currentDelayMonthButton).toHaveAttribute('aria-expanded', 'true');
+  await expect(delayDetails).toBeVisible();
   await expect(page.locator('#payment-delay-events-list')).toContainText('Nenhum ciclo rastreável');
-  const currentDelayMonthNumber = new Date().getMonth() + 1;
-  await expect(page.locator('#payment-delay-events-position')).toHaveText(`Mês ${currentDelayMonthNumber} de 12`);
-  await page.locator('#btn-delay-next-month').click();
-  const nextDelayMonthNumber = currentDelayMonthNumber === 12 ? 1 : currentDelayMonthNumber + 1;
-  await expect(page.locator('#payment-delay-events-position')).toHaveText(`Mês ${nextDelayMonthNumber} de 12`);
+  await currentDelayMonthButton.click();
+  await expect(delayDetails).toBeHidden();
   const cacheState = await page.evaluate(async () => {
     const { auth } = await import('/src/firebase/client.js');
     const userId = auth.currentUser.uid;
@@ -194,6 +198,9 @@ test('mantém navegação e diálogos utilizáveis em viewport mobile', async ({
   await signInWithEmulator(page);
 
   await expect(page.locator('#payment-delays-months-list .payment-delay-month')).toHaveCount(12);
+  const mobileDelayMonthButton = page.locator('[data-delay-month="0"]');
+  await mobileDelayMonthButton.click();
+  await expect(page.locator('#payment-delay-month-details')).toBeVisible();
   const delaysCardBox = await page.locator('.payment-delays-card').boundingBox();
   expect(delaysCardBox.x).toBeGreaterThanOrEqual(0);
   expect(delaysCardBox.x + delaysCardBox.width).toBeLessThanOrEqual(390);

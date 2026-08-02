@@ -320,33 +320,16 @@
 
           <div class="payment-delays-section-heading">
             <h3 data-i18n="dashboard-delays-by-month">Atrasos por mês</h3>
-            <span data-i18n="dashboard-delays-basis">Organizado pelo mês em que o pagamento deveria ter chegado.</span>
+            <span data-i18n="dashboard-delays-basis">Clique em um mês para ver as datas previstas e realizadas.</span>
           </div>
           <div class="payment-delays-months-grid" id="payment-delays-months-list" role="list">
             <!-- Dynamically populated with all months of the current year -->
           </div>
-
-          <div class="payment-delays-section-heading payment-delay-events-heading">
-            <div class="payment-delay-events-heading-copy">
-              <h3 data-i18n="dashboard-delays-events-title">Datas previstas x realizadas</h3>
-              <span data-i18n="dashboard-delays-events-help">Consulte os ciclos em atraso de um mês por vez.</span>
+          <section class="payment-delay-month-details" id="payment-delay-month-details" tabindex="-1" aria-live="polite" hidden>
+            <div class="payment-delay-events-list" id="payment-delay-events-list">
+              <!-- Dynamically populated after selecting a month -->
             </div>
-            <nav class="payment-delay-month-navigation" data-i18n-aria-label="dashboard-delays-navigation-label" aria-label="Navegação dos meses com atrasos">
-              <button class="btn-icon payment-delay-month-nav-button" type="button" id="btn-delay-previous-month" data-i18n-title="dashboard-delays-previous-month" title="Mês anterior" data-i18n-aria-label="dashboard-delays-previous-month" aria-label="Mês anterior">
-                <i data-lucide="chevron-left"></i>
-              </button>
-              <div class="payment-delay-selected-month" aria-live="polite">
-                <strong id="payment-delay-events-month">—</strong>
-                <span id="payment-delay-events-position">—</span>
-              </div>
-              <button class="btn-icon payment-delay-month-nav-button" type="button" id="btn-delay-next-month" data-i18n-title="dashboard-delays-next-month" title="Próximo mês" data-i18n-aria-label="dashboard-delays-next-month" aria-label="Próximo mês">
-                <i data-lucide="chevron-right"></i>
-              </button>
-            </nav>
-          </div>
-          <div class="payment-delay-events-list" id="payment-delay-events-list">
-            <!-- Dynamically populated with delayed payment events -->
-          </div>
+          </section>
         </div>
       </section>
 
