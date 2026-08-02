@@ -114,6 +114,16 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
   await expect(page.locator('#payment-delays-months-list .payment-delay-month')).toHaveCount(12);
   await expect(page.locator('#payment-delays-months-list .payment-delay-month-average')).toHaveCount(12);
   await expect(page.locator('[data-delay-month="0"] .payment-delay-month-average')).toContainText('Média do atraso');
+  const delayMonthLayout = await page.locator('#payment-delays-months-list').evaluate(grid => {
+    const monthName = grid.querySelector('.payment-delay-month-header > strong');
+    const view = grid.ownerDocument.defaultView;
+    return {
+      columns: view.getComputedStyle(grid).gridTemplateColumns.split(' ').length,
+      monthNameFontSize: Number.parseFloat(view.getComputedStyle(monthName).fontSize)
+    };
+  });
+  expect(delayMonthLayout.columns).toBe(4);
+  expect(delayMonthLayout.monthNameFontSize).toBeGreaterThanOrEqual(15);
   await expect(page.locator('#payment-delays-expected-amount')).toContainText('0');
   const delayDetails = page.locator('#payment-delay-month-details');
   await expect(delayDetails).toBeHidden();
