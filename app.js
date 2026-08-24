@@ -160,8 +160,8 @@ const applicationProtectionReady = initializeApplicationProtection().catch(error
 });
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.135';
-const APP_BUILD_DATE = '2026-08-02 03:47:22';
+const APP_VERSION = '1.0.136';
+const APP_BUILD_DATE = '2026-08-24 13:19:56';
 
 
 
@@ -1789,7 +1789,17 @@ function createDayElement(dayNum, dateStr, isOtherMonth, container, projectedDay
       const valDiv = document.createElement('div');
       valDiv.className = 'day-value';
       if (data.status === 'partial') {
-        valDiv.innerHTML = `<span>${formatCurrency(data.amountPaid)}</span><span class="day-pending-value">(-${formatCurrency(data.pendingAmount)})</span>`;
+        valDiv.classList.add('day-payment-breakdown');
+
+        const paidRow = document.createElement('span');
+        paidRow.className = 'day-payment-row day-payment-row-paid';
+        paidRow.innerHTML = `<span class="day-payment-label">${texts['legend-paid']}</span><strong class="day-payment-amount">${formatCurrency(data.amountPaid)}</strong>`;
+        valDiv.appendChild(paidRow);
+
+        const pendingRow = document.createElement('span');
+        pendingRow.className = 'day-payment-row day-payment-row-pending';
+        pendingRow.innerHTML = `<span class="day-payment-label">${texts['legend-pending']}</span><strong class="day-payment-amount">${formatCurrency(data.pendingAmount)}</strong>`;
+        valDiv.appendChild(pendingRow);
       } else {
         valDiv.innerText = formatCurrency(data.rate);
       }
@@ -1819,7 +1829,11 @@ function createDayElement(dayNum, dateStr, isOtherMonth, container, projectedDay
     accessibleDescription.push(texts[`legend-${data.period}`] || data.period);
     if (isFinancialDay(data)) accessibleDescription.push(formatCurrency(data.rate));
     if (data.status === 'paid') accessibleDescription.push(texts['legend-paid']);
-    else if (data.status === 'partial') accessibleDescription.push(texts['legend-partial']);
+    else if (data.status === 'partial') {
+      accessibleDescription.push(texts['legend-partial']);
+      accessibleDescription.push(`${texts['legend-paid']}: ${formatCurrency(data.amountPaid)}`);
+      accessibleDescription.push(`${texts['legend-pending']}: ${formatCurrency(data.pendingAmount)}`);
+    }
     else if (data.status === 'unpaid') accessibleDescription.push(texts['legend-pending']);
   } else if (isDefaultOffDay) {
     accessibleDescription.push(texts['legend-off']);

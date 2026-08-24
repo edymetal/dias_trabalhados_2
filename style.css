@@ -1932,10 +1932,44 @@ body.dialog-open {
   flex-direction: column;
 }
 
-.day-pending-value {
+.day-payment-breakdown {
+  gap: 0.25rem;
+  width: 100%;
+}
+
+.day-payment-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.25rem 0.4rem;
+  border-radius: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.day-payment-row-paid {
+  color: var(--status-paid);
+  background: var(--status-paid-glow);
+}
+
+.day-payment-row-pending {
   color: var(--status-unpaid);
-  font-size: 0.65rem;
-  font-weight: 600;
+  background: var(--status-unpaid-glow);
+}
+
+.day-payment-label {
+  overflow: hidden;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+
+.day-payment-amount {
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .day-badge {
@@ -2045,6 +2079,24 @@ body.dialog-open {
 .compact-view .day-value {
   font-size: 0.6rem;
   margin-top: 0;
+}
+
+.compact-view .day-payment-breakdown {
+  gap: 1px;
+}
+
+.compact-view .day-payment-row {
+  gap: 2px;
+  padding: 1px 2px;
+  border-radius: 3px;
+}
+
+.compact-view .day-payment-label {
+  font-size: 0.43rem;
+}
+
+.compact-view .day-payment-amount {
+  font-size: 0.5rem;
 }
 
 .compact-view .day-status-indicator {
@@ -3687,11 +3739,6 @@ body.dialog-open {
     line-height: 1.1;
   }
 
-  .day-pending-value {
-    font-size: 0.65rem;
-    margin-top: 2px;
-  }
-
   .day-badge {
     display: flex;
     align-items: center;
@@ -3717,6 +3764,22 @@ body.dialog-open {
   
   .calendar-day {
     min-height: 100px;
+  }
+
+  .day-payment-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    padding: 3px;
+  }
+
+  .day-payment-label {
+    font-size: 0.48rem;
+  }
+
+  .day-payment-amount {
+    font-size: 0.63rem;
   }
 
   .actions-row {
