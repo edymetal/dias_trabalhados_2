@@ -10,8 +10,9 @@
 6. O adaptador usa `update()` para enviar os caminhos da operação atomicamente, sem substituir irmãos não relacionados.
 7. A fila só remove uma operação após confirmação e volta a tentar quando a conexão retorna.
 8. Uma assinatura `onValue` atualiza a sessão quando outro cliente modifica a mesma base.
-9. O domínio calcula datas, resumos e alocação de pagamentos sem conhecer DOM ou Firebase.
-10. A UI renderiza o estado e a situação da sincronização; Chart.js é importado somente quando solicitado.
+9. Navegadores móveis usam long polling HTTPS do SDK para evitar bloqueios de WebSocket por redes, proxies ou roteadores.
+10. O domínio calcula datas, resumos e alocação de pagamentos sem conhecer DOM ou Firebase.
+11. A UI renderiza o estado e a situação da sincronização; Chart.js é importado somente quando solicitado.
 
 ## Limites dos módulos
 

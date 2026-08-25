@@ -64,6 +64,13 @@ describe('operação e entrega', () => {
     expect(production).not.toContain('127.0.0.1');
     expect(test).toContain('http://127.0.0.1:9000');
     expect(test).toContain('http://127.0.0.1:9099');
+
+    const scriptSources = production.split('; ').find(value => value.startsWith('script-src'));
+    const frameSources = production.split('; ').find(value => value.startsWith('frame-src'));
+    expect(scriptSources).toContain('https://*.firebaseio.com');
+    expect(scriptSources).toContain('https://*.firebasedatabase.app');
+    expect(frameSources).toContain('https://*.firebaseio.com');
+    expect(frameSources).toContain('https://*.firebasedatabase.app');
   });
 
   it('mantém os assets de instalação relativos ao subdiretório do Pages', async () => {

@@ -29,11 +29,11 @@ export function createContentSecurityPolicy(mode = 'production') {
     `connect-src ${connections.join(' ')}`,
     "font-src 'self' https://fonts.gstatic.com data:",
     "form-action 'self'",
-    "frame-src 'self' https://accounts.google.com https://apis.google.com https://www.google.com https://*.firebaseapp.com",
+    "frame-src 'self' https://accounts.google.com https://apis.google.com https://www.google.com https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app",
     "img-src 'self' data: https://*.googleusercontent.com https://www.gravatar.com https://www.gstatic.com",
     "manifest-src 'self'",
     "object-src 'none'",
-    "script-src 'self' https://apis.google.com https://www.google.com https://www.gstatic.com",
+    "script-src 'self' https://apis.google.com https://www.google.com https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "worker-src 'self' blob:"
   ].join('; ');

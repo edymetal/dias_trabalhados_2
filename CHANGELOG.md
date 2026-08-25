@@ -4,6 +4,10 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 
 ## Unreleased
 
+### Corrigido
+
+- sincronização do Realtime Database em navegadores móveis cuja rede bloqueia WebSocket, usando o transporte HTTPS suportado pelo SDK.
+
 ### Adicionado
 
 - CSP gerada por ambiente e health check do GitHub Pages;
