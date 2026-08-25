@@ -161,8 +161,8 @@ const applicationProtectionReady = initializeApplicationProtection().catch(error
 });
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.138';
-const APP_BUILD_DATE = '2026-08-25 13:38:50';
+const APP_VERSION = '1.0.139';
+const APP_BUILD_DATE = '2026-08-25 13:45:02';
 
 
 
@@ -1594,6 +1594,7 @@ async function renderAnnualMethodChart(cash, deposit) {
   }
 
   const hasData = cash > 0 || deposit > 0;
+  const annualTotal = addMoney(cash, deposit);
   const dataValues = hasData ? [cash, deposit] : [1];
   const backgroundColors = hasData 
     ? ['rgba(16, 185, 129, 0.75)', 'rgba(139, 92, 246, 0.75)'] 
@@ -1631,12 +1632,20 @@ async function renderAnnualMethodChart(cash, deposit) {
           callbacks: {
             label: function(context) {
               const value = context.raw;
-              return `${context.label}: ${formatCurrency(value)}`;
+              const percentage = formatPaymentMethodShare(value, annualTotal);
+              return `${context.label}: ${formatCurrency(value)} (${percentage})`;
             }
           }
         },
         datalabels: {
-          display: false
+          anchor: 'center',
+          align: 'center',
+          color: '#fff',
+          font: { family: 'Outfit', weight: '700', size: 11 },
+          formatter: value => formatPaymentMethodShare(value, annualTotal),
+          display: context => (
+            hasData && context.dataset.data[context.dataIndex] > 0
+          )
         }
       }
     }
