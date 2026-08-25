@@ -23,7 +23,10 @@ test.beforeAll(async ({ request }) => {
     }
   );
 
-  expect(response.ok()).toBe(true);
+  if (!response.ok()) {
+    const payload = await response.json();
+    expect(payload.error?.message).toBe('EMAIL_EXISTS');
+  }
 });
 
 async function signInWithEmulator(page) {
