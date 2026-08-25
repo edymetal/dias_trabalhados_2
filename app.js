@@ -161,8 +161,8 @@ const applicationProtectionReady = initializeApplicationProtection().catch(error
 });
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.139';
-const APP_BUILD_DATE = '2026-08-25 13:45:02';
+const APP_VERSION = '1.0.140';
+const APP_BUILD_DATE = '2026-08-25 13:49:36';
 
 
 
@@ -1428,6 +1428,54 @@ function renderMonthlyWeeksSummary() {
 }
 
 // Cria/Atualiza o gráfico dinâmico
+function renderEarningsChartShare(labels, cashValues, depositValues, texts) {
+  const container = document.getElementById('earnings-chart-share');
+  if (!container) return;
+
+  const renderCells = values => values.map((value, index) => {
+    const monthlyTotal = addMoney(cashValues[index], depositValues[index]);
+    const percentage = monthlyTotal > 0
+      ? formatPaymentMethodShare(value, monthlyTotal)
+      : '—';
+    return `<td>${percentage}</td>`;
+  }).join('');
+
+  const cashLabel = texts['opt-cash'] || 'Dinheiro';
+  const depositLabel = texts['opt-deposit'] || 'Depósito';
+
+  container.innerHTML = `
+    <table class="earnings-chart-share-table">
+      <caption>${escapeHtml(texts['chart-share-title'])}</caption>
+      <thead>
+        <tr>
+          <th scope="col">${escapeHtml(texts['chart-share-method'])}</th>
+          ${labels.map(label => `<th scope="col">${escapeHtml(label)}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">
+            <span class="earnings-chart-share-method">
+              <span class="earnings-chart-share-dot cash" aria-hidden="true"></span>
+              ${escapeHtml(cashLabel)}
+            </span>
+          </th>
+          ${renderCells(cashValues)}
+        </tr>
+        <tr>
+          <th scope="row">
+            <span class="earnings-chart-share-method">
+              <span class="earnings-chart-share-dot deposit" aria-hidden="true"></span>
+              ${escapeHtml(depositLabel)}
+            </span>
+          </th>
+          ${renderCells(depositValues)}
+        </tr>
+      </tbody>
+    </table>
+  `;
+}
+
 async function renderEarningsChart() {
   if (!db) return; // Segurança contra carga incompleta
   const canvas = document.getElementById('earningsChart');
@@ -1480,6 +1528,7 @@ async function renderEarningsChart() {
     (total, dataset) => total + Number(dataset.data[dataIndex] || 0),
     0
   );
+  renderEarningsChartShare(labels, cashValues, depositValues, texts);
 
   if (earningsChart) {
     earningsChart.destroy();
@@ -1546,17 +1595,9 @@ async function renderEarningsChart() {
         datalabels: {
           anchor: 'center',
           align: 'center',
-          formatter: (value, context) => {
-            if (value <= 5) return '';
-            const monthlyTotal = getMonthlyTotal(context.chart, context.dataIndex);
-            return [
-              formatCurrency(value),
-              formatPaymentMethodShare(value, monthlyTotal)
-            ];
-          },
+          formatter: value => value > 5 ? formatCurrency(value) : '',
           color: '#fff',
-          font: { family: 'Outfit', weight: '700', size: 10, lineHeight: 1.2 },
-          textAlign: 'center',
+          font: { family: 'Outfit', weight: '700', size: 10 },
           display: function(context) {
             return context.dataset.data[context.dataIndex] > 0;
           }

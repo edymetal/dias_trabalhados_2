@@ -1517,6 +1517,86 @@ body.dialog-open {
   width: 100%;
 }
 
+.earnings-chart-share {
+  margin-top: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
+}
+
+.earnings-chart-share-table {
+  width: 100%;
+  min-width: 600px;
+  table-layout: fixed;
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-sm);
+  border-spacing: 0;
+  overflow: hidden;
+  background: var(--bg-tertiary);
+}
+
+.earnings-chart-share-table caption {
+  padding-bottom: 0.55rem;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.earnings-chart-share-table th,
+.earnings-chart-share-table td {
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.earnings-chart-share-table thead th {
+  font-weight: 600;
+}
+
+.earnings-chart-share-table th:first-child {
+  width: 108px;
+  text-align: left;
+}
+
+.earnings-chart-share-table tbody th {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.earnings-chart-share-table tbody tr:last-child th,
+.earnings-chart-share-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.earnings-chart-share-table tbody td {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.earnings-chart-share-method {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.earnings-chart-share-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  flex: 0 0 auto;
+  border-radius: 2px;
+}
+
+.earnings-chart-share-dot.cash {
+  background: var(--status-paid);
+}
+
+.earnings-chart-share-dot.deposit {
+  background: var(--accent-purple);
+}
+
 .monthly-weeks-summary {
   display: flex;
   flex-direction: column;
