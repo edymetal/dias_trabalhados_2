@@ -56,6 +56,14 @@ export function calculateReceivedByMonthInYear(workedDays, year = new Date().get
   return monthlyCents.map(fromCents);
 }
 
+export function calculatePaymentMethodShare(value, monthlyTotal) {
+  const totalCents = toCents(monthlyTotal || 0);
+  if (totalCents <= 0) return 0;
+
+  const valueCents = toCents(value || 0);
+  return Math.min(1, Math.max(0, valueCents / totalCents));
+}
+
 export function calculateExpectedPaymentDate(workedDate, cycle) {
   const parsedWorkedDate = parseLocalDate(workedDate);
   if (!parsedWorkedDate) return null;

@@ -70,6 +70,7 @@ import {
 import {
   calculateFinancialSummary,
   calculatePaymentDelaySummary,
+  calculatePaymentMethodShare,
   calculateReceivedByMonthInYear,
   splitPaymentMethod
 } from './src/domain/dashboard.js';
@@ -160,8 +161,8 @@ const applicationProtectionReady = initializeApplicationProtection().catch(error
 });
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.137';
-const APP_BUILD_DATE = '2026-08-25 13:25:55';
+const APP_VERSION = '1.0.138';
+const APP_BUILD_DATE = '2026-08-25 13:38:50';
 
 
 
@@ -917,6 +918,14 @@ function formatCurrency(value) {
   return new Intl.NumberFormat(lang, { style: 'currency', currency: 'EUR' }).format(normalizeMoney(value || 0));
 }
 
+function formatPaymentMethodShare(value, monthlyTotal) {
+  const lang = db.settings.language === 'it-IT' ? 'it-IT' : 'pt-BR';
+  return new Intl.NumberFormat(lang, {
+    style: 'percent',
+    maximumFractionDigits: 1
+  }).format(calculatePaymentMethodShare(value, monthlyTotal));
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll('&', '&amp;')
@@ -1467,6 +1476,10 @@ async function renderEarningsChart() {
   const labels = Object.keys(monthlyData).map(k => monthlyData[k].label);
   const cashValues = Object.keys(monthlyData).map(k => monthlyData[k].cash);
   const depositValues = Object.keys(monthlyData).map(k => monthlyData[k].deposit);
+  const getMonthlyTotal = (chart, dataIndex) => chart.data.datasets.reduce(
+    (total, dataset) => total + Number(dataset.data[dataIndex] || 0),
+    0
+  );
 
   if (earningsChart) {
     earningsChart.destroy();
@@ -1516,12 +1529,16 @@ async function renderEarningsChart() {
             label: function(context) {
               let label = context.dataset.label || '';
               if (label) label += ': ';
-              if (context.parsed.y !== null) label += formatCurrency(context.parsed.y);
+              if (context.parsed.y !== null) {
+                const monthlyTotal = getMonthlyTotal(context.chart, context.dataIndex);
+                const percentage = formatPaymentMethodShare(context.parsed.y, monthlyTotal);
+                label += `${formatCurrency(context.parsed.y)} (${percentage})`;
+              }
               return label;
             },
             footer: function(items) {
-              let total = 0;
-              items.forEach(item => total += item.parsed.y);
+              if (items.length === 0) return '';
+              const total = getMonthlyTotal(items[0].chart, items[0].dataIndex);
               return `Total: ${formatCurrency(total)}`;
             }
           }
@@ -1529,9 +1546,17 @@ async function renderEarningsChart() {
         datalabels: {
           anchor: 'center',
           align: 'center',
-          formatter: (value) => value > 5 ? formatCurrency(value) : '',
+          formatter: (value, context) => {
+            if (value <= 5) return '';
+            const monthlyTotal = getMonthlyTotal(context.chart, context.dataIndex);
+            return [
+              formatCurrency(value),
+              formatPaymentMethodShare(value, monthlyTotal)
+            ];
+          },
           color: '#fff',
-          font: { family: 'Outfit', weight: '700', size: 10 },
+          font: { family: 'Outfit', weight: '700', size: 10, lineHeight: 1.2 },
+          textAlign: 'center',
           display: function(context) {
             return context.dataset.data[context.dataIndex] > 0;
           }

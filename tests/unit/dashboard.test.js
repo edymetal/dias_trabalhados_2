@@ -6,6 +6,7 @@ import {
   calculateExpectedPaymentDate,
   calculateFinancialSummary,
   calculatePaymentDelaySummary,
+  calculatePaymentMethodShare,
   calculateReceivedByMonthInYear,
   calculateReceivedForWorkedDaysInMonth,
   getMonthDateRange,
@@ -45,6 +46,13 @@ describe('resumo do dashboard', () => {
     expect(calculateReceivedByMonthInYear(workedDays, 2026)).toEqual([
       45, 0, 0, 0, 0, 0, 60, 0, 0, 0, 0, 0
     ]);
+  });
+
+  it('calcula a participação de cada método no total recebido do mês', () => {
+    expect(calculatePaymentMethodShare(790, 1290)).toBeCloseTo(0.6124, 4);
+    expect(calculatePaymentMethodShare(500, 1290)).toBeCloseTo(0.3876, 4);
+    expect(calculatePaymentMethodShare(95, 95)).toBe(1);
+    expect(calculatePaymentMethodShare(0, 0)).toBe(0);
   });
 
   it('calcula a data prevista conforme o ciclo semanal ou mensal', () => {
