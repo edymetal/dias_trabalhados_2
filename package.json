@@ -32,8 +32,8 @@
   "dependencies": {
     "chart.js": "4.5.1",
     "chartjs-plugin-datalabels": "2.2.0",
-    "firebase": "10.14.1",
-    "lucide": "1.25.0"
+    "firebase": "12.18.0",
+    "lucide": "1.35.0"
   },
   "overrides": {
     "undici": "6.27.0"
