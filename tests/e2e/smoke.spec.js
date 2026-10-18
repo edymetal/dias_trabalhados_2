@@ -152,22 +152,27 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
   expect(cacheState.queue).toEqual([]);
 
   await page.locator('[data-tab="calendar"]').click();
+  const reportWidth = (Math.ceil((await page.locator('.calendar-wrapper').boundingBox()).width) + 32) * 2;
+  await expect(page.locator('#btn-payment-report')).toHaveText('');
+  await expect(page.locator('#btn-payment-report svg')).toBeVisible();
   // A report includes the visible month and general balance, with a PNG fallback.
   await page.evaluate(() => {
     Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => false });
   });
   await page.locator('#btn-payment-report').click();
-  await expect(page.locator('#payment-report-modal')).toBeVisible();
+  await expect(page.locator('#payment-report-modal')).toBeVisible({ timeout: 20000 });
   await expect(page.locator('#payment-report-share')).toBeHidden();
   const reportImage = page.locator('#payment-report-preview');
-  await expect(reportImage).toHaveJSProperty('naturalWidth', 1400);
+  await expect(reportImage).toHaveJSProperty('naturalWidth', reportWidth);
   await reportImage.screenshot({ path: 'test-results/payment-report-preview.png' });
   const reportLink = new URL(await page.locator('#payment-report-whatsapp').getAttribute('href'));
   expect(reportLink.searchParams.get('text')).toContain('70,00');
   expect(reportLink.searchParams.get('text')).toContain(await page.locator('#calendar-month-year').innerText());
   const reportDownload = page.waitForEvent('download');
   await page.locator('#payment-report-download').click();
-  expect((await reportDownload).suggestedFilename()).toMatch(/^pagamento-\d{4}-\d{2}\.png$/);
+  const downloadedReport = await reportDownload;
+  expect(downloadedReport.suggestedFilename()).toMatch(/^pagamento-\d{4}-\d{2}\.png$/);
+  await downloadedReport.saveAs('test-results/payment-report-export.png');
   await page.keyboard.press('Escape');
   await expect(page.locator('#payment-report-modal')).toBeHidden();
   await expect(page.locator('#btn-payment-report')).toBeFocused();
@@ -263,8 +268,9 @@ test('mantém navegação e diálogos utilizáveis em viewport mobile', async ({
   await menuButton.click();
   await page.getByRole('button', { name: 'Calendário' }).click();
   await expect(page.locator('#section-calendar')).toHaveClass(/active/);
+  const mobileReportWidth = (1556 + 32) * 2;
   await page.locator('#btn-payment-report').click();
-  await expect(page.locator('#payment-report-preview')).toHaveJSProperty('naturalWidth', 1400);
+  await expect(page.locator('#payment-report-preview')).toHaveJSProperty('naturalWidth', mobileReportWidth, { timeout: 20000 });
   const reportBox = await page.locator('#payment-report-modal .modal-content').boundingBox();
   expect(reportBox.x).toBeGreaterThanOrEqual(0);
   expect(reportBox.x + reportBox.width).toBeLessThanOrEqual(390);

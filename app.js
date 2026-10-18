@@ -37,6 +37,7 @@ import {
   Palmtree,
   PieChart,
   Save,
+  Send,
   Settings,
   Sun,
   Sunset,
@@ -139,6 +140,7 @@ const lucideIcons = {
   Palmtree,
   PieChart,
   Save,
+  Send,
   Settings,
   Sun,
   Sunset,
@@ -162,8 +164,8 @@ const applicationProtectionReady = initializeApplicationProtection().catch(error
 });
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.143';
-const APP_BUILD_DATE = '2026-10-18 22:47:38';
+const APP_VERSION = '1.0.144';
+const APP_BUILD_DATE = '2026-10-18 23:14:44';
 
 
 
@@ -872,18 +874,8 @@ function initNavigation() {
       generated: `${texts['share-generated']}: ${new Date().toLocaleString(getCurrentLanguage())}`,
       filename: `pagamento-${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`,
       message: `${title}\n${balanceLabel}: ${balance}\n${scope}`,
-      weekdays: [...document.querySelectorAll('#calendar-days-grid .calendar-day-label')].map(el => el.innerText),
-      days: [...document.querySelectorAll('#calendar-days-grid .calendar-day')].map(el => ({
-        number: el.querySelector('.day-number').innerText,
-        lines: [...el.querySelectorAll('.day-badge, .day-value:not(.day-payment-breakdown), .day-payment-row, .projected-badge')]
-          .map(detail => (detail.classList.contains('day-payment-row')
-            ? [...detail.children].map(child => child.textContent).join(': ')
-            : detail.textContent).replace(/\s+/g, ' ').trim()),
-        otherMonth: el.classList.contains('other-month'),
-        paid: el.classList.contains('day-status-paid') || el.classList.contains('day-projected-paid'),
-        partial: el.classList.contains('day-status-partial') || el.classList.contains('day-projected-partial'),
-        unpaid: el.classList.contains('day-status-unpaid')
-      }))
+      calendar: document.querySelector('.calendar-wrapper'),
+      balanceCard: document.querySelector('.stat-card.stat-pending')
     };
   });
   if (btnToggleZoom) {

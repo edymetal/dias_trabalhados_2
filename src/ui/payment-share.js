@@ -1,41 +1,50 @@
 import { openDialog } from './dialog.js';
 import { showStatus } from './feedback.js';
 
-// Draw from the visible calendar so projections, partial payments and days off
-// are identical to what the user reviewed, regardless of screen size or zoom.
-export function drawPaymentReport({ title, weekdays, days, balanceLabel, balance, scope, generated }) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1400;
-  canvas.height = 370 + Math.ceil(days.length / 7) * 164;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Canvas unavailable');
-  ctx.fillStyle = '#0d1422';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const text = (value, x, y, size = 20, color = '#e8edf5', maxWidth = 1300) => {
-    ctx.fillStyle = color;
-    ctx.font = `600 ${size}px system-ui, sans-serif`;
-    ctx.fillText(value, x, y, maxWidth);
-  };
-  text(title, 36, 52, 32);
-  text(generated, 36, 84, 17, '#a6b3c8');
-  ctx.fillStyle = '#182235';
-  ctx.fillRect(36, 108, 1328, 140);
-  text(balanceLabel, 56, 141, 21);
-  text(balance, 56, 190, 38, '#ffbd69');
-  text(scope, 56, 225, 17, '#a6b3c8');
-  weekdays.forEach((day, i) => text(day, 48 + i * 190, 288, 18, '#a6b3c8'));
-  days.forEach((day, i) => {
-    const x = 36 + (i % 7) * 190;
-    const y = 310 + Math.floor(i / 7) * 164;
-    ctx.fillStyle = '#172132';
-    ctx.fillRect(x, y, 178, 152);
-    const color = day.paid ? '#2bd4a1' : day.partial ? '#ffbd69' : day.unpaid ? '#ff626e' : '#64748b';
-    ctx.fillStyle = color;
-    ctx.fillRect(x, y, 4, 152);
-    text(day.number, x + 14, y + 29, 23, day.otherMonth ? '#778296' : '#ffffff', 150);
-    day.lines.forEach((line, j) => text(line, x + 14, y + 56 + j * 21, 15, day.otherMonth ? '#778296' : '#d3dceb', 150));
-  });
-  return canvas;
+// Capture the real calendar markup and CSS, including its SVG icons and badges.
+export async function drawPaymentReport({ calendar, balanceCard, balanceLabel, balance, scope, generated }) {
+  await document.fonts.ready;
+  const host = document.createElement('div');
+  host.className = 'payment-report-capture-host';
+  host.setAttribute('aria-hidden', 'true');
+  host.inert = true;
+  const mobile = window.innerWidth <= 768;
+  // Export all seven columns on phones, including days outside the scroll area.
+  const calendarWidth = mobile ? 1556 : Math.ceil(calendar.getBoundingClientRect().width);
+  host.style.width = `${calendarWidth + 32}px`;
+  const capture = document.createElement('div');
+  capture.className = 'payment-report-capture';
+  const calendarCopy = calendar.cloneNode(true);
+  calendarCopy.querySelector('#btn-payment-report')?.remove();
+  const card = balanceCard.cloneNode(true);
+  card.classList.add('payment-report-balance');
+  card.querySelector('.stat-info p').textContent = balanceLabel;
+  card.querySelector('.stat-info h3').textContent = balance;
+  const caption = document.createElement('p');
+  caption.className = 'payment-report-caption';
+  caption.textContent = `${scope} ${generated}`;
+  capture.append(calendarCopy, card, caption);
+  capture.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
+  host.append(capture);
+  document.body.append(host);
+  try {
+    // Preserve the sizes and inherited colors when SVG icons become images.
+    capture.querySelectorAll('svg').forEach(icon => {
+      const style = getComputedStyle(icon);
+      icon.setAttribute('width', style.width);
+      icon.setAttribute('height', style.height);
+      icon.style.color = style.color;
+    });
+    const { default: html2canvas } = await import('html2canvas');
+    return await html2canvas(capture, {
+      scale: 2,
+      logging: false,
+      windowWidth: mobile ? 1600 : window.innerWidth,
+      backgroundColor: getComputedStyle(capture).backgroundColor
+    });
+  } finally {
+    host.remove();
+  }
 }
 
 export async function sharePaymentFile(file, title, navigatorApi = navigator) {
@@ -64,7 +73,7 @@ export function setupPaymentShare(getReport) {
     try {
       const report = getReport();
       texts = report.texts;
-      const canvas = drawPaymentReport(report);
+      const canvas = await drawPaymentReport(report);
       const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
       if (!blob) throw new Error('PNG encoding failed');
       if (objectUrl) URL.revokeObjectURL(objectUrl);
