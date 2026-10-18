@@ -36,7 +36,8 @@
     "lucide": "1.25.0"
   },
   "overrides": {
-    "undici": "6.27.0"
+    "undici@6": "6.29.1",
+    "@grpc/grpc-js": "1.14.6"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
