@@ -349,6 +349,7 @@
           <div class="calendar-header">
             <h2 class="calendar-nav-title" id="calendar-month-year">Maio de 2026</h2>
             <div class="calendar-actions-nav">
+              <button class="btn-secondary btn-compact" type="button" id="btn-payment-report" data-i18n="btn-payment-report">Resumo para WhatsApp</button>
               <button class="btn-icon" type="button" id="btn-toggle-calendar-zoom" title="Alternar Zoom" data-i18n-title="tooltip-toggle-calendar-zoom" aria-label="Alternar zoom" data-i18n-aria-label="tooltip-toggle-calendar-zoom">
                 <i data-lucide="zoom-out"></i>
               </button>
@@ -1155,6 +1156,22 @@
       <div class="actions-row actions-spaced">
         <button type="button" class="btn-secondary action-grow" data-confirm-value="false" data-i18n="btn-cancel">Cancelar</button>
         <button type="button" class="btn-primary action-grow" id="confirmation-accept" data-confirm-value="true" data-i18n="btn-confirm">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="payment-report-modal" hidden>
+    <div class="glass-card modal-content modal-large" role="dialog" aria-modal="true" aria-labelledby="payment-report-title" aria-describedby="payment-report-status" tabindex="-1">
+      <div class="modal-header">
+        <h2 id="payment-report-title" data-i18n="share-title">Resumo de pagamento</h2>
+        <button type="button" class="modal-close" data-dialog-close aria-label="Fechar" data-i18n-aria-label="aria-close-dialog">&times;</button>
+      </div>
+      <p id="payment-report-status" role="status"></p>
+      <img id="payment-report-preview" alt="Calendário e saldo do pagamento">
+      <div class="payment-report-actions">
+        <button type="button" class="btn-primary" id="payment-report-share" data-i18n="share-send">Compartilhar imagem</button>
+        <a class="btn-secondary" id="payment-report-download" data-i18n="share-download">Baixar imagem</a>
+        <a class="btn-secondary" id="payment-report-whatsapp" target="_blank" rel="noopener noreferrer" data-i18n="share-whatsapp">Abrir WhatsApp</a>
       </div>
     </div>
   </div>

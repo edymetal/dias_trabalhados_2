@@ -19,8 +19,8 @@ describe('contrato acessível da interface', () => {
 
     expect(html).toContain('class="skip-link"');
     expect(html).toContain('id="main-content"');
-    expect(html.match(/role="(?:alert)?dialog"/g)).toHaveLength(4);
-    expect(html.match(/aria-modal="true"/g)).toHaveLength(4);
+    expect(html.match(/role="(?:alert)?dialog"/g)).toHaveLength(5);
+    expect(html.match(/aria-modal="true"/g)).toHaveLength(5);
     expect(html).toContain('aria-current="page"');
     expect(html).toContain('aria-controls="app-sidebar"');
   });

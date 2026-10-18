@@ -103,6 +103,7 @@ import {
 } from './src/ui/dialog.js';
 import { renderSyncState, reportError, showStatus } from './src/ui/feedback.js';
 import { translations } from './src/ui/translations.js';
+import { setupPaymentShare } from './src/ui/payment-share.js';
 
 const lucideIcons = {
   AlertCircle,
@@ -161,8 +162,8 @@ const applicationProtectionReady = initializeApplicationProtection().catch(error
 });
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.141';
-const APP_BUILD_DATE = '2026-08-25 14:03:46';
+const APP_VERSION = '1.0.142';
+const APP_BUILD_DATE = '2026-10-18 19:23:55';
 
 
 
@@ -859,6 +860,32 @@ function initNavigation() {
 
   // Funcionalidade de Zoom do Calendário
   const btnToggleZoom = document.getElementById('btn-toggle-calendar-zoom');
+  setupPaymentShare(() => {
+    const texts = translations[getCurrentLanguage()];
+    const { netBalance } = calculateFinancialSummary(db);
+    const title = document.getElementById('calendar-month-year').innerText;
+    const balanceLabel = texts[netBalance < 0 ? 'stat-total-credit' : 'stat-total-pending'];
+    const balance = formatCurrency(Math.abs(netBalance));
+    const scope = texts['share-scope'];
+    return {
+      texts, title, balanceLabel, balance, scope,
+      generated: `${texts['share-generated']}: ${new Date().toLocaleString(getCurrentLanguage())}`,
+      filename: `pagamento-${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`,
+      message: `${title}\n${balanceLabel}: ${balance}\n${scope}`,
+      weekdays: [...document.querySelectorAll('#calendar-days-grid .calendar-day-label')].map(el => el.innerText),
+      days: [...document.querySelectorAll('#calendar-days-grid .calendar-day')].map(el => ({
+        number: el.querySelector('.day-number').innerText,
+        lines: [...el.querySelectorAll('.day-badge, .day-value:not(.day-payment-breakdown), .day-payment-row, .projected-badge')]
+          .map(detail => (detail.classList.contains('day-payment-row')
+            ? [...detail.children].map(child => child.textContent).join(': ')
+            : detail.textContent).replace(/\s+/g, ' ').trim()),
+        otherMonth: el.classList.contains('other-month'),
+        paid: el.classList.contains('day-status-paid') || el.classList.contains('day-projected-paid'),
+        partial: el.classList.contains('day-status-partial') || el.classList.contains('day-projected-partial'),
+        unpaid: el.classList.contains('day-status-unpaid')
+      }))
+    };
+  });
   if (btnToggleZoom) {
     btnToggleZoom.addEventListener('click', () => {
       const calendarWrapper = document.querySelector('.calendar-wrapper');

@@ -16,6 +16,12 @@ O projeto possui uma restrição permanente: deve operar somente com **GitHub Fr
 
 A Etapa 0 foi concluída localmente em 22/07/2026: exportação administrativa, SHA-256, criptografia e restauração comprovada no emulador. Consulte `plans/etapa-0-backup-e-restauracao.md` antes de qualquer mudança de persistência, importação, limpeza ou regras remotas.
 
+## Resumo para WhatsApp
+
+Na aba Calendário, use **Resumo para WhatsApp** para gerar uma imagem do mês exibido com os turnos, pagamentos parciais e o saldo geral atualizado (todos os meses, descontados os adiantamentos), como no painel. Confira a prévia e use **Compartilhar imagem**, escolhendo o WhatsApp e o destinatário. O envio é concluído por você no WhatsApp.
+
+Se o navegador não oferecer compartilhamento de arquivos, use **Baixar imagem** e **Abrir WhatsApp**. A mensagem leva o período e o saldo; anexe a imagem baixada na conversa. O relatório é gerado localmente no navegador, sem serviço externo ou custo adicional.
+
 ## Requisitos
 
 - Node.js 22.13 ou superior;
