@@ -18,6 +18,13 @@ describe('compartilhamento do resumo', () => {
     expect(api.share).not.toHaveBeenCalled();
   });
 
+  it('compartilha imagem e mensagem com o valor a pagar no mesmo envio', async () => {
+    const api = { canShare: () => true, share: vi.fn().mockResolvedValue() };
+    const message = 'Outubro 2026\nValor a pagar: € 70,00';
+    expect(await sharePaymentFile(file, 'Resumo', api, message)).toBe('shared');
+    expect(api.share).toHaveBeenCalledWith({ files: [file], title: 'Resumo', text: message });
+  });
+
   it('trata cancelamento como uma escolha normal do usuário', async () => {
     const api = { canShare: () => true, share: vi.fn().mockRejectedValue(new DOMException('Cancelado', 'AbortError')) };
     expect(await sharePaymentFile(file, 'Resumo', api)).toBe('cancelled');

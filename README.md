@@ -18,9 +18,9 @@ A Etapa 0 foi concluída localmente em 22/07/2026: exportação administrativa, 
 
 ## Resumo para WhatsApp
 
-Na aba Calendário, use **Resumo para WhatsApp** para gerar uma imagem do mês exibido com os turnos, pagamentos parciais e o saldo geral atualizado (todos os meses, descontados os adiantamentos), como no painel. Confira a prévia e use **Compartilhar imagem**, escolhendo o WhatsApp e o destinatário. O envio é concluído por você no WhatsApp.
+Na aba Calendário, use **Resumo para WhatsApp** para gerar uma imagem do mês exibido com os turnos, pagamentos parciais e o saldo geral atualizado (todos os meses, descontados os adiantamentos), como no painel. Confira a prévia e toque no ícone do WhatsApp: nos aparelhos compatíveis, a imagem e a mensagem com o valor a pagar são entregues ao compartilhamento do sistema. Escolha WhatsApp e o destinatário e confirme o envio. O botão de compartilhamento geral também inclui a imagem e o valor. Alguns aplicativos podem ignorar a mensagem; o saldo permanece visível na própria imagem.
 
-Se o navegador não oferecer compartilhamento de arquivos, use **Baixar imagem** e **Abrir WhatsApp**. A mensagem leva o período e o saldo; anexe a imagem baixada na conversa. O relatório é gerado localmente no navegador, sem serviço externo ou custo adicional.
+Se o navegador não oferecer compartilhamento de arquivos, o ícone do WhatsApp baixa automaticamente a imagem e abre a mensagem com o período e o valor a pagar; anexe o PNG baixado na conversa. Se o compartilhamento falhar, a interface orienta tocar novamente no ícone para usar esse caminho alternativo. Cancelar o compartilhamento não abre o WhatsApp nem baixa arquivos. O relatório é gerado localmente no navegador, sem serviço externo ou custo adicional.
 
 ## Requisitos
 

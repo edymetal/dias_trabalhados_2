@@ -158,6 +158,7 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
   // A report includes the visible month and general balance, with a PNG fallback.
   await page.evaluate(() => {
     Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => false });
+    globalThis.open = url => { globalThis.openedWhatsappUrl = url; return null; };
   });
   await page.locator('#btn-payment-report').click();
   await expect(page.locator('#payment-report-modal')).toBeVisible({ timeout: 20000 });
@@ -165,9 +166,17 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
   const reportImage = page.locator('#payment-report-preview');
   await expect(reportImage).toHaveJSProperty('naturalWidth', reportWidth);
   await reportImage.screenshot({ path: 'test-results/payment-report-preview.png' });
-  const reportLink = new URL(await page.locator('#payment-report-whatsapp').getAttribute('href'));
+  const whatsappDownload = page.waitForEvent('download');
+  await page.locator('#payment-report-whatsapp').click();
+  expect((await whatsappDownload).suggestedFilename()).toMatch(/^pagamento-\d{4}-\d{2}\.png$/);
+  const reportLink = new URL(await page.evaluate(() => globalThis.openedWhatsappUrl));
   expect(reportLink.searchParams.get('text')).toContain('70,00');
+  expect(reportLink.searchParams.get('text')).toContain('Valor a pagar');
   expect(reportLink.searchParams.get('text')).toContain(await page.locator('#calendar-month-year').innerText());
+  await expect(page.locator('#payment-report-status')).toContainText('Anexe o PNG');
+  await expect(page.locator('.calendar-legend [data-i18n="legend-morning"]')).toHaveCount(0);
+  await expect(page.locator('.calendar-legend [data-i18n="legend-night"]')).toHaveCount(0);
+  await expect(page.locator('.calendar-legend [data-i18n="legend-both"]')).toHaveCount(0);
   const reportDownload = page.waitForEvent('download');
   await page.locator('#payment-report-download').click();
   const downloadedReport = await reportDownload;
@@ -180,12 +189,19 @@ test('autentica e conclui os fluxos de calendário e pagamento com dados sintét
     Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
     Object.defineProperty(navigator, 'share', {
       configurable: true,
-      value: async ({ files }) => { globalThis.sharedReportFile = { name: files[0].name, type: files[0].type }; }
+      value: async ({ files, text }) => {
+        globalThis.sharedReportFile = { name: files[0].name, type: files[0].type, text };
+        globalThis.sharedReportCount = (globalThis.sharedReportCount || 0) + 1;
+      }
     });
   });
   await page.locator('#btn-payment-report').click();
-  await page.locator('#payment-report-share').click();
+  await page.locator('#payment-report-whatsapp').click();
   await expect.poll(() => page.evaluate(() => globalThis.sharedReportFile?.type)).toBe('image/png');
+  expect(await page.evaluate(() => globalThis.sharedReportFile.text)).toContain('Valor a pagar:');
+  expect(await page.evaluate(() => globalThis.sharedReportFile.text)).toContain('70,00');
+  await page.locator('#payment-report-share').click();
+  await expect.poll(() => page.evaluate(() => globalThis.sharedReportCount)).toBe(2);
   await page.keyboard.press('Escape');
   const workedDayButton = page.locator(`.calendar-day[data-date="${workedDate}"]`);
   await workedDayButton.click();

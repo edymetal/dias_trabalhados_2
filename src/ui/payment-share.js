@@ -47,10 +47,12 @@ export async function drawPaymentReport({ calendar, balanceCard, balanceLabel, b
   }
 }
 
-export async function sharePaymentFile(file, title, navigatorApi = navigator) {
+export async function sharePaymentFile(file, title, navigatorApi = navigator, message = '') {
   if (!navigatorApi.share || !navigatorApi.canShare?.({ files: [file] })) return 'unsupported';
   try {
-    await navigatorApi.share({ files: [file], title });
+    const data = { files: [file], title };
+    if (message) data.text = message;
+    await navigatorApi.share(data);
     return 'shared';
   } catch (error) {
     if (error.name === 'AbortError') return 'cancelled';
@@ -68,6 +70,14 @@ export function setupPaymentShare(getReport) {
   let file;
   let objectUrl;
   let texts;
+  let message;
+  let whatsappUrl;
+  let whatsappFallback = false;
+  const openWhatsappFallback = () => {
+    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    download.click();
+    status.textContent = texts['share-whatsapp-manual'];
+  };
   trigger.addEventListener('click', async () => {
     trigger.disabled = true;
     try {
@@ -84,7 +94,9 @@ export function setupPaymentShare(getReport) {
       preview.alt = texts['share-preview-alt'];
       download.href = objectUrl;
       download.download = file.name;
-      whatsapp.href = `https://wa.me/?text=${encodeURIComponent(report.message)}`;
+      message = report.message;
+      whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      whatsappFallback = false;
       status.textContent = texts['share-instructions'];
       share.hidden = !(navigator.share && navigator.canShare?.({ files: [file] }));
       trigger.disabled = false;
@@ -97,17 +109,30 @@ export function setupPaymentShare(getReport) {
       trigger.disabled = false;
     }
   });
-  share.addEventListener('click', async () => {
+  const sendReport = async (toWhatsapp = false) => {
     if (!file) return;
+    if (toWhatsapp && whatsappFallback) {
+      openWhatsappFallback();
+      return;
+    }
     share.disabled = true;
+    whatsapp.disabled = true;
     try {
-      const result = await sharePaymentFile(file, texts['share-title']);
-      if (result === 'unsupported') status.textContent = texts['share-instructions'];
+      if (toWhatsapp) status.textContent = texts['share-choose-whatsapp'];
+      const result = await sharePaymentFile(file, texts['share-title'], navigator, message);
+      if (result === 'unsupported') {
+        if (toWhatsapp) openWhatsappFallback();
+        else status.textContent = texts['share-instructions'];
+      }
     } catch (error) {
       console.error('[payment-share]', error);
+      whatsappFallback = true;
       status.textContent = texts['share-fallback'];
     } finally {
       share.disabled = false;
+      whatsapp.disabled = false;
     }
-  });
+  };
+  share.addEventListener('click', () => sendReport());
+  whatsapp.addEventListener('click', () => sendReport(true));
 }

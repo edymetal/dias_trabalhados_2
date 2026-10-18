@@ -164,8 +164,8 @@ const applicationProtectionReady = initializeApplicationProtection().catch(error
 });
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.146';
-const APP_BUILD_DATE = '2026-10-18 23:42:29';
+const APP_VERSION = '1.0.147';
+const APP_BUILD_DATE = '2026-10-18 23:49:41';
 
 
 
@@ -873,7 +873,7 @@ function initNavigation() {
       texts, title, balanceLabel, balance, scope,
       generated: `${texts['share-generated']}: ${new Date().toLocaleString(getCurrentLanguage())}`,
       filename: `pagamento-${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`,
-      message: `${title}\n${balanceLabel}: ${balance}\n${scope}`,
+      message: `${title}\n${netBalance < 0 ? balanceLabel : texts['share-amount-due']}: ${balance}\n${scope}`,
       calendar: document.querySelector('.calendar-wrapper'),
       balanceCard: document.querySelector('.stat-card.stat-pending')
     };
