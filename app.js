@@ -32,6 +32,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MessageCircle,
   Moon,
   Palette,
   Palmtree,
@@ -135,6 +136,7 @@ const lucideIcons = {
   LayoutDashboard,
   LogOut,
   Menu,
+  MessageCircle,
   Moon,
   Palette,
   Palmtree,
@@ -164,8 +166,8 @@ const applicationProtectionReady = initializeApplicationProtection().catch(error
 });
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.144';
-const APP_BUILD_DATE = '2026-10-18 23:14:44';
+const APP_VERSION = '1.0.145';
+const APP_BUILD_DATE = '2026-10-18 23:26:10';
 
 
 
