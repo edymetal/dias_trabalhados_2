@@ -18,9 +18,9 @@ A Etapa 0 foi concluída localmente em 22/07/2026: exportação administrativa, 
 
 ## Resumo para WhatsApp
 
-Na aba Calendário, use **Resumo para WhatsApp** para gerar uma imagem do mês exibido com os turnos, pagamentos parciais e o saldo geral atualizado (todos os meses, descontados os adiantamentos), como no painel. O ícone do WhatsApp compartilha o PNG gerado em memória junto com a mensagem contendo o valor a pagar. Escolha WhatsApp e o contato no compartilhamento do aparelho e confirme o envio. O navegador não permite escolher o aplicativo de destino automaticamente ao compartilhar um arquivo local.
+Na aba Calendário, use **Resumo para WhatsApp** para gerar uma imagem do mês exibido com os turnos, pagamentos parciais e o saldo geral atualizado (todos os meses, descontados os adiantamentos), como no painel. O ícone do WhatsApp compartilha apenas o PNG gerado em memória, sem título ou texto de mensagem. Escolha WhatsApp e o contato no compartilhamento do aparelho, escreva o valor manualmente na conversa e confirme o envio. O navegador não permite escolher o aplicativo de destino automaticamente ao compartilhar um arquivo local, mesmo quando o conteúdo é apenas uma imagem.
 
-Não há download automático, atalho que envie apenas texto ou alternativa que exija anexar manualmente o PNG. Se o navegador não suportar o compartilhamento de arquivos, a interface explica a limitação. Cancelamentos e erros também não baixam arquivos nem abrem outro aplicativo. O ícone de envio usa o mesmo compartilhamento com imagem e valor; o download permanece uma ação opcional e separada, no seu próprio ícone. Alguns aplicativos podem ignorar o texto recebido; o saldo permanece visível na imagem. O relatório é gerado localmente no navegador, sem serviço externo ou custo adicional.
+Não há download automático, atalho que envie apenas texto ou alternativa que exija anexar manualmente o PNG. Se o navegador não suportar o compartilhamento de arquivos, a interface explica a limitação. Cancelamentos e erros também não baixam arquivos nem abrem outro aplicativo. Há uma única ação de compartilhamento, com o ícone do WhatsApp; o download permanece uma ação opcional e separada, no seu próprio ícone. O saldo permanece visível na imagem. O relatório é gerado localmente no navegador, sem serviço externo ou custo adicional.
 
 ## Requisitos
 

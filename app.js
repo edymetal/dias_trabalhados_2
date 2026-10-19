@@ -164,8 +164,8 @@ const applicationProtectionReady = initializeApplicationProtection().catch(error
 });
 
 // Versão da aplicação (gerenciada automaticamente pelo Git Hook)
-const APP_VERSION = '1.0.149';
-const APP_BUILD_DATE = '2026-10-19 08:46:14';
+const APP_VERSION = '1.0.150';
+const APP_BUILD_DATE = '2026-10-19 08:56:42';
 
 
 
@@ -865,15 +865,13 @@ function initNavigation() {
   setupPaymentShare(() => {
     const texts = translations[getCurrentLanguage()];
     const { netBalance } = calculateFinancialSummary(db);
-    const title = document.getElementById('calendar-month-year').innerText;
     const balanceLabel = texts[netBalance < 0 ? 'stat-total-credit' : 'stat-total-pending'];
     const balance = formatCurrency(Math.abs(netBalance));
     const scope = texts['share-scope'];
     return {
-      texts, title, balanceLabel, balance, scope,
+      texts, balanceLabel, balance, scope,
       generated: `${texts['share-generated']}: ${new Date().toLocaleString(getCurrentLanguage())}`,
       filename: `pagamento-${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`,
-      message: `${title}\n${netBalance < 0 ? balanceLabel : texts['share-amount-due']}: ${balance}\n${scope}`,
       calendar: document.querySelector('.calendar-wrapper'),
       balanceCard: document.querySelector('.stat-card.stat-pending')
     };

@@ -47,12 +47,10 @@ export async function drawPaymentReport({ calendar, balanceCard, balanceLabel, b
   }
 }
 
-export async function sharePaymentFile(file, title, navigatorApi = navigator, message = '') {
+export async function sharePaymentFile(file, navigatorApi = navigator) {
   if (!navigatorApi.share || !navigatorApi.canShare?.({ files: [file] })) return 'unsupported';
   try {
-    const data = { files: [file], title };
-    if (message) data.text = message;
-    await navigatorApi.share(data);
+    await navigatorApi.share({ files: [file] });
     return 'shared';
   } catch (error) {
     if (error.name === 'AbortError') return 'cancelled';
@@ -65,12 +63,10 @@ export function setupPaymentShare(getReport) {
   const preview = document.getElementById('payment-report-preview');
   const download = document.getElementById('payment-report-download');
   const whatsapp = document.getElementById('payment-report-whatsapp');
-  const share = document.getElementById('payment-report-share');
   const status = document.getElementById('payment-report-status');
   let file;
   let objectUrl;
   let texts;
-  let message;
   trigger.addEventListener('click', async () => {
     trigger.disabled = true;
     try {
@@ -87,9 +83,7 @@ export function setupPaymentShare(getReport) {
       preview.alt = texts['share-preview-alt'];
       download.href = objectUrl;
       download.download = file.name;
-      message = report.message;
       status.textContent = texts['share-instructions'];
-      share.hidden = !(navigator.share && navigator.canShare?.({ files: [file] }));
       trigger.disabled = false;
       trigger.focus({ preventScroll: true });
       openDialog('payment-report-modal');
@@ -100,22 +94,19 @@ export function setupPaymentShare(getReport) {
       trigger.disabled = false;
     }
   });
-  const sendReport = async (toWhatsapp = false) => {
+  const sendReport = async () => {
     if (!file) return;
-    share.disabled = true;
     whatsapp.disabled = true;
     try {
-      if (toWhatsapp) status.textContent = texts['share-choose-whatsapp'];
-      const result = await sharePaymentFile(file, texts['share-title'], navigator, message);
+      status.textContent = texts['share-choose-whatsapp'];
+      const result = await sharePaymentFile(file);
       if (result === 'unsupported') status.textContent = texts['share-unsupported'];
     } catch (error) {
       console.error('[payment-share]', error);
       status.textContent = texts['share-fallback'];
     } finally {
-      share.disabled = false;
       whatsapp.disabled = false;
     }
   };
-  share.addEventListener('click', () => sendReport());
-  whatsapp.addEventListener('click', () => sendReport(true));
+  whatsapp.addEventListener('click', sendReport);
 }
