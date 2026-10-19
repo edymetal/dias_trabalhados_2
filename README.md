@@ -18,9 +18,9 @@ A Etapa 0 foi concluída localmente em 22/07/2026: exportação administrativa, 
 
 ## Resumo para WhatsApp
 
-Na aba Calendário, use **Resumo para WhatsApp** para gerar uma imagem do mês exibido com os turnos, pagamentos parciais e o saldo geral atualizado (todos os meses, descontados os adiantamentos), como no painel. O ícone do WhatsApp baixa o PNG e abre diretamente o aplicativo instalado pelo atalho `whatsapp://send`, com o valor a pagar na mensagem, sem chamar o seletor de compartilhamento. Escolha o contato, anexe o PNG baixado e confirme o envio. Esse atalho não permite anexar um arquivo local automaticamente. O navegador ainda pode pedir autorização para abrir o aplicativo externo.
+Na aba Calendário, use **Resumo para WhatsApp** para gerar uma imagem do mês exibido com os turnos, pagamentos parciais e o saldo geral atualizado (todos os meses, descontados os adiantamentos), como no painel. O ícone do WhatsApp compartilha o PNG gerado em memória junto com a mensagem contendo o valor a pagar. Escolha WhatsApp e o contato no compartilhamento do aparelho e confirme o envio. O navegador não permite escolher o aplicativo de destino automaticamente ao compartilhar um arquivo local.
 
-Se o aplicativo não abrir, use o link **Abrir pelo navegador** que aparece após tocar no WhatsApp. O ícone de envio continua usando o compartilhamento do sistema para encaminhar imagem e valor juntos aos aplicativos disponíveis, quando suportado. Alguns aplicativos podem ignorar o texto; o saldo permanece visível na imagem. Cancelar esse compartilhamento não abre o WhatsApp nem baixa arquivos. O relatório é gerado localmente no navegador, sem serviço externo ou custo adicional.
+Não há download automático, atalho que envie apenas texto ou alternativa que exija anexar manualmente o PNG. Se o navegador não suportar o compartilhamento de arquivos, a interface explica a limitação. Cancelamentos e erros também não baixam arquivos nem abrem outro aplicativo. O ícone de envio usa o mesmo compartilhamento com imagem e valor; o download permanece uma ação opcional e separada, no seu próprio ícone. Alguns aplicativos podem ignorar o texto recebido; o saldo permanece visível na imagem. O relatório é gerado localmente no navegador, sem serviço externo ou custo adicional.
 
 ## Requisitos
 

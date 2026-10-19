@@ -11,7 +11,7 @@ describe('compartilhamento do resumo', () => {
     expect(api.share).toHaveBeenCalledWith({ files: [file], title: 'Resumo' });
   });
 
-  it('oferece fallback quando o navegador não compartilha arquivos', async () => {
+  it('informa falta de suporte sem tentar compartilhar arquivos', async () => {
     expect(await sharePaymentFile(file, 'Resumo', {})).toBe('unsupported');
     const api = { canShare: () => false, share: vi.fn() };
     expect(await sharePaymentFile(file, 'Resumo', api)).toBe('unsupported');
@@ -30,7 +30,7 @@ describe('compartilhamento do resumo', () => {
     expect(await sharePaymentFile(file, 'Resumo', api)).toBe('cancelled');
   });
 
-  it('propaga falhas para exibir as opções de download e WhatsApp', async () => {
+  it('propaga falhas para informar que o compartilhamento não foi concluído', async () => {
     const error = new DOMException('Bloqueado', 'NotAllowedError');
     const api = { canShare: () => true, share: vi.fn().mockRejectedValue(error) };
     await expect(sharePaymentFile(file, 'Resumo', api)).rejects.toBe(error);

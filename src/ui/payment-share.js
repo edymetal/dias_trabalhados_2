@@ -71,19 +71,6 @@ export function setupPaymentShare(getReport) {
   let objectUrl;
   let texts;
   let message;
-  let whatsappUrl;
-  const openWhatsapp = () => {
-    if (!file) return;
-    status.textContent = texts['share-whatsapp-manual'];
-    const browserLink = document.createElement('a');
-    browserLink.href = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    browserLink.target = '_blank';
-    browserLink.rel = 'noopener noreferrer';
-    browserLink.textContent = texts['share-whatsapp-browser'];
-    status.append(' ', browserLink);
-    download.click();
-    window.open(whatsappUrl, '_self');
-  };
   trigger.addEventListener('click', async () => {
     trigger.disabled = true;
     try {
@@ -101,7 +88,6 @@ export function setupPaymentShare(getReport) {
       download.href = objectUrl;
       download.download = file.name;
       message = report.message;
-      whatsappUrl = `whatsapp://send?text=${encodeURIComponent(message)}`;
       status.textContent = texts['share-instructions'];
       share.hidden = !(navigator.share && navigator.canShare?.({ files: [file] }));
       trigger.disabled = false;
@@ -114,13 +100,14 @@ export function setupPaymentShare(getReport) {
       trigger.disabled = false;
     }
   });
-  const sendReport = async () => {
+  const sendReport = async (toWhatsapp = false) => {
     if (!file) return;
     share.disabled = true;
     whatsapp.disabled = true;
     try {
+      if (toWhatsapp) status.textContent = texts['share-choose-whatsapp'];
       const result = await sharePaymentFile(file, texts['share-title'], navigator, message);
-      if (result === 'unsupported') status.textContent = texts['share-instructions'];
+      if (result === 'unsupported') status.textContent = texts['share-unsupported'];
     } catch (error) {
       console.error('[payment-share]', error);
       status.textContent = texts['share-fallback'];
@@ -130,5 +117,5 @@ export function setupPaymentShare(getReport) {
     }
   };
   share.addEventListener('click', () => sendReport());
-  whatsapp.addEventListener('click', openWhatsapp);
+  whatsapp.addEventListener('click', () => sendReport(true));
 }
