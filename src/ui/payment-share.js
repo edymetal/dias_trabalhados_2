@@ -72,11 +72,17 @@ export function setupPaymentShare(getReport) {
   let texts;
   let message;
   let whatsappUrl;
-  let whatsappFallback = false;
-  const openWhatsappFallback = () => {
-    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-    download.click();
+  const openWhatsapp = () => {
+    if (!file) return;
     status.textContent = texts['share-whatsapp-manual'];
+    const browserLink = document.createElement('a');
+    browserLink.href = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    browserLink.target = '_blank';
+    browserLink.rel = 'noopener noreferrer';
+    browserLink.textContent = texts['share-whatsapp-browser'];
+    status.append(' ', browserLink);
+    download.click();
+    window.open(whatsappUrl, '_self');
   };
   trigger.addEventListener('click', async () => {
     trigger.disabled = true;
@@ -95,8 +101,7 @@ export function setupPaymentShare(getReport) {
       download.href = objectUrl;
       download.download = file.name;
       message = report.message;
-      whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-      whatsappFallback = false;
+      whatsappUrl = `whatsapp://send?text=${encodeURIComponent(message)}`;
       status.textContent = texts['share-instructions'];
       share.hidden = !(navigator.share && navigator.canShare?.({ files: [file] }));
       trigger.disabled = false;
@@ -109,24 +114,15 @@ export function setupPaymentShare(getReport) {
       trigger.disabled = false;
     }
   });
-  const sendReport = async (toWhatsapp = false) => {
+  const sendReport = async () => {
     if (!file) return;
-    if (toWhatsapp && whatsappFallback) {
-      openWhatsappFallback();
-      return;
-    }
     share.disabled = true;
     whatsapp.disabled = true;
     try {
-      if (toWhatsapp) status.textContent = texts['share-choose-whatsapp'];
       const result = await sharePaymentFile(file, texts['share-title'], navigator, message);
-      if (result === 'unsupported') {
-        if (toWhatsapp) openWhatsappFallback();
-        else status.textContent = texts['share-instructions'];
-      }
+      if (result === 'unsupported') status.textContent = texts['share-instructions'];
     } catch (error) {
       console.error('[payment-share]', error);
-      whatsappFallback = true;
       status.textContent = texts['share-fallback'];
     } finally {
       share.disabled = false;
@@ -134,5 +130,5 @@ export function setupPaymentShare(getReport) {
     }
   };
   share.addEventListener('click', () => sendReport());
-  whatsapp.addEventListener('click', () => sendReport(true));
+  whatsapp.addEventListener('click', openWhatsapp);
 }
